@@ -1,0 +1,23 @@
+project_id,wbs_code,parent_wbs,scope_item,deliverable,percent_complete,status
+ORB-1001,1,,Nordic Retail Platform,Program,40,In Progress
+ORB-1001,1.1,1,Discovery & Requirements,Signed-off requirements,100,Complete
+ORB-1001,1.2,1,Store POS Integration,POS adapter live in 3 pilot stores,55,In Progress
+ORB-1001,1.3,1,E-commerce Replatform,New checkout in production,20,In Progress
+ORB-1001,1.4,1,Rollout & Hypercare,All 40 stores migrated,0,Not Started
+ORB-1002,1,,Customer Data Migration,Program,65,In Progress
+ORB-1002,1.1,1,Source Data Profiling,Profiling report,100,Complete
+ORB-1002,1.2,1,Mapping & Transformation,Validated mapping rules,80,In Progress
+ORB-1002,1.3,1,Cutover Rehearsal,Successful dress rehearsal,10,At Risk
+ORB-1002,1.4,1,Production Cutover,Go-live sign-off,0,Not Started
+ORB-1003,1,,AI Advisory Discovery,Engagement,55,In Progress
+ORB-1003,1.1,1,Current-State Assessment,Assessment deck,90,In Progress
+ORB-1003,1.2,1,Opportunity Roadmap,Prioritised roadmap,30,In Progress
+ORB-1004,1,,Warehouse Automation Rollout,Program,30,In Progress
+ORB-1004,1.1,1,Conveyor & Robotics Install,Commissioned line,45,In Progress
+ORB-1004,1.2,1,WMS Integration,WMS talks to robotics,15,In Progress
+ORB-1005,1,,Payments Compliance Upgrade,Program,72,In Progress
+ORB-1005,1.1,1,PSD2/SCA Remediation,Compliant auth flows,85,In Progress
+ORB-1005,1.2,1,Audit & Certification,External sign-off,40,In Progress
+ORB-1006,1,,Data Governance Framework,Program,48,In Progress
+ORB-1006,1.1,1,Data Catalogue,Populated catalogue,60,In Progress
+ORB-1006,1.2,1,Policy & Ownership,Approved policies,35,In Progress
