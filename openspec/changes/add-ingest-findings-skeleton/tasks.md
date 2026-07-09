@@ -46,5 +46,5 @@
 
 ## 8. Verify
 
-- [ ] 8.1 Run the app, exercise upload → analyze → read end-to-end (API + React view), confirm the finding shows its citation
-- [ ] 8.2 Run `openspec validate --change add-ingest-findings-skeleton` and the full test suite
+- [x] 8.1 Run the app, exercise upload → analyze → read end-to-end (API + React view), confirm the finding shows its citation
+- [x] 8.2 Run `openspec validate --change add-ingest-findings-skeleton` and the full test suite

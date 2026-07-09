@@ -6,7 +6,6 @@ using AiPMOInsight.Infrastructure.Findings;
 using AiPMOInsight.Infrastructure.Ingest;
 using AiPMOInsight.Infrastructure.Persistence;
 using AiPMOInsight.Infrastructure.Security;
-using AiPMOInsight.Infrastructure.Widgets;
 
 namespace AiPMOInsight.Infrastructure;
 
@@ -24,7 +23,6 @@ public static class DependencyInjection
 
         services.AddDbContext<AppDbContext>(options => options.UseNpgsql(connectionString));
 
-        services.AddScoped<IWidgetRepository, EfWidgetRepository>();
         services.AddScoped<IUploadRepository, EfUploadRepository>();
         services.AddScoped<IFindingRepository, EfFindingRepository>();
         services.AddScoped<IRefreshTokenService, RefreshTokenService>();

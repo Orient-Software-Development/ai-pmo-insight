@@ -3,7 +3,7 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace AiPMOInsight.Infrastructure.Persistence.Configurations;
 
-/// <summary>Fluent mapping for <see cref="RefreshToken"/> (snake_case columns, like widgets).</summary>
+/// <summary>Fluent mapping for <see cref="RefreshToken"/> (snake_case columns).</summary>
 internal sealed class RefreshTokenConfiguration : IEntityTypeConfiguration<RefreshToken>
 {
     public void Configure(EntityTypeBuilder<RefreshToken> builder)

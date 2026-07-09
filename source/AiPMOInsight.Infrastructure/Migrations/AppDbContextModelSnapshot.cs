@@ -78,28 +78,6 @@ namespace AiPMOInsight.Infrastructure.Migrations
                     b.ToTable("uploads", (string)null);
                 });
 
-            modelBuilder.Entity("AiPMOInsight.Domain.Widgets.Widget", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid")
-                        .HasColumnName("id");
-
-                    b.Property<DateTimeOffset>("CreatedAt")
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("created_at");
-
-                    b.Property<string>("Name")
-                        .IsRequired()
-                        .HasMaxLength(200)
-                        .HasColumnType("character varying(200)")
-                        .HasColumnName("name");
-
-                    b.HasKey("Id");
-
-                    b.ToTable("widgets", (string)null);
-                });
-
             modelBuilder.Entity("AiPMOInsight.Infrastructure.Persistence.AppUser", b =>
                 {
                     b.Property<string>("Id")
