@@ -1,0 +1,592 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>AI PMO Insight — Wireframe</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
+<style>
+  :root{
+    --bg:0 0% 100%; --gradient-bg:220 24% 97%; --card:0 0% 100%;
+    --fg:222 30% 14%; --muted-fg:220 9% 46%; --border:222 14% 88%;
+    --brand-blue:205 90% 48%; --brand-magenta:288 70% 56%; --accent:207 91% 48%;
+    --green:150 65% 38%; --amber:35 92% 42%; --red:0 72% 50%; --blue:205 90% 48%;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{scroll-behavior:smooth}
+  body{background:hsl(var(--gradient-bg));color:hsl(var(--fg));font-family:'Sora',system-ui,sans-serif;-webkit-font-smoothing:antialiased;line-height:1.55;overflow-x:hidden}
+  .bg-base{position:fixed;inset:0;z-index:0;pointer-events:none;background:radial-gradient(120% 90% at 100% 0%,hsl(var(--bg)) 0%,hsl(var(--gradient-bg)) 55%,#e8ecf3 100%)}
+  .bg-blob::before,.bg-blob::after{content:"";position:fixed;border-radius:50%;filter:blur(95px);z-index:0;pointer-events:none}
+  .bg-blob::before{width:680px;height:520px;top:-200px;left:-160px;opacity:.26;background:radial-gradient(circle,hsl(var(--brand-blue)/.5),transparent 68%)}
+  .bg-blob::after{width:720px;height:600px;top:48%;right:-220px;opacity:.18;background:radial-gradient(circle,hsl(var(--brand-magenta)/.4),transparent 68%)}
+  .wrap{position:relative;z-index:2;max-width:1240px;margin:0 auto;padding:0 28px 110px}
+
+  /* top bar */
+  .topbar{position:sticky;top:0;z-index:50;backdrop-filter:blur(14px);background:hsl(0 0% 100% / .72);border-bottom:1px solid hsl(var(--border))}
+  .topbar-in{max-width:1240px;margin:0 auto;padding:11px 28px;display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap}
+  .brand{display:flex;align-items:center;gap:12px}
+  .brand-mark{width:38px;height:38px;border-radius:11px;display:grid;place-items:center;background:linear-gradient(135deg,hsl(var(--brand-blue)),hsl(var(--brand-magenta)));box-shadow:0 6px 18px hsl(var(--brand-magenta)/.3),inset 0 0 0 1px hsl(0 0% 100% / .25)}
+  .brand-mark svg{width:21px;height:21px;color:#fff}
+  .brand-name{font-weight:700;font-size:15.5px;letter-spacing:-.01em;line-height:1.1}
+  .brand-sub{font-size:11px;color:hsl(var(--muted-fg));letter-spacing:.04em}
+  .wf-pill{font-size:11px;font-weight:700;color:hsl(var(--brand-blue));background:hsl(var(--brand-blue)/.1);border:1px solid hsl(var(--brand-blue)/.25);padding:6px 13px;border-radius:999px;letter-spacing:.04em}
+
+  /* hero */
+  .hero{padding:38px 0 6px;max-width:920px}
+  .eyebrow{display:inline-flex;align-items:center;gap:8px;font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:hsl(var(--brand-blue));font-weight:600;margin-bottom:14px}
+  .eyebrow::before{content:"";width:26px;height:1px;background:hsl(var(--brand-blue)/.6)}
+  h1.title{font-size:36px;font-weight:700;letter-spacing:-.025em;line-height:1.1}
+  .title .grad{background:linear-gradient(100deg,hsl(var(--brand-blue)),hsl(var(--brand-magenta)));-webkit-background-clip:text;background-clip:text;color:transparent}
+  .lede{margin-top:13px;font-size:15px;color:hsl(var(--muted-fg));max-width:780px}
+  .legend{margin-top:16px;display:inline-flex;align-items:center;gap:16px;padding:9px 16px;border-radius:999px;background:hsl(0 0% 100% / .7);border:1px solid hsl(var(--border));font-size:12px}
+  .legend b{color:hsl(var(--fg))}
+
+  /* sections */
+  section{margin-top:42px;scroll-margin-top:80px}
+  .sec-head{display:flex;align-items:baseline;gap:12px;margin-bottom:4px;flex-wrap:wrap}
+  .sec-kicker{font-size:11px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:hsl(var(--brand-magenta));display:flex;align-items:center;gap:8px}
+  .sec-kicker .num{width:20px;height:20px;border-radius:6px;background:hsl(var(--brand-blue));color:#fff;font-size:11px;display:grid;place-items:center}
+  h2{font-size:23px;font-weight:700;letter-spacing:-.02em}
+  .sec-sub{font-size:13.5px;color:hsl(var(--muted-fg));margin:5px 0 18px;max-width:860px}
+
+  .card{background:hsl(0 0% 100% / .82);border:1px solid hsl(var(--border));border-radius:16px;padding:20px;box-shadow:0 1px 2px hsl(220 25% 30% / .04),0 10px 28px hsl(220 25% 30% / .05)}
+  .card-hd{font-size:13px;font-weight:700;display:flex;justify-content:space-between;align-items:center;margin-bottom:14px}
+  .tag{font-size:9.5px;font-weight:700;color:#fff;background:hsl(var(--brand-blue));padding:3px 9px;border-radius:6px;letter-spacing:.05em}
+  .row{display:flex;gap:16px;flex-wrap:wrap}
+  .col{flex:1;min-width:0}
+  .label{font-size:10px;text-transform:uppercase;letter-spacing:.07em;color:hsl(var(--muted-fg));font-weight:700;margin-bottom:7px}
+  .skel{height:9px;background:hsl(220 16% 92%);border-radius:4px;margin:8px 0}
+  .skel.s{width:55%}.skel.m{width:78%}.skel.l{width:100%}
+  .note{font-size:11px;color:hsl(var(--muted-fg));margin-top:8px;font-style:italic}
+
+  /* finding lists (exec summary) */
+  .flist{list-style:none}
+  .flist li{padding:9px 0;border-bottom:1px solid hsl(220 16% 95%)}
+  .flist li:last-child{border-bottom:0}
+  .flist .top{display:flex;align-items:center;gap:8px;font-size:12.5px;font-weight:600}
+  .flist .top .num{width:18px;height:18px;border-radius:6px;background:hsl(var(--brand-blue)/.1);color:hsl(var(--brand-blue));font-size:10px;font-weight:700;display:grid;place-items:center;flex:0 0 auto}
+  .flist .meta{font-size:11px;color:hsl(var(--muted-fg));margin-top:2px;margin-left:19px}
+  .flist .meta.nodot{margin-left:0}
+  .miniconf{font-size:9px;font-weight:700;padding:1px 7px;border-radius:999px;margin-left:auto;flex:0 0 auto}
+  .miniconf.h{background:hsl(var(--green)/.12);color:hsl(var(--green))}
+  .miniconf.m{background:hsl(var(--amber)/.14);color:hsl(var(--amber))}
+
+  /* progress comparison + milestone/decision lists */
+  .cmp{margin:6px 0 2px}
+  .cmprow{display:flex;align-items:center;gap:10px;margin:8px 0}
+  .cmprow .cmpk{font-size:11px;color:hsl(var(--muted-fg));width:88px;flex:0 0 auto}
+  .cmprow .track{flex:1;background:hsl(220 16% 91%);border-radius:5px;height:9px;overflow:hidden}
+  .cmprow .fill{height:100%;background:linear-gradient(90deg,hsl(var(--brand-blue)),hsl(var(--brand-magenta)))}
+  .cmprow .fill.ghost{background:hsl(220 12% 78%)}
+  .cmprow .cmpv{font-size:11.5px;font-weight:700;width:34px;text-align:right;flex:0 0 auto}
+  .mlist{list-style:none;margin-top:4px}
+  .mlist li{font-size:12px;padding:6px 0;border-bottom:1px solid hsl(220 16% 95%)}
+  .mlist li:last-child{border-bottom:0}
+  .mlist li .arr{color:hsl(var(--brand-blue));font-weight:700;margin-right:6px}
+
+  /* data-quality signals (embedded inline) */
+  .dq{display:inline-flex;align-items:center;gap:4px;font-size:9.5px;font-weight:700;padding:2px 8px;border-radius:6px;vertical-align:middle;white-space:nowrap}
+  .dq.warn{background:hsl(var(--amber)/.15);color:hsl(var(--amber));border:1px solid hsl(var(--amber)/.35)}
+  .dq.crit{background:hsl(var(--red)/.1);color:hsl(var(--red));border:1px solid hsl(var(--red)/.3)}
+  .dq.ok{background:hsl(var(--green)/.12);color:hsl(var(--green));border:1px solid hsl(var(--green)/.3)}
+  .stamp{font-size:10.5px;color:hsl(var(--muted-fg))}
+  .bar.est,.fill.est{background:repeating-linear-gradient(45deg,hsl(220 12% 70%),hsl(220 12% 70%) 5px,hsl(220 14% 84%) 5px,hsl(220 14% 84%) 10px)}
+  .legend-bars{font-size:11px;color:hsl(var(--muted-fg));padding:12px 14px 4px}
+  .legend-bars .sw{display:inline-block;width:26px;height:8px;border-radius:3px;vertical-align:middle;margin:0 5px 0 14px}
+  .legend-bars .sw:first-child{margin-left:0}
+  .legend-bars .sw.solid{background:linear-gradient(90deg,hsl(var(--brand-blue)),hsl(var(--brand-magenta)))}
+  .legend-bars .sw.hatch{background:repeating-linear-gradient(45deg,hsl(220 12% 70%),hsl(220 12% 70%) 5px,hsl(220 14% 84%) 5px,hsl(220 14% 84%) 10px)}
+  /* hover tooltip */
+  .tip{position:relative;cursor:help}
+  .tip .tipbox{visibility:hidden;opacity:0;position:absolute;bottom:135%;left:0;z-index:40;width:240px;white-space:normal;background:hsl(222 30% 14%);color:#fff;font-size:11px;font-weight:400;line-height:1.5;padding:10px 12px;border-radius:9px;box-shadow:0 8px 24px hsl(220 25% 20% / .3);transition:.15s;letter-spacing:0;text-transform:none}
+  .tip:hover .tipbox{visibility:visible;opacity:1}
+  .tip .tipbox b{color:#fff}
+  .tip .tipbox::after{content:"";position:absolute;top:100%;left:18px;border:6px solid transparent;border-top-color:hsl(222 30% 14%)}
+  .tip.left .tipbox{left:auto;right:0}
+  .tip.left .tipbox::after{left:auto;right:18px}
+  /* data-quality list (part 5) */
+  .dqlist{list-style:none}
+  .dqlist li{display:flex;gap:14px;align-items:flex-start;padding:12px 0;border-bottom:1px solid hsl(220 16% 95%)}
+  .dqlist li:last-child{border-bottom:0}
+  .dqlist .dq{flex:0 0 auto;min-width:138px;margin-top:1px}
+  .dqbody{font-size:12.5px}
+  .dqeffect{font-size:11.5px;color:hsl(var(--muted-fg));font-style:italic;margin-top:3px}
+
+  /* RAG donut (exec summary) */
+  .donut{width:118px;height:118px;border-radius:50%;flex:0 0 auto;position:relative;
+    background:conic-gradient(
+      #fff 0 0.6%,
+      hsl(var(--green)) 0.6% 53.95%, #fff 53.95% 55.15%,
+      hsl(var(--amber)) 55.15% 81.2%, #fff 81.2% 82.4%,
+      hsl(var(--red)) 82.4% 99.4%, #fff 99.4% 100%)}
+  .donut::after{content:"";position:absolute;inset:14px;border-radius:50%;background:#fff}
+  .donut .dc{position:absolute;inset:0;z-index:1;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;line-height:1}
+  .donut .dc b{font-size:24px;font-weight:800;line-height:1;letter-spacing:-.01em}
+  .donut .dc span{font-size:8px;color:hsl(var(--muted-fg));letter-spacing:.1em;text-transform:uppercase;margin-top:4px}
+  .dlegend{display:flex;flex-direction:column;gap:8px;font-size:12.5px}
+  .dlegend .li{display:flex;align-items:center;gap:8px}
+  .dlegend .li .sw{width:11px;height:11px;border-radius:50%;flex:0 0 auto}
+  .dlegend .li span{color:hsl(var(--muted-fg))}
+
+  /* bullet chart (list + detail) */
+  .bullet{position:relative;height:11px;background:hsl(220 16% 91%);border-radius:5px;width:120px;overflow:visible}
+  .bullet .bfill{position:absolute;left:0;top:0;height:100%;border-radius:5px;background:linear-gradient(90deg,hsl(var(--brand-blue)),hsl(var(--brand-magenta)))}
+  .bullet .bfill.est{background:repeating-linear-gradient(45deg,hsl(220 12% 70%),hsl(220 12% 70%) 5px,hsl(220 14% 84%) 5px,hsl(220 14% 84%) 10px)}
+  .bullet .bmark{position:absolute;top:-3px;width:2px;height:17px;background:hsl(222 30% 25%);border-radius:1px}
+  .bcap{font-size:10px;color:hsl(var(--muted-fg));margin-top:8px;white-space:nowrap}
+  .bullet.big{height:16px;width:100%;border-radius:7px}
+  .bullet.big .bmark{top:-6px;height:28px}
+  .bullet.big .bmark span{position:absolute;top:-15px;left:50%;transform:translateX(-50%);font-size:10px;color:hsl(222 30% 25%);font-weight:700;white-space:nowrap}
+
+  /* data-confidence gauge + freshness (part 5) */
+  .confgauge{--p:82;width:112px;height:112px;border-radius:50%;flex:0 0 auto;position:relative;
+    background:conic-gradient(hsl(var(--green)) calc(var(--p)*1%),hsl(220 16% 91%) 0)}
+  .confgauge::after{content:"";position:absolute;inset:13px;border-radius:50%;background:#fff}
+  .confgauge .cg{position:absolute;inset:0;z-index:1;display:flex;align-items:center;justify-content:center;text-align:center}
+  .confgauge .cg b{font-size:28px;font-weight:800;line-height:1;letter-spacing:-.01em}
+  .gaugebox{flex:0 0 auto;text-align:center;display:flex;flex-direction:column;align-items:center;justify-content:center;padding-right:26px;border-right:1px solid hsl(220 16% 92%)}
+  .gaugelbl{font-size:10px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:hsl(var(--muted-fg));margin-top:11px}
+  .fresh{display:flex;gap:7px;flex-wrap:wrap}
+  .ftile{border:1px solid hsl(var(--border));border-radius:9px;padding:7px 11px;font-size:11px;min-width:84px;background:#fff;border-top:3px solid var(--fc)}
+  .ftile .fn{font-weight:700;font-size:11px}
+  .ftile .fa{font-size:10px;color:hsl(var(--muted-fg))}
+  .ftile.miss{background:repeating-linear-gradient(45deg,#fff,#fff 6px,hsl(220 16% 95%) 6px,hsl(220 16% 95%) 12px)}
+  .remed{list-style:none;counter-reset:r}
+  .remed li{counter-increment:r;position:relative;padding:9px 0 9px 34px;border-bottom:1px solid hsl(220 16% 95%);font-size:12.5px}
+  .remed li:last-child{border-bottom:0}
+  .remed li::before{content:counter(r);position:absolute;left:0;top:8px;width:22px;height:22px;border-radius:7px;background:hsl(var(--brand-blue)/.1);color:hsl(var(--brand-blue));font-size:11px;font-weight:700;display:grid;place-items:center}
+  .remed li .own{float:right;font-size:10.5px;color:hsl(var(--muted-fg));font-weight:600}
+
+  /* RAG dots + verdict pills */
+  .rag{display:inline-block;width:11px;height:11px;border-radius:50%;vertical-align:middle;margin-right:7px}
+  .g{background:hsl(var(--green))}.a{background:hsl(var(--amber))}.r{background:hsl(var(--red))}
+  .verdict{display:inline-flex;align-items:center;gap:6px;font-size:11px;font-weight:700;padding:3px 11px;border-radius:999px}
+  .verdict.ok{background:hsl(var(--green)/.12);color:hsl(var(--green))}
+  .verdict.risk{background:hsl(var(--amber)/.14);color:hsl(var(--amber))}
+  .verdict.crit{background:hsl(var(--red)/.1);color:hsl(var(--red))}
+
+  /* upload */
+  .upload{border:1.5px dashed hsl(var(--brand-blue)/.45);border-radius:13px;padding:20px;text-align:center;background:hsl(var(--brand-blue)/.04);font-size:13px;color:hsl(var(--muted-fg))}
+  .upload b{color:hsl(var(--fg))}
+  .chips{display:flex;gap:7px;flex-wrap:wrap;margin-top:12px;justify-content:center}
+  .chip{border:1px solid hsl(var(--border));background:#fff;border-radius:999px;padding:5px 12px;font-size:11.5px;color:hsl(var(--fg))}
+
+  /* KPIs */
+  .kpi{display:flex;gap:12px}
+  .kpi .k{flex:1;border:1px solid hsl(var(--border));border-radius:13px;padding:13px;text-align:center;background:#fff}
+  .kpi .k .n{font-size:24px;font-weight:800;letter-spacing:-.01em}
+  .kpi .k .t{font-size:10px;color:hsl(var(--muted-fg));text-transform:uppercase;letter-spacing:.05em;margin-top:3px}
+
+  /* table */
+  table{width:100%;border-collapse:collapse;font-size:12.5px}
+  th,td{text-align:left;padding:9px 11px;border-bottom:1px solid hsl(220 16% 94%)}
+  th{font-size:10px;text-transform:uppercase;letter-spacing:.05em;color:hsl(var(--muted-fg))}
+  .conf{font-size:10px;color:hsl(var(--muted-fg))}
+  .barwrap{background:hsl(220 16% 91%);border-radius:5px;height:8px;width:96px;overflow:hidden}
+  .bar{height:100%;background:linear-gradient(90deg,hsl(var(--brand-blue)),hsl(var(--brand-magenta)))}
+
+  /* agents */
+  .agents{display:flex;gap:9px;flex-wrap:wrap;align-items:stretch}
+  .agent{flex:1 1 130px;border:1px solid hsl(var(--border));border-radius:12px;padding:13px 10px;background:#fff;font-size:11.5px;text-align:center;font-weight:600}
+  .agent .ic{width:32px;height:32px;border-radius:9px;background:hsl(var(--brand-blue)/.08);color:hsl(var(--brand-blue));margin:0 auto 8px;display:grid;place-items:center;font-size:15px}
+  .agent.review{border-style:dashed;border-color:hsl(var(--brand-magenta)/.5);background:hsl(var(--brand-magenta)/.04)}
+  .agent.review .ic{background:hsl(var(--brand-magenta)/.1);color:hsl(var(--brand-magenta))}
+  .arrow{align-self:center;color:hsl(var(--border));font-size:18px;font-weight:700}
+
+  footer{margin-top:54px;padding-top:22px;border-top:1px solid hsl(var(--border));font-size:11.5px;color:hsl(var(--muted-fg));text-align:center}
+
+  /* AI-recommendation details modal */
+  .detailsbtn{font-family:inherit;font-size:11px;font-weight:700;color:hsl(var(--brand-blue));background:hsl(var(--brand-blue)/.1);border:1px solid hsl(var(--brand-blue)/.28);padding:4px 11px;border-radius:999px;cursor:pointer}
+  .detailsbtn:hover{background:hsl(var(--brand-blue)/.18)}
+  .rovl{position:fixed;inset:0;z-index:100;background:hsl(222 30% 14% / .5);backdrop-filter:blur(3px);opacity:0;visibility:hidden;transition:.2s;display:flex;align-items:center;justify-content:center;padding:28px}
+  .rovl.open{opacity:1;visibility:visible}
+  .rpanel{background:#fff;width:660px;max-width:100%;max-height:88vh;overflow-y:auto;border-radius:18px;box-shadow:0 24px 60px hsl(220 25% 20% / .3);transform:translateY(14px) scale(.985);transition:.25s}
+  .rovl.open .rpanel{transform:none}
+  .rphd{position:sticky;top:0;background:#fff;border-bottom:1px solid hsl(var(--border));padding:20px 24px;display:flex;justify-content:space-between;align-items:flex-start;gap:12px;z-index:1}
+  .rpclose{width:32px;height:32px;border:1px solid hsl(var(--border));background:#fff;border-radius:9px;cursor:pointer;font-size:15px;color:hsl(var(--muted-fg));flex:0 0 auto}
+  .rpbody{padding:8px 24px 24px}
+  .rec{border:1px solid hsl(var(--border));border-left:4px solid var(--rc,hsl(var(--brand-blue)));border-radius:12px;padding:14px 16px;margin-top:14px}
+  .rec .rectop{display:flex;align-items:center;gap:10px}
+  .rec .recnum{width:24px;height:24px;border-radius:7px;background:hsl(var(--brand-blue));color:#fff;font-size:12px;font-weight:700;display:grid;place-items:center;flex:0 0 auto}
+  .rec .rectitle{font-size:14px;font-weight:700}
+  .rec .recrow{font-size:12.5px;margin-top:5px;line-height:1.5}
+  .rec .reck{font-size:9.5px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:hsl(var(--muted-fg));display:block;margin-top:10px}
+  .rec .recsrc{font-size:11px;color:hsl(var(--brand-blue));background:hsl(var(--brand-blue)/.08);border-radius:6px;padding:2px 8px;display:inline-block;margin:4px 4px 0 0}
+  .rec .recfoot{display:flex;gap:10px;align-items:center;margin-top:12px;flex-wrap:wrap}
+  .recowner{font-size:11px;color:hsl(var(--muted-fg))}
+</style>
+</head>
+<body>
+<div class="bg-base"></div><div class="bg-blob"></div>
+
+<div class="topbar">
+  <div class="topbar-in">
+    <div class="brand">
+      <div class="brand-mark"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1"><path d="M3 3v18h18"/><path d="M7 15l4-4 3 3 5-6"/></svg></div>
+      <div>
+        <div class="brand-name">NWWI · AI PMO Insight</div>
+        <div class="brand-sub">Project & portfolio health — Proof of Concept</div>
+      </div>
+    </div>
+    <span class="wf-pill">WIREFRAME · LAYOUT ONLY</span>
+  </div>
+</div>
+
+<div class="wrap">
+
+  <!-- 1. INTAKE -->
+  <section>
+    <div class="sec-head"><span class="sec-kicker"><span class="num">1</span> Data intake</span></div>
+    <h2>Manual upload through agreed templates</h2>
+    <p class="sec-sub">In the POC, data is uploaded by hand; automated connectors come only after value is proven. Source traceability (file · sheet · row · meeting date) is stored so every finding can be cited.</p>
+    <div class="row">
+      <div class="col" style="flex:2">
+        <div class="upload">
+          ⬆ <b>Drag &amp; drop project files</b> — or upload via template
+          <div class="chips">
+            <span class="chip">Budget &amp; cost (BPI .xlsx)</span>
+            <span class="chip">Hours / status (Overview .xlsx)</span>
+            <span class="chip">Resource assignments (.xlsx)</span>
+            <span class="chip">Absenteeism (.xlsx)</span>
+            <span class="chip">RAID log</span>
+            <span class="chip">Meeting minutes (.docx)</span>
+            <span class="chip">MS Project plan</span>
+          </div>
+        </div>
+      </div>
+      <div class="col">
+        <div class="card">
+          <div class="card-hd">Ingest status</div>
+          <div style="font-size:12.5px"><span class="rag g"></span>6 files parsed &amp; normalized</div>
+          <div style="font-size:12.5px;margin-top:8px"><span class="rag a"></span>1 file — language / codes need mapping</div>
+          <div class="note">Assignments × absenteeism cross-linked by employee → surfaces key-person / overlap risk.</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 2. EXEC PORTFOLIO -->
+  <section>
+    <div class="sec-head"><span class="sec-kicker"><span class="num">2</span> Executive view</span></div>
+    <h2>Portfolio summary</h2>
+    <p class="sec-sub">The leadership-level rollup: overall health, where intervention is needed, financial exposure, resource bottlenecks and the decision backlog.</p>
+    <div class="card">
+      <div class="card-hd">Portfolio health <span class="tag">EXEC VIEW</span></div>
+      <div style="display:flex;gap:26px;align-items:center;margin-bottom:18px;flex-wrap:wrap">
+        <div class="donut"><div class="dc"><b>11</b><span>projects</span></div></div>
+        <div class="dlegend">
+          <div class="li"><span class="sw" style="background:hsl(var(--green))"></span><b>6</b> <span>On track</span></div>
+          <div class="li"><span class="sw" style="background:hsl(var(--amber))"></span><b>3</b> <span>At risk</span></div>
+          <div class="li"><span class="sw" style="background:hsl(var(--red))"></span><b>2</b> <span>Critical</span></div>
+        </div>
+        <div class="kpi" style="flex:1;min-width:240px">
+          <div class="k"><div class="n">kr 9M</div><div class="t">Financial exposure</div></div>
+          <div class="k"><div class="n">4</div><div class="t">Decisions pending</div></div>
+        </div>
+      </div>
+      <div class="row">
+        <div class="col">
+          <div class="label">Intervention needed</div>
+          <ul class="flist">
+            <li>
+              <div class="top"><span class="rag r"></span>6358 — AGV install</div>
+              <div class="meta">+7% over budget · install slipped to 30/04 · sponsor decision required</div>
+            </li>
+            <li>
+              <div class="top"><span class="rag r"></span>Project Nordkap — WMS rollout</div>
+              <div class="meta">2 blockers open &gt;14 days · no actuals for 3 weeks</div>
+            </li>
+            <li>
+              <div class="top"><span class="rag a"></span>Project Kronebank — line retrofit</div>
+              <div class="meta">Schedule slip · revised plan due 20/12</div>
+            </li>
+          </ul>
+        </div>
+        <div class="col">
+          <div class="label">Resource bottlenecks</div>
+          <ul class="flist">
+            <li>
+              <div class="top"><span class="rag r"></span>Peter Nguyen · Controls (EK)</div>
+              <div class="meta">140% across 3 projects · 18% absence → key-person risk</div>
+            </li>
+            <li>
+              <div class="top"><span class="rag a"></span>Michael Andersen · Software (SU)</div>
+              <div class="meta">100% across 2 projects (6358, Kronebank)</div>
+            </li>
+            <li>
+              <div class="top"><span class="rag a"></span>Quang Le · PM</div>
+              <div class="meta">15% absence — extended sick leave (single project)</div>
+            </li>
+          </ul>
+        </div>
+        <div class="col">
+          <div class="label">Recommended actions</div>
+          <ul class="flist">
+            <li>
+              <div class="top"><span class="num">1</span>Escalate 6358 install date to steering committee<span class="miniconf h">High</span></div>
+            </li>
+            <li>
+              <div class="top"><span class="num">2</span>Assign scanner-spec decision owner, deadline 24/11<span class="miniconf h">High</span></div>
+            </li>
+            <li>
+              <div class="top"><span class="num">3</span>Re-baseline Kronebank budget after approved change request<span class="miniconf m">Med</span></div>
+            </li>
+            <li>
+              <div class="top"><span class="num">4</span>Backfill SU role to relieve delivery pressure<span class="miniconf m">Med</span></div>
+            </li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 3. PROJECT LIST -->
+  <section>
+    <div class="sec-head"><span class="sec-kicker"><span class="num">3</span> Drill-down</span></div>
+    <h2>Project status list</h2>
+    <p class="sec-sub">Every project with its real progress, budget deviation, open risks and the AI's confidence. Data-quality issues are flagged <b>inline</b> — and where a number is estimated rather than measured, the progress bar is shown hatched.</p>
+    <div class="legend" style="margin:0 0 16px"><span><span class="rag g"></span><b>Green</b> within baseline</span><span><span class="rag a"></span><b>Amber</b> ≤5% over</span><span><span class="rag r"></span><b>Red</b> &gt;5% over</span></div>
+    <div class="card" style="padding:6px 0">
+      <table>
+        <thead><tr><th>Status</th><th>Project</th><th>Progress (real)</th><th>Budget dev.</th><th>Open risks</th><th>Data</th><th>AI conf.</th></tr></thead>
+        <tbody>
+          <tr>
+            <td><span class="verdict crit">Red</span></td>
+            <td>6358 — AGV install</td>
+            <td><div class="bullet"><div class="bfill est" style="width:62%"></div><div class="bmark" style="left:75%"></div></div><div class="bcap">62% done · 75% elapsed</div></td>
+            <td>+7% over</td><td>2 blockers</td>
+            <td><span class="dq warn tip left">⚠ stale<span class="tipbox"><b>Actuals 21 days old.</b> Last time booking 08 Nov, so progress is interpolated from milestones — not measured. Confidence reduced to Medium.</span></span></td>
+            <td class="conf">Medium</td>
+          </tr>
+          <tr>
+            <td><span class="verdict crit">Red</span></td>
+            <td>Nordkap — WMS rollout</td>
+            <td><div class="bullet"><div class="bfill est" style="width:40%"></div><div class="bmark" style="left:55%"></div></div><div class="bcap">40% done · 55% elapsed</div></td>
+            <td>n/a</td><td>2 blockers</td>
+            <td><span class="dq crit tip left">⚠ 2 issues<span class="tipbox"><b>No actuals logged + inconsistent IDs.</b> Progress is an estimate only; project appears as "NOR-WMS" and "Nordkap_2024" across files. Treat status as low-confidence.</span></span></td>
+            <td class="conf">Low</td>
+          </tr>
+          <tr>
+            <td><span class="verdict risk">Amber</span></td>
+            <td>Kronebank — line retrofit</td>
+            <td><div class="bullet"><div class="bfill" style="width:48%"></div><div class="bmark" style="left:55%"></div></div><div class="bcap">48% done · 55% elapsed</div></td>
+            <td>+3% over</td><td>1 slip</td>
+            <td><span class="dq warn tip left">⚠ resource<span class="tipbox"><b>Resource-plan mismatch.</b> 2 people are booking time to Kronebank who aren't in the resource plan — resource &amp; cost attribution may be off.</span></span></td>
+            <td class="conf">Medium</td>
+          </tr>
+          <tr>
+            <td><span class="verdict ok">Green</span></td>
+            <td>ØRESUND — AGV upgrade</td>
+            <td><div class="bullet"><div class="bfill" style="width:80%"></div><div class="bmark" style="left:78%"></div></div><div class="bcap">80% done · 78% elapsed</div></td>
+            <td>on budget</td><td>—</td>
+            <td><span class="dq ok">✓ verified</span></td>
+            <td class="conf">High</td>
+          </tr>
+        </tbody>
+      </table>
+      <div class="legend-bars"><span class="sw solid"></span>measured from actuals<span class="sw hatch"></span>estimated (data stale / missing)<span style="display:inline-block;width:2px;height:13px;background:hsl(222 30% 25%);vertical-align:middle;margin:0 5px 0 16px"></span>marker = where elapsed time says it should be</div>
+    </div>
+  </section>
+
+  <!-- 4. PROJECT DETAIL -->
+  <section>
+    <div class="sec-head"><span class="sec-kicker"><span class="num">4</span> Single project</span></div>
+    <h2>Project detail — "6358"</h2>
+    <p class="sec-sub">Real progress from hours, cost &amp; milestones — not elapsed calendar time — combined with risks pulled from unstructured meeting minutes.</p>
+    <div class="row">
+      <div class="col">
+        <div class="card" style="height:100%">
+          <div class="card-hd"><span class="verdict crit">Status: RED</span> <span class="tag">PROJECT VIEW</span></div>
+          <div class="stamp" style="margin:-4px 0 12px">Hours actuals as of <b>08 Nov</b> · <span style="color:hsl(var(--amber))">21 days stale</span> · 4 source files</div>
+          <div class="label">Real progress vs. elapsed time <span class="dq warn tip" style="margin-left:6px">⚠ estimate<span class="tipbox"><b>Actuals 21 days stale.</b> Real-progress % is interpolated from the last booking (08 Nov) plus milestone evidence. Refresh time-tracking to confirm.</span></span></div>
+          <div style="margin:16px 0 6px"><div class="bullet big"><div class="bfill est" style="width:62%"></div><div class="bmark" style="left:75%"><span>elapsed 75%</span></div></div></div>
+          <div class="bcap" style="display:flex;justify-content:space-between"><span>Real progress <b style="color:hsl(var(--fg))">62%</b> · hatched = estimated</span><span style="color:hsl(var(--red));font-weight:700">13 pts behind</span></div>
+          <div class="note">Month 9 of 12 (75% elapsed) but only ~62% delivered → a 13-pt gap the old "time = % done" method hid.</div>
+          <div class="label" style="margin-top:14px">Deviations &amp; milestones</div>
+          <ul class="mlist">
+            <li><span class="rag a"></span>Hours 8,940 / 14,400 budget · forecast 15,400 <b>(+7%)</b></li>
+            <li><span class="rag g"></span>Design freeze — completed 14/11</li>
+            <li><span class="rag r"></span>Installation start — slipped 01/04 → <b>30/04</b></li>
+            <li><span class="rag g"></span>CWA ready (Hobart) — on track, early April</li>
+          </ul>
+          <div class="label" style="margin-top:14px">Resource risk</div>
+          <div style="font-size:12.5px"><span class="rag r"></span><b>Peter</b> shared across 3 projects · 18% absence <span class="conf">· see Resource &amp; people ↓</span></div>
+        </div>
+      </div>
+      <div class="col">
+        <div class="card" style="height:100%">
+          <div class="card-hd">Risks / issues / decisions (RAID)</div>
+          <div style="font-size:12.5px"><span class="rag r"></span>Schedule slipped to 30/04 <span class="conf">· src: minutes 22-11-2023</span></div>
+          <div style="font-size:12.5px;margin-top:8px"><span class="rag a"></span>Scanner spec unresolved <span class="conf">· owner: Johnny · due 24/11</span></div>
+          <div style="font-size:12.5px;margin-top:8px"><span class="rag a"></span>Design description update <span class="conf">· owner: Johnny · due 22/11</span></div>
+          <div class="label" style="margin-top:14px">Decisions needed</div>
+          <ul class="mlist">
+            <li><span class="rag r"></span>Prioritise scanner false-positive vs false-negative <span class="conf">· MIBU · 24/11</span></li>
+            <li><span class="rag a"></span>Approve manual operation after container alert <span class="conf">· FL</span></li>
+          </ul>
+        </div>
+      </div>
+      <div class="col" style="flex:0 0 270px">
+        <div class="card" style="height:100%">
+          <div class="card-hd">AI recommendation</div>
+          <div style="font-size:12px">Forecast cost overrun <b>+7%</b> and a 13-pt progress gap; the 30/04 install slip puts the contractual milestone at risk.</div>
+          <ul class="mlist" style="margin-top:10px">
+            <li><span class="arr">→</span>Escalate revised timeline to steering committee</li>
+            <li><span class="arr">→</span>Consolidate scanner-spec questions into one decision (24/11)</li>
+            <li><span class="arr">→</span>Re-forecast ETC against latest approved BPI baseline</li>
+          </ul>
+          <div style="margin-top:12px;display:flex;align-items:center;gap:8px;flex-wrap:wrap"><span class="verdict risk">Confidence: Medium</span><button class="detailsbtn" onclick="openRecs()">Details →</button></div>
+          <div class="note">Based on 4 source files · actuals missing for last 3 weeks · cites source file / row / meeting.</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 5. RESOURCE & PEOPLE -->
+  <section>
+    <div class="sec-head"><span class="sec-kicker"><span class="num">5</span> Resource &amp; people</span></div>
+    <h2>Key-person &amp; overlap risk</h2>
+    <p class="sec-sub">Part of project health — cross-referencing the <b>resource-assignment</b> and <b>absenteeism</b> inputs. A person spread across several projects who is frequently absent puts all of them at risk at once.</p>
+    <div class="card">
+      <div class="card-hd">Assignments × absenteeism <span class="tag">2 INPUTS COMBINED</span></div>
+      <table>
+        <thead><tr><th>Employee</th><th>Role</th><th>Assigned projects</th><th>Alloc.</th><th>Absence</th><th>Overlap risk</th></tr></thead>
+        <tbody>
+          <tr>
+            <td>Peter Nguyen</td><td>Controls (EK)</td>
+            <td>6358, Nordkap, ØRESUND <b>(3)</b></td>
+            <td><span style="color:hsl(var(--red));font-weight:700">140%</span></td>
+            <td><span style="color:hsl(var(--red));font-weight:700">18% ↑</span></td>
+            <td><span class="verdict crit">Critical</span></td>
+          </tr>
+          <tr>
+            <td>Michael Andersen</td><td>Software (SU)</td>
+            <td>6358, Kronebank <b>(2)</b></td>
+            <td>100%</td>
+            <td><span style="color:hsl(var(--amber));font-weight:700">8%</span></td>
+            <td><span class="verdict risk">Watch</span></td>
+          </tr>
+          <tr>
+            <td>Mai Tran</td><td>Construction (K)</td>
+            <td>ØRESUND, Kronebank <b>(2)</b></td>
+            <td>100%</td>
+            <td><span style="color:hsl(var(--green));font-weight:700">3%</span></td>
+            <td><span class="verdict ok">Low · reliable</span></td>
+          </tr>
+          <tr>
+            <td>Quang Le</td><td>PM</td>
+            <td>Nordkap <b>(1)</b></td>
+            <td>80%</td>
+            <td><span style="color:hsl(var(--amber));font-weight:700">15% ↑</span></td>
+            <td><span class="verdict risk">Watch</span></td>
+          </tr>
+        </tbody>
+      </table>
+      <div class="note">Top risk: <b>Peter</b> — on 3 projects at 140% and absent 18%; his absence stalls <b>6358, Nordkap &amp; ØRESUND</b> at once. <b>Mai</b> has the same overlap but 3% absence → far lower risk. Overlap alone isn't the risk — <b>overlap × absence</b> is.</div>
+    </div>
+  </section>
+
+  <!-- 6. DATA CONFIDENCE -->
+  <section>
+    <div class="sec-head"><span class="sec-kicker"><span class="num">6</span> Trust layer</span></div>
+    <h2>Data confidence &amp; pipeline health</h2>
+    <p class="sec-sub">Per-project reliability is already flagged inline in the list and detail above. This panel adds what those can't: an <b>overall trust score</b>, the updates that are <b>missing entirely</b>, cross-cutting issues that corrupt the data, and the fixes to make it trustworthy.</p>
+    <div class="card">
+      <div style="display:flex;gap:26px;align-items:stretch;flex-wrap:wrap">
+        <div class="gaugebox">
+          <div class="confgauge"><div class="cg"><b>82%</b></div></div>
+          <div class="gaugelbl">Data confidence</div>
+          <div style="margin-top:10px"><span class="dq warn">▼ from 88%</span></div>
+          <div class="note" style="margin-top:7px;font-style:normal">9 of 11 reporting · <b>2 silent</b></div>
+        </div>
+        <div class="col" style="min-width:300px">
+          <div class="label">Actuals freshness — coverage across all 11 projects</div>
+          <div class="fresh">
+            <div class="ftile" style="--fc:hsl(var(--green))"><div class="fn">ØRESUND</div><div class="fa">2 days</div></div>
+            <div class="ftile" style="--fc:hsl(var(--green))"><div class="fn">Kronebank</div><div class="fa">4 days</div></div>
+            <div class="ftile" style="--fc:hsl(var(--green))"><div class="fn">Vestfyn</div><div class="fa">5 days</div></div>
+            <div class="ftile" style="--fc:hsl(var(--amber))"><div class="fn">Skagen</div><div class="fa">14 days</div></div>
+            <div class="ftile" style="--fc:hsl(var(--amber))"><div class="fn">Havnbo</div><div class="fa">18 days</div></div>
+            <div class="ftile" style="--fc:hsl(var(--amber))"><div class="fn">6358</div><div class="fa">21 days</div></div>
+            <div class="ftile miss" style="--fc:hsl(var(--red))"><div class="fn">Nordkap</div><div class="fa">no actuals</div></div>
+            <div class="ftile miss" style="--fc:hsl(var(--red))"><div class="fn">Ferm</div><div class="fa">silent</div></div>
+            <div class="ftile miss" style="--fc:hsl(var(--red))"><div class="fn">Jysk</div><div class="fa">silent</div></div>
+          </div>
+          <div class="note">Hatched = no data at all — the <b>absences</b> a per-project row can't show. +2 more projects fresh (&lt;7 days) not shown.</div>
+        </div>
+      </div>
+
+      <div style="border-top:1px solid hsl(220 16% 94%);margin-top:16px;padding-top:14px">
+        <div class="label">Cross-cutting issues — not attributable to a single project row</div>
+        <div class="row" style="margin-top:6px">
+          <div class="col"><span class="dq crit">⚠ 2 silent</span> <span style="font-size:12px">Ferm &amp; Jysk expected to report this cycle — nothing received</span></div>
+          <div class="col"><span class="dq crit">⚠ duplicate ID</span> <span style="font-size:12px">Nordkap logged as "NOR-WMS" &amp; "Nordkap_2024" — hours split</span></div>
+          <div class="col"><span class="dq warn">⚠ ingest fail</span> <span style="font-size:12px">File 5 of 5: German tab names unmapped</span></div>
+        </div>
+      </div>
+
+      <div style="border-top:1px solid hsl(220 16% 94%);margin-top:16px;padding-top:14px">
+        <div class="label">Remediation — to lift confidence back above 85%</div>
+        <ul class="remed">
+          <li>Refresh time-tracking export for Nordkap &amp; 6358 <span class="own">PMO admin</span></li>
+          <li>Merge Nordkap's two identities (NOR-WMS / Nordkap_2024) <span class="own">Data lead</span></li>
+          <li>Map German tab names in file 5 to the data dictionary <span class="own">Data lead</span></li>
+          <li>Chase Ferm &amp; Jysk for this cycle's status <span class="own">Portfolio mgr</span></li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <footer>
+    NextWave Workforce Intelligence · AI PMO Insight Solution · Wireframe (layout only) · June 2026<br/>
+    Theme matched to the NWWI presentation set — placeholder content, structure for review.
+  </footer>
+</div>
+<!-- ===== AI recommendation details modal ===== -->
+<div class="rovl" id="rovl" onclick="closeRecs()">
+  <div class="rpanel" onclick="event.stopPropagation()">
+    <div class="rphd">
+      <div>
+        <div style="font-size:11px;font-weight:700;color:hsl(var(--brand-magenta));letter-spacing:.06em;text-transform:uppercase">AI recommendations · 6358 — AGV install</div>
+        <div style="font-size:19px;font-weight:800;margin-top:3px">4 actions, with the reasoning behind them</div>
+      </div>
+      <button class="rpclose" onclick="closeRecs()">✕</button>
+    </div>
+    <div class="rpbody">
+      <div class="rec" style="--rc:hsl(var(--red))">
+        <div class="rectop"><span class="recnum">1</span><span class="rectitle">Escalate the revised timeline to the steering committee</span></div>
+        <span class="reck">Why</span><div class="recrow">Installation start slipped 01/04 → 30/04 and the forecast-at-completion is +7% over the B1 baseline — the contractual go-live milestone is now at risk. A steering decision is needed to re-baseline or recover.</div>
+        <span class="reck">Evidence cited</span><div class="recrow"><span class="recsrc">minutes 22-11-2023 · item a</span><span class="recsrc">Overview.xlsx · ETC 15,400h vs 14,400h</span></div>
+        <div class="recfoot"><span class="verdict crit">Priority: High</span><span class="recowner">Owner: Project sponsor · Confidence: High</span></div>
+      </div>
+      <div class="rec" style="--rc:hsl(var(--amber))">
+        <div class="rectop"><span class="recnum">2</span><span class="rectitle">Consolidate the scanner-spec questions into one decision</span></div>
+        <span class="reck">Why</span><div class="recrow">Several open scanner questions (false-positive vs false-negative, item types, edge band) are blocking design sign-off. Bundling them into a single owned decision removes rework risk and unblocks the design freeze.</div>
+        <span class="reck">Evidence cited</span><div class="recrow"><span class="recsrc">minutes 22-11-2023 · item c</span><span class="recsrc">2 blockers open &gt;14 days</span></div>
+        <div class="recfoot"><span class="verdict risk">Priority: Medium</span><span class="recowner">Owner: MIBU / Johnny · due 24/11 · Confidence: Medium</span></div>
+      </div>
+      <div class="rec" style="--rc:hsl(var(--amber))">
+        <div class="rectop"><span class="recnum">3</span><span class="rectitle">Re-forecast ETC against the latest approved BPI baseline</span></div>
+        <span class="reck">Why</span><div class="recrow">Actuals are missing for 3 weeks, so status leans on a time-derived %. Recomputing the forecast on the latest approved BPI (not the original B1) separates approved scope changes from true execution slippage and restores confidence.</div>
+        <span class="reck">Evidence cited</span><div class="recrow"><span class="recsrc">no time bookings since 08/11</span><span class="recsrc">BPI vs B1 baseline gap</span></div>
+        <div class="recfoot"><span class="verdict risk">Priority: Medium</span><span class="recowner">Owner: PMO analyst · Confidence: Medium</span></div>
+      </div>
+      <div class="rec" style="--rc:hsl(var(--red))">
+        <div class="rectop"><span class="recnum">4</span><span class="rectitle">Add a backup for Peter on 6358 (key-person risk)</span></div>
+        <span class="reck">Why</span><div class="recrow">Peter is allocated across 3 projects at 140% and is absent 18% of the time; if he's out, 6358, Nordkap and ØRESUND stall together. A named backup on 6358 removes the single point of failure.</div>
+        <span class="reck">Evidence cited</span><div class="recrow"><span class="recsrc">resource-assignments.xlsx · 140% / 3 projects</span><span class="recsrc">absenteeism.xlsx · 18%</span></div>
+        <div class="recfoot"><span class="verdict crit">Priority: High</span><span class="recowner">Owner: Resource manager · Confidence: Medium</span></div>
+      </div>
+      <div class="note" style="padding:0 2px">Every recommendation cites its exact source (file · sheet/row · meeting date) so a PM can verify the reasoning before acting.</div>
+    </div>
+  </div>
+</div>
+<script>
+function openRecs(){document.getElementById('rovl').classList.add('open');}
+function closeRecs(){document.getElementById('rovl').classList.remove('open');}
+document.addEventListener('keydown',function(e){if(e.key==='Escape')closeRecs();});
+</script>
+</body>
+</html>
