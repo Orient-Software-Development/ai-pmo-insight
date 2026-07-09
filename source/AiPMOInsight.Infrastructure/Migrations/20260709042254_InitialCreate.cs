@@ -51,16 +51,33 @@ namespace AiPMOInsight.Infrastructure.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "widgets",
+                name: "findings",
                 columns: table => new
                 {
                     id = table.Column<Guid>(type: "uuid", nullable: false),
-                    name = table.Column<string>(type: "character varying(200)", maxLength: 200, nullable: false),
+                    project_key = table.Column<string>(type: "character varying(200)", maxLength: 200, nullable: false),
+                    summary = table.Column<string>(type: "text", nullable: false),
+                    citation_upload_id = table.Column<Guid>(type: "uuid", nullable: false),
+                    citation_locator = table.Column<string>(type: "character varying(500)", maxLength: 500, nullable: false),
                     created_at = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_widgets", x => x.id);
+                    table.PrimaryKey("PK_findings", x => x.id);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "uploads",
+                columns: table => new
+                {
+                    id = table.Column<Guid>(type: "uuid", nullable: false),
+                    file_name = table.Column<string>(type: "character varying(500)", maxLength: 500, nullable: false),
+                    content = table.Column<byte[]>(type: "bytea", nullable: false),
+                    uploaded_at = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_uploads", x => x.id);
                 });
 
             migrationBuilder.CreateTable(
@@ -97,7 +114,8 @@ namespace AiPMOInsight.Infrastructure.Migrations
                     created_at = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
                     expires_at = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
                     revoked_at = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true),
-                    replaced_by_token_hash = table.Column<string>(type: "text", nullable: true)
+                    replaced_by_token_hash = table.Column<string>(type: "text", nullable: true),
+                    xmin = table.Column<uint>(type: "xid", rowVersion: true, nullable: false)
                 },
                 constraints: table =>
                 {
@@ -133,6 +151,11 @@ namespace AiPMOInsight.Infrastructure.Migrations
                 unique: true);
 
             migrationBuilder.CreateIndex(
+                name: "IX_findings_project_key",
+                table: "findings",
+                column: "project_key");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_refresh_tokens_token_hash",
                 table: "refresh_tokens",
                 column: "token_hash",
@@ -151,10 +174,13 @@ namespace AiPMOInsight.Infrastructure.Migrations
                 name: "AspNetUserRoles");
 
             migrationBuilder.DropTable(
+                name: "findings");
+
+            migrationBuilder.DropTable(
                 name: "refresh_tokens");
 
             migrationBuilder.DropTable(
-                name: "widgets");
+                name: "uploads");
 
             migrationBuilder.DropTable(
                 name: "AspNetRoles");

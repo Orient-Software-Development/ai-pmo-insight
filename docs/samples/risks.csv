@@ -1,0 +1,8 @@
+project_id,risk_id,title,probability,impact,severity,status,owner,raised_date,last_updated,mitigation_plan
+ORB-1002,R-1002-1,Legacy source data quality worse than profiled,High,High,Critical,Open,Sven Aalto,2026-03-10,2026-06-14,
+ORB-1002,R-1002-2,Cutover window may exceed agreed downtime,Medium,High,High,Open,Anna Berg,2026-04-02,2026-06-14,Negotiate extended maintenance window with client ops
+ORB-1001,R-1001-1,POS vendor API rate limits block rollout,Medium,High,High,Open,Jonas Vik,2026-04-20,2026-05-30,Request higher rate tier; add caching layer
+ORB-1001,R-1001-2,Key-person dependency on PM across portfolio,High,Medium,High,Open,Anna Berg,2026-05-01,2026-05-05,
+ORB-1004,R-1004-1,Robotics vendor lead time slippage,Medium,Medium,Medium,Open,Mette Sorensen,2026-05-12,2026-06-27,Order long-lead parts early
+ORB-1005,R-1005-1,Certification auditor availability in August,Low,High,Medium,Open,Priya Nair,2026-06-01,2026-06-09,Book auditor slot now
+ORB-1003,R-1003-1,Roadmap scope creep from stakeholders,Low,Low,Low,Open,Lars Holm,2026-06-20,2026-07-04,Hold scope to agreed themes

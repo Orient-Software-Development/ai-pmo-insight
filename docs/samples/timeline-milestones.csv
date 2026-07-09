@@ -1,0 +1,14 @@
+project_id,milestone_id,milestone_name,wbs_code,baseline_date,forecast_date,actual_date,status,is_critical
+ORB-1001,M-1001-1,Requirements sign-off,1.1,2026-02-27,2026-02-27,2026-03-06,Complete,No
+ORB-1001,M-1001-2,POS pilot live,1.2,2026-06-30,2026-07-31,,In Progress,Yes
+ORB-1001,M-1001-3,E-commerce go-live,1.3,2026-08-31,2026-09-15,,Not Started,Yes
+ORB-1001,M-1001-4,All stores migrated,1.4,2026-09-30,2026-10-15,,Not Started,No
+ORB-1002,M-1002-1,Profiling complete,1.1,2026-01-30,2026-01-30,2026-02-04,Complete,No
+ORB-1002,M-1002-2,Data cutover dress rehearsal,1.3,2026-05-30,2026-07-18,,Missed,Yes
+ORB-1002,M-1002-3,Production cutover,1.4,2026-06-30,2026-08-01,,At Risk,Yes
+ORB-1003,M-1003-1,Assessment delivered,1.1,2026-06-15,2026-06-20,2026-06-19,Complete,No
+ORB-1003,M-1003-2,Roadmap presented,1.2,2026-07-15,2026-07-15,,In Progress,No
+ORB-1004,M-1004-1,Line commissioned,1.1,2026-07-31,2026-08-31,,In Progress,Yes
+ORB-1005,M-1005-1,SCA remediation done,1.1,2026-06-30,2026-07-20,,In Progress,Yes
+ORB-1005,M-1005-2,Certification achieved,1.2,2026-08-15,2026-08-15,,Not Started,Yes
+ORB-1006,M-1006-1,Catalogue live,1.1,2026-08-31,2026-08-31,,In Progress,No

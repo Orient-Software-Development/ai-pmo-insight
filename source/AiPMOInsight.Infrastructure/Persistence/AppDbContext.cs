@@ -2,7 +2,8 @@ using System.Reflection;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
-using AiPMOInsight.Domain.Widgets;
+using AiPMOInsight.Domain.Findings;
+using AiPMOInsight.Domain.Ingest;
 
 namespace AiPMOInsight.Infrastructure.Persistence;
 
@@ -16,8 +17,9 @@ namespace AiPMOInsight.Infrastructure.Persistence;
 /// </summary>
 public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : IdentityDbContext<AppUser>(options)
 {
-    public DbSet<Widget> Widgets => Set<Widget>();
     public DbSet<RefreshToken> RefreshTokens => Set<RefreshToken>();
+    public DbSet<Upload> Uploads => Set<Upload>();
+    public DbSet<Finding> Findings => Set<Finding>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
