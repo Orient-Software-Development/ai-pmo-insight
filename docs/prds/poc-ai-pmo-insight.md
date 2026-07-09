@@ -25,7 +25,11 @@ Framed by the doc:
 
 > *"We do not just automate status reporting. We turn fragmented project data into portfolio-level management insight, decision support, and early-warning signals."*
 
-The specific input files (spreadsheet names, sheet layouts, meeting-minute templates) are **not yet known** — the plan explicitly asks the client *"can we get data examples, e.g., 3 months back?"* Ingest work cannot be built without those samples.
+The client's project data lives in **Orbit** (`orbit.online`), a WBS-based project-planning SaaS. Orbit exposes a **GraphQL API** (primary read technology, API-key auth), an **XML import** validated against a published **XSD schema**, exports to **Excel / CSV / XML / Word / PowerPoint**, and a **direct Power BI integration**. It also already ships **SAP / Maconomy** (finance), **time-tracking** (Intempus, Timegrip), and **HR** integrations, plus native **OpenAI / Azure AI** hooks.
+
+Knowing the source system collapses the plan doc's *"can we get data examples, e.g., 3 months back?"* blocker: instead of reverse-engineering unknown fragmented files, ingest is written against a known schema, and the client ask shrinks to *"one Orbit export of a few projects."*
+
+**Decision — the POC does not wait on client data.** It is built and demoed on **dummy fixtures shaped like an Orbit export**; real Orbit data is fed in later (export upload first, then the GraphQL pull — plan item #13, out of POC scope). See [POC input data](#poc-input-data-decided-dummy-fixtures). This takes the client off the build's critical path entirely; *what actually lives in Orbit vs. outside it* (see open questions) becomes a data-feed question, not a build blocker, because the fixtures exercise both analysis paths regardless.
 
 ## Solution
 
@@ -116,13 +120,13 @@ The plan doc leaves implementation details open. The bets below **extend it** �
 - **Single tenant.** One customer, one auth realm, one PostgreSQL database. No `TenantId` in the domain. Auth uses the template's cookie-transported JWT + Identity + role-based authorization.
 - **Roles.** Seed `admin`, `pmoAdmin`, `pmoUser`, `executive`. Confirmed at kick-off — the plan doc lists the audience as *"Executive, Project Management, Other?"* and the "Other?" is deliberately open.
 - **Agent pipeline = one orchestrator + N skills, not N services.** The 9 agents in the plan doc are conceptual. In code they become skill/prompt definitions with typed input/output contracts, invoked by a single orchestrator in the Application layer. Agents 3–6 (Status, Risk, Financial, Resource) may collapse to fewer skills for the POC and expand later. Challenge and Review remain distinct — they are the trust story.
-- **Raw data is separated from findings from day one.** The plan doc says *"ideally only capture findings, not client data."* We implement this as a **landing zone** for uploaded files (retention TBD — proposed default 30 days) and a **findings store** for structured findings + citations (retained per client policy). Domain aggregates are separable so retention can be flipped without a rewrite.
+- **Raw vs findings storage — deferred; POC stores together.** The plan doc says *"ideally only capture findings, not client data."* The eventual target is a **landing zone** for uploaded files (retention TBD — proposed default 30 days) separated from a **findings store** for structured findings + citations. **For the POC we store whatever is convenient (raw and findings may share a store); the raw/findings split, TTL, and retention are a later decision** (see open questions). The one invariant that holds regardless: **every finding keeps its citation** (source-file reference + locator) back to its input, so deferring the split never costs traceability — separating the stores later becomes a data move, not a rewrite.
 - **Data Quality Agent surfaces duplicate-identity candidates for confirmation.** The plan doc's agent #2 is *"checks missing data, inconsistent project IDs, old updates."* For the POC we surface duplicate candidates to a PMO admin — never silently merge. Whether this warrants a first-class "Entities" module depends on how much the client's real data exhibits duplication.
 - **Health-scoring rules live in a YAML file** in the repo (path TBD — `openspec/config` or `docs/config`), loaded by a `HealthScoringService`. Structure: weights per area, RAG thresholds, override rules (condition → minimum RAG). Migration to a DB-backed admin UI is a post-POC decision.
 
 ### Modules to add on top of the template
 
-- **Ingest** — upload endpoints, parser adapters per file type (one per input category once sample templates arrive). Landing-zone storage abstraction.
+- **Ingest** — two modes against the Orbit source: **(POC)** manual upload of an Orbit export (CSV/XML/Excel), parsed by adapters written against Orbit's export shape / XSD; **(later, plan item #13, out of scope)** a GraphQL pull directly from the client's Orbit tenant. Same landing-zone storage abstraction behind both. For the POC build the upload is fed **dummy fixtures** (below) so no live Orbit access is required.
 - **Analysis** — the agent orchestrator, per-skill prompt registry, LLM client abstraction, findings-store persistence, evidence citation model.
 - **Health scoring** — YAML-driven weighted score + override engine, exposed as a query over the findings store.
 - **Dashboards** — three levels in the React SPA (Executive / Project / Data Quality). Every finding cites its evidence source.
@@ -130,11 +134,20 @@ The plan doc leaves implementation details open. The bets below **extend it** �
 
 ### Data model philosophy (from the doc)
 
-Persist **findings and citations**, not client operational data — a direct read of the plan doc's *"ideally only capture findings, not client data."* Raw uploaded files live in the landing zone with a TTL. Parsed intermediate structures may be cached during a single analysis run but are not part of the durable domain model. Every finding record includes: source-file reference, sheet/row or meeting-date locator, agent that produced it, confidence score, and the input snapshot used (so re-analysis after prompt changes is traceable).
+The eventual target is to persist **findings and citations**, not client operational data — a direct read of the plan doc's *"ideally only capture findings, not client data."* **For the POC this separation is deferred** (see the storage decision above and open questions): raw and findings may share a store, and whether raw uploads get a TTL / landing zone is decided later. Parsed intermediate structures may be cached during a single analysis run but are not part of the durable domain model. Every finding record includes: source-file reference, sheet/row or meeting-date locator, agent that produced it, confidence score, and the input snapshot used (so re-analysis after prompt changes is traceable).
 
 ### LLM & agent runtime
 
 The plan doc says *"Identify AI Skills — What to do?"* — deliberately open. Two candidates for the POC: **Claude Agent SDK** or **Microsoft Semantic Kernel**. Decision deferred to kick-off; both fit the "orchestrator + skills" shape. Prompt versioning belongs in the repo, not in a database, for the POC.
+
+### POC input data (decided: dummy fixtures)
+
+The POC is built and demoed against **dummy fixtures**, not live client data. Two rules keep the dummy honest:
+
+1. **Shaped like an Orbit export.** Fixtures mirror Orbit's export columns / XSD for the structured categories (identifier, scope/WBS, timeline, budget, resources, time used), so the later swap from dummy → real Orbit data is a *parser change, not a redesign*. A wrongly-shaped dummy would give false confidence.
+2. **Includes at least one unstructured meeting-minutes sample.** Even though it is not yet confirmed whether risks/issues/decisions/minutes live inside Orbit, the fixture set carries a free-text minutes blob so the pipeline exercises **both** analysis paths — deterministic scoring over structured data *and* LLM-over-text extraction — before we know where those categories actually live. This de-risks the fork rather than waiting on it.
+
+The fixtures ship in the repo and double as golden-file test inputs (see Testing). Real Orbit data replaces them via the ingest upload mode once the client provides a sample export.
 
 ## Testing Decisions (PRD, not in doc)
 
@@ -188,7 +201,10 @@ Delivered through the plan's activity blocks: scope → landscape → POC scope+
 
 ### Open questions from the plan doc (resolved at kick-off)
 
-- **Sample data availability** — the plan explicitly asks *"can we get data examples, e.g., 3 months back?"* Ingest parsers cannot be built without real (anonymized) template files. **Highest-priority blocker.**
+- **Sample data availability** — ~~was the highest-priority blocker~~. **Resolved for the build:** source system is **Orbit** and the POC runs on dummy fixtures, so the build no longer waits on client data. A real (anonymized) Orbit export of a few projects is still wanted to validate the parsers, but it is no longer on the critical path.
+- **What lives in Orbit vs. outside it** — specifically **risks / issues / decisions / meeting minutes**. Structured categories (schedule, budget, resources, time) are near-certainly in Orbit; these four may be in Orbit's RAID/notes, in another tool, or only in unstructured minutes. **This is the top decision-driver** for how much of the pipeline is deterministic scoring vs. LLM-over-text. Not a build blocker (fixtures cover both paths), but the first thing to settle at kick-off.
+- **Is the data actually "fragmented"?** — the problem statement assumes scattered data. If Orbit already consolidates the structured KPIs (and Power BI already charts them), the AI's value shifts to unstructured extraction, cross-referencing (e.g. "40% done / 70% burned"), early-warning, and the Challenge/Review trust layer — *not* re-computing dashboards Orbit gives for free.
+- **Why not Orbit-native AI + Power BI?** — Orbit already integrates OpenAI/Azure AI and exports to Power BI. Pin down NextWave's differentiator (portfolio-level cross-project early-warning + adversarial trust layer) so the POC doesn't rebuild what the client already has.
 - **Audience clarification** — target listed as *"Executive, Project Management, Other?"* — the "Other?" needs to be settled.
 - **Health-scoring weights and override rules** — the doc explicitly marks its example table as *"EXAMPLE!"*. Final numbers with the PMO before scoring goes live.
 - **Absence handling** — the doc says *"clarify if possible"*.
@@ -198,9 +214,10 @@ Delivered through the plan's activity blocks: scope → landscape → POC scope+
 ### Open questions added by this PRD (not in the doc)
 
 - **LLM runtime choice** — Claude Agent SDK vs. Semantic Kernel.
-- **Retention of raw uploads** — proposed default 30-day landing-zone TTL; final policy depends on the client's data-governance stance.
+- **Raw vs findings storage split** — **deferred for the POC** (we store together for now). To decide later: whether raw client data is separated from findings into a distinct landing zone, and how strictly the plan doc's *"only capture findings, not client data"* is enforced. Trade-off = data-governance/privacy posture vs. build simplicity. The finding→citation link is preserved regardless, so this can be revisited without a rewrite.
+- **Retention of raw uploads** — proposed default 30-day landing-zone TTL; final policy depends on the client's data-governance stance (tied to the storage-split question above).
 - **Hosting region and data-residency constraints** — the input set includes named individuals (meeting minutes), potentially absenteeism data, and commercially sensitive budget/resource data; hosting jurisdiction should be confirmed with the client.
 
 ### Next artefact
 
-`/opsx:explore` on the walking skeleton: **upload → parse one input category (once a sample arrives) → landing-zone + findings-store split → single-project detail endpoint**. Explicitly **no LLM in the first slice** — that proves the data-model separation before adding intelligence on top.
+`/opsx:explore` on the walking skeleton: **upload a dummy Orbit-shaped fixture → landing-zone + findings-store split → a stub analysis that emits one finding *citing its source* → single-project (Level 2) read endpoint**. Explicitly **no LLM and no real parser in the first slice** — the parser is stubbed and the input is a dummy fixture, so the slice proves the *architecture* (the landing-zone / findings-store separation and the citation link) rather than the ingest. The citation is the one thing that must be real from commit one. With dummy data as the decided input, this slice has no undecided fork left in it and is ready to become the first OpenSpec change.
