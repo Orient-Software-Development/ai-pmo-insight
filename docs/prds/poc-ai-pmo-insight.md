@@ -174,6 +174,7 @@ Implied by scope framing, not stated in the doc:
 Not out-of-scope forever, but **not in POC**:
 
 - **Automated data load** — plan item #13, a distinct later activity in the same engagement (*"Clarify technology and build data load"*). POC uses manual upload only.
+- **Vector search / RAG** — not needed at POC scale. Meeting minutes fit in a single LLM context per project, so the pipeline uses schema-constrained LLM *extraction* over full documents rather than embed-and-retrieve. Revisit when minute volume outgrows the context window, or when cross-portfolio Q&A / lessons-learned retrieval (Enhancement Options) becomes a feature. If added later, `pgvector` on the existing Postgres is the natural fit — no new infra, and the `ILlmClient` port stays unchanged.
 
 ## Further Notes
 
