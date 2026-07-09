@@ -1,14 +1,14 @@
-project_id,wbs_code,resource_name,role,allocation_pct,planned_hours,period_start,period_end
-ORB-1001,1.2,Anna Berg,Project Manager,30,240,2026-01-06,2026-09-30
-ORB-1001,1.2,Jonas Vik,Integration Engineer,80,1080,2026-03-01,2026-08-31
-ORB-1001,1.3,Priya Nair,Frontend Lead,100,1200,2026-04-01,2026-09-15
-ORB-1002,1.2,Anna Berg,Project Manager,25,200,2025-11-03,2026-06-30
-ORB-1002,1.2,Jonas Vik,Data Engineer,60,720,2026-01-05,2026-06-30
-ORB-1002,1.3,Sven Aalto,Migration Specialist,100,900,2026-02-01,2026-06-30
-ORB-1004,1.1,Anna Berg,Project Manager,20,180,2026-02-17,2026-11-30
-ORB-1004,1.1,Mette Sorensen,Delivery Lead,90,1400,2026-02-17,2026-11-30
-ORB-1005,1.1,Anna Berg,Project Manager,25,190,2026-01-20,2026-08-15
-ORB-1005,1.1,Priya Nair,Security Engineer,50,600,2026-02-01,2026-08-15
-ORB-1006,1.1,Anna Berg,Project Manager,20,160,2026-03-02,2026-10-31
-ORB-1006,1.2,Lars Holm,Governance Advisor,40,480,2026-03-02,2026-10-31
-ORB-1003,1.1,Lars Holm,Lead Advisor,60,360,2026-04-01,2026-07-15
+project_id,wbs_code,resource_name,professional_group,competency,occupancy_rate_pct,base_estimate_hours,period_start,period_end
+ORB-1001,1.2,Anna Berg,Project Management,PMP,30,240,2026-01-06,2026-09-30
+ORB-1001,1.2,Jonas Vik,Engineering,Integration,80,1080,2026-03-01,2026-08-31
+ORB-1001,1.3,Priya Nair,Engineering,Frontend,100,1200,2026-04-01,2026-09-15
+ORB-1002,1.2,Anna Berg,Project Management,PMP,25,200,2025-11-03,2026-06-30
+ORB-1002,1.2,Jonas Vik,Engineering,Data Engineering,60,720,2026-01-05,2026-06-30
+ORB-1002,1.3,Sven Aalto,Engineering,Data Migration,100,900,2026-02-01,2026-06-30
+ORB-1004,1.1,Anna Berg,Project Management,PMP,20,180,2026-02-17,2026-11-30
+ORB-1004,1.1,Mette Sorensen,Delivery,Delivery Lead,90,1400,2026-02-17,2026-11-30
+ORB-1005,1.1,Anna Berg,Project Management,PMP,25,190,2026-01-20,2026-08-15
+ORB-1005,1.1,Priya Nair,Engineering,Security,50,600,2026-02-01,2026-08-15
+ORB-1006,1.1,Anna Berg,Project Management,PMP,20,160,2026-03-02,2026-10-31
+ORB-1006,1.2,Lars Holm,Advisory,Governance,40,480,2026-03-02,2026-10-31
+ORB-1003,1.1,Lars Holm,Advisory,Lead Advisor,60,360,2026-04-01,2026-07-15

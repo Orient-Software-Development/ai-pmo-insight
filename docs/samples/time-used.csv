@@ -1,12 +1,12 @@
-project_id,resource_name,wbs_code,week_starting,hours_logged,notes
-ORB-1001,Jonas Vik,1.2,2026-06-08,38,POS adapter build
-ORB-1001,Jonas Vik,1.2,2026-06-15,40,POS adapter build
-ORB-1001,Priya Nair,1.3,2026-06-15,42,Checkout UI
-ORB-1001,Anna Berg,1.2,2026-06-15,6,PM oversight
-ORB-1002,Sven Aalto,1.3,2026-06-08,45,Rehearsal prep - overtime
-ORB-1002,Sven Aalto,1.3,2026-06-15,44,Rehearsal prep - overtime
-ORB-1002,Jonas Vik,1.2,2026-06-15,18,Split with ORB-1001
-ORB-1002,Anna Berg,1.2,2026-06-15,0,On holiday
-ORB-1004,Mette Sorensen,1.1,2026-06-15,40,Commissioning
-ORB-1005,Priya Nair,1.1,2026-06-15,20,SCA remediation
-ORB-1003,Lars Holm,1.1,2026-06-15,22,Assessment write-up
+project_id,resource_name,wbs_code,week_starting,registered_hours,entry_type,notes
+ORB-1001,Jonas Vik,1.2,2026-06-08,38,Work,POS adapter build
+ORB-1001,Jonas Vik,1.2,2026-06-15,40,Work,POS adapter build
+ORB-1001,Priya Nair,1.3,2026-06-15,42,Work,Checkout UI
+ORB-1001,Anna Berg,1.2,2026-06-15,6,Work,PM oversight
+ORB-1002,Sven Aalto,1.3,2026-06-08,45,Work,Rehearsal prep - overtime
+ORB-1002,Sven Aalto,1.3,2026-06-15,44,Work,Rehearsal prep - overtime
+ORB-1002,Jonas Vik,1.2,2026-06-15,18,Work,Split with ORB-1001
+ORB-1002,Anna Berg,1.2,2026-06-15,0,Blocked day,Holiday 2026-06-16 to 2026-06-27
+ORB-1004,Mette Sorensen,1.1,2026-06-15,40,Work,Commissioning
+ORB-1005,Priya Nair,1.1,2026-06-15,20,Work,SCA remediation
+ORB-1003,Lars Holm,1.1,2026-06-15,22,Work,Assessment write-up
