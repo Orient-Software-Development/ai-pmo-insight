@@ -80,7 +80,7 @@ export function ChangePassword() {
 
         <button type="submit" aria-busy={busy} disabled={busy}>Change password</button>
         {' '}
-        <a href="#" onClick={e => { e.preventDefault(); navigate('/widgets'); }}>Cancel</a>
+        <a href="#" onClick={e => { e.preventDefault(); navigate('/projects'); }}>Cancel</a>
       </form>
     </div>
   );

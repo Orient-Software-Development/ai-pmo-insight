@@ -21,7 +21,7 @@ export function Login() {
         await register(email, password);
       }
       await login(email, password);
-      navigate('/widgets');
+      navigate('/projects');
     } catch (err) {
       setError(err.message);
     } finally {

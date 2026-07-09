@@ -153,10 +153,11 @@ app.UseAuthorization();
 
 // Slice endpoints own their route group, tags, and auth policy internally (see each
 // Map*Endpoints). Auth: /api/auth/* (httpOnly-cookie tokens). Profile: /api/profile/me.
-// Widgets: /api/widgets.
+// Ingest: /api/ingest/upload. Analysis: /api/analyze/{uploadId}. Projects (L2): /api/projects/{projectKey}.
 app.MapAuthEndpoints();
 app.MapProfileEndpoints();
-app.MapWidgetEndpoints();
+app.MapIngestEndpoints();
+app.MapFindingsEndpoints();
 
 
 // SPA client-side routing: serve index.html for unmatched non-API routes.

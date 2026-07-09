@@ -1,0 +1,6 @@
+project_id,decision_id,title,status,owner,raised_date,needed_by,consequence_if_delayed
+ORB-1002,D-1002-1,Approve revised go-live date (Aug 1),Overdue,Steering Committee,2026-06-01,2026-06-20,Cutover cannot be scheduled; team idle and client SLA at risk
+ORB-1002,D-1002-2,Fund additional data-cleansing sprint,Pending,Client Sponsor,2026-06-12,2026-07-15,Integrity errors persist into production
+ORB-1001,D-1001-1,Choose caching approach for POS API limits,Pending,Jonas Vik,2026-05-25,2026-07-20,Rollout throughput remains capped
+ORB-1005,D-1005-1,Confirm external auditor firm,Pending,Anna Berg,2026-06-05,2026-07-31,Certification milestone slips
+ORB-1006,D-1006-1,Approve data-ownership RACI,Approved,Lars Holm,2026-05-02,2026-06-30,

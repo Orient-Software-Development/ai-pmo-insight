@@ -1,0 +1,6 @@
+project_id,issue_id,title,severity,status,owner,raised_date,last_updated,resolution
+ORB-1002,I-1002-1,Dress rehearsal failed - referential integrity errors,Critical,Open,Sven Aalto,2026-05-31,2026-06-14,
+ORB-1002,I-1002-2,Client sign-off on mapping rules delayed,High,Open,Anna Berg,2026-05-20,2026-06-15,
+ORB-1001,I-1001-1,POS pilot store hardware not delivered,Medium,Open,Jonas Vik,2026-06-05,2026-06-30,Escalated to vendor account manager
+ORB-1004,I-1004-1,Site power upgrade behind schedule,Medium,Open,Mette Sorensen,2026-06-10,2026-06-27,Coordinating with facilities
+ORB-1005,I-1005-1,Ambiguous SCA requirement interpretation,Low,Resolved,Priya Nair,2026-05-15,2026-06-02,Confirmed with compliance; documented

@@ -1,0 +1,7 @@
+project_id,project_name,project_type,project_manager,status_rag,percent_complete,start_date,end_date,last_status_update
+ORB-1001,Nordic Retail Platform,Implementation,Anna Berg,Amber,40,2026-01-06,2026-09-30,2026-07-01
+ORB-1002,Customer Data Migration,Implementation,Anna Berg,Red,65,2025-11-03,2026-06-30,2026-06-15
+ORB-1003,AI Advisory Discovery,Advisory,Lars Holm,Green,55,2026-04-01,2026-07-15,2026-07-05
+ORB-1004,Warehouse Automation Rollout,Implementation,Mette Sorensen,Amber,30,2026-02-17,2026-11-30,2026-06-28
+ORB-1005,Payments Compliance Upgrade,Implementation,Anna Berg,Amber,72,2026-01-20,2026-08-15,2026-06-10
+ORB-1006,Data Governance Framework,AI PMO,Anna Berg,Green,48,2026-03-02,2026-10-31,2026-07-03
