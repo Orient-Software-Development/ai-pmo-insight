@@ -1,6 +1,7 @@
 import { Home } from './components/Home';
 import { Counter } from './components/Counter';
 import { Widgets } from './components/Widgets';
+import { ProjectFindings } from './components/ProjectFindings';
 import { Login } from './components/Login';
 import { ChangePassword } from './components/ChangePassword';
 import { RequireAuth } from './AuthContext';
@@ -24,6 +25,15 @@ const AppRoutes = [
     element: (
       <RequireAuth>
         <Widgets />
+      </RequireAuth>
+    ),
+  },
+  {
+    // Protected: redirects to /login when signed out.
+    path: '/projects',
+    element: (
+      <RequireAuth>
+        <ProjectFindings />
       </RequireAuth>
     ),
   },

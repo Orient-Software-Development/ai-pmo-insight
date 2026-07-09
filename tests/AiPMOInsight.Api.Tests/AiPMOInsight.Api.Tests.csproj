@@ -27,4 +27,9 @@
     <ProjectReference Include="..\..\source\AiPMOInsight.Api\AiPMOInsight.Api.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <!-- Dummy Orbit-shaped fixtures used as golden-file inputs by the integration tests. -->
+    <None Include="Fixtures\**\*" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
 </Project>
