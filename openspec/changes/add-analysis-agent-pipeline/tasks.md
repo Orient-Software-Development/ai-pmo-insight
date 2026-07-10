@@ -15,13 +15,13 @@
 
 ## 3. Data & analysis layer — deterministic, no LLM (agents #1, #2, #3, #5, #6)
 
-- [ ] 3.1 Typed records (transient Application models) with source locators: `Project`, `Milestone`, `BudgetLine`, `Assignment`, `MinuteEntry`, `RaidItem`
-- [ ] 3.2 **#1 Data Collector** — parse the dummy Orbit-shaped fixtures into typed records: Excel (ClosedXML/OpenXml — decide library, EPPlus only if licensed), Orbit XML (`System.Xml`), `.docx` minutes (OpenXml). Parsers live in Infrastructure; skill in Application
-- [ ] 3.3 **#2 Data Quality** — missing fields, stale updates, inconsistent IDs (fuzzy match) → DQ findings + a confidence signal for downstream
-- [ ] 3.4 **#3 Status** — milestone adherence, schedule variance, delay severity, upcoming/dependency risk (math over dates) → cited findings
-- [ ] 3.5 **#5 Financial** — budget/forecast variance, burn rate, budget-vs-progress cross-signal, financial exposure → cited findings
-- [ ] 3.6 **#6 Resource** — allocation variance, capacity pressure, missing roles, concentration × absence → cited findings
-- [ ] 3.7 Every deterministic finding cites the record locator it derives from; confidence set via `ConfidencePolicy`
+- [x] 3.1 Typed records (transient Application models) with source locators: `Project`, `Milestone`, `BudgetLine`, `Assignment`, `MinuteEntry`, `RaidItem`
+- [x] 3.2 **#1 Data Collector** — parse the dummy Orbit-shaped fixtures into typed records: Excel (**ClosedXML, MIT — decided**), Orbit XML (`System.Xml`), `.docx` minutes (DocumentFormat.OpenXml). Parsers live in Infrastructure; skill in Application
+- [x] 3.3 **#2 Data Quality** — missing fields, stale updates, inconsistent IDs (fuzzy match) → DQ findings + a confidence signal for downstream
+- [x] 3.4 **#3 Status** — milestone adherence, schedule variance, delay severity, upcoming/dependency risk (math over dates) → cited findings
+- [x] 3.5 **#5 Financial** — budget/forecast variance, burn rate, budget-vs-progress cross-signal, financial exposure → cited findings
+- [x] 3.6 **#6 Resource** — allocation variance, capacity pressure, missing roles, concentration × absence → cited findings
+- [x] 3.7 Every deterministic finding cites the record locator it derives from; confidence set via `ConfidencePolicy`
 
 ## 4. FakeLlmClient + LLM-wired agents (#4 partial, #7, #8, #9)
 

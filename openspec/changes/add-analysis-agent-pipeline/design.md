@@ -78,7 +78,7 @@ Skipping any of #4, #7, #8 forfeits a success criterion — hence all are wired 
 
 ## Risks / Trade-offs
 
-- **EPPlus is commercial-licensed since v5** → Mitigation: prefer ClosedXML / DocumentFormat.OpenXml for Excel unless an EPPlus license is confirmed; decided in tasks. `System.Xml` and OpenXml (`.docx`) are unencumbered.
+- **EPPlus is commercial-licensed since v5** → **Decision: use ClosedXML (MIT) for Excel** — license-friendly, high-level API, no per-seat cost. EPPlus rejected on licensing; raw `DocumentFormat.OpenXml` rejected as unnecessarily low-level for tabular fixtures. `System.Xml` (Orbit XML) and OpenXml (`.docx`) are unencumbered and used directly.
 - **A weak fake gives false confidence** → Mitigation: the fake exercises *control flow, shape, and citation propagation* — exactly what unit/integration tests should cover; content quality is the next change's evaluation harness (§2.7).
 - **Confidence methodology not finalized (§2.1)** → Mitigation: land the field + `ConfidencePolicy` seam now with a documented POC default; final weights are a kick-off number, swappable without a migration.
 - **Deterministic agents drifting toward scoring logic (Phase 4 overlap)** → Mitigation: agents emit *findings*, not the weighted RAG score; the YAML scoring engine stays a separate change (§1.3).
@@ -94,6 +94,6 @@ One additive EF migration for the `Finding` provenance columns, extended `Citati
 - **Confidence formula (§2.1)** — exact weighting of DQ signals vs. LLM self-report; POC default proposed above, confirmed at kick-off.
 - **Skill collapse (§3.6)** — do #3/#5/#6 stay three skills or fewer for the POC? Registry config.
 - **#4 scope (§3.7)** — minutes-heavy vs. RAID-heavy depends on what lives in Orbit; the hybrid handles both, split tuned at kick-off.
-- **Excel library** — ClosedXML vs. EPPlus (license) vs. raw OpenXml; decided in tasks.
+- ~~**Excel library** — ClosedXML vs. EPPlus (license) vs. raw OpenXml~~ — **RESOLVED: ClosedXML (MIT)** (see Risks / Trade-offs).
 - **Narrative/Challenge/Review persistence shape** — `Kind`-tagged findings (chosen) vs. dedicated tables; revisit if it strains.
 - **LLM runtime (§3.1)** — Anthropic / Azure OpenAI / OpenAI direct; gates only the real adapter (next change).

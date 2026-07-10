@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using AiPMOInsight.Application.Abstractions;
+using AiPMOInsight.Infrastructure.Analysis.Parsing;
 using AiPMOInsight.Infrastructure.Findings;
 using AiPMOInsight.Infrastructure.Ingest;
 using AiPMOInsight.Infrastructure.Persistence;
@@ -26,6 +27,9 @@ public static class DependencyInjection
         services.AddScoped<IUploadRepository, EfUploadRepository>();
         services.AddScoped<IFindingRepository, EfFindingRepository>();
         services.AddScoped<IRefreshTokenService, RefreshTokenService>();
+
+        // Data Collector (#1) file parsing adapter (ClosedXML / OpenXml / System.Xml).
+        services.AddScoped<IUploadParser, UploadParser>();
 
         return services;
     }
