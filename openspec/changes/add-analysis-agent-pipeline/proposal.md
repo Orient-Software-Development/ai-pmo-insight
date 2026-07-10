@@ -17,7 +17,7 @@ The walking skeleton (`add-ingest-findings-skeleton`) proved the architecture: u
 - **#6 Resource** — allocation variance, capacity pressure, missing roles, concentration × absence (math).
 
 **Trust + hybrid layer — wired via `FakeLlmClient` this slice (shape real, behavior stubbed):**
-- **#4 Risk & Issue (hybrid)** — deterministic RAID-record filtering **+** LLM extraction of risks from unstructured meeting minutes.
+- **#4 Risk & Issue (hybrid)** — deterministic RAID-record filtering **+** LLM extraction of risks from unstructured meeting minutes. The LLM path fires **only when minutes are present**; with no minutes, #4 is fully deterministic (0 LLM calls).
 - **#7 Narrative (LLM, hybrid)** — prose synthesis: overall status + recommendation (owner / deadline / rationale). **Template-first**: ~60–70% of narratives fit recurring shapes (single-signal RED, two-signal RED with clear primary/secondary, DQ-driven "Needs PM Review", routine GREEN) rendered deterministically from templates; the LLM handles the ~15% genuinely complex cases (multi-signal cross-referencing, minute-extracted signals). Cuts LLM calls without losing synthesis quality.
 - **#8 Challenge (LLM, hybrid)** — adversarial critique of findings + narrative (weak claims, unsupported numbers, alt interpretations, missing caveats) with deterministic checks for broken evidence links / stale data. Reads #7 + findings.
 - **#9 Review (LLM, hybrid)** — predicts stakeholder questions **grouped by audience** (executive / sponsor / data lead / peer PM). Reads #7 + #8 + findings. **Not a keep/drop gate — all outputs persist.**

@@ -55,7 +55,7 @@ Prompts for the 4 LLM agents live as files under the Analysis feature; the regis
 | Layer | LLM calls / cycle | Cost | Latency |
 |---|---|---|---|
 | #1–#3, #5, #6 | 0 | $0 | ms |
-| #4 (minutes only) | ~20 | ~$0.30 | ~5s parallel |
+| #4 (minutes only — 0 if no minutes) | ~20 | ~$0.30 | ~5s parallel |
 | #7 Narrative (hybrid) | ~6 (templates cover ~60–70%) + 1 portfolio | ~$0.10 | ~2s parallel |
 | #8 Challenge | ~20 | ~$0.30 | ~5s parallel |
 | #9 Review | ~20 | ~$0.15 | ~3s parallel |
