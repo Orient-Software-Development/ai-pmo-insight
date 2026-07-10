@@ -50,7 +50,13 @@ The current slice. Proves the *architecture* end-to-end; the *intelligence* is d
 
 ---
 
-## Phase 2 — Real Orbit ingest / parsing ⬜
+## Phase 2 — Real Orbit ingest / parsing 🟡 partial
+
+> **Approach (2026-07-10):** deterministic **parsing is agent #1 (Data Collector)** of the Phase 3
+> pipeline, built against the **dummy Orbit-shaped fixtures** in `add-analysis-agent-pipeline`.
+> That covers CSV/Excel/XML/`.docx` → typed records with source locators. **Hardened real-Orbit
+> parsing** (full XSD, anonymized real exports, parse-status reporting) stays a later change
+> (gap `docs/gap-project.md` §1.2). So this phase is partly delivered via agent #1, partly deferred.
 
 Turn the opaque-bytes stub into a real parser written against Orbit's export shape.
 
@@ -63,9 +69,17 @@ Turn the opaque-bytes stub into a real parser written against Orbit's export sha
 
 ---
 
-## Phase 3 — Analysis: agent pipeline + LLM ⬜
+## Phase 3 — Analysis: agent pipeline + LLM 🟡 in progress
 
 The suggested 9-agent pipeline (PRD marks the exact split as "Assumption but not decided").
+
+> **Approach (2026-07-10):** OpenSpec change `add-analysis-agent-pipeline`, sliced as
+> **"deterministic layer + trust layer with `FakeLlmClient`"**. Only 4 of 9 agents touch the LLM
+> (#4 partial, #7 Narrative, #8 Challenge, #9 Review); the 5 deterministic agents (#1 parse,
+> #2 data quality, #3 status, #5 financial, #6 resource) are pure C# and ship fully. The LLM
+> agents are wired through a **fake client** so it demos end-to-end on fixtures with no API key;
+> the **real `ILlmClient` adapter is the next change** (after the runtime is chosen at kick-off,
+> gap §3.1). Data flow: `#1 → #2 → parallel(#3,#4,#5,#6) → #7 → #8 → #9 → persist`.
 
 - ⬜ LLM client abstraction (runtime TBD: Claude Agent SDK vs. Semantic Kernel)
 - ⬜ Orchestrator + per-skill prompt registry (one orchestrator + N skills, not N services)
