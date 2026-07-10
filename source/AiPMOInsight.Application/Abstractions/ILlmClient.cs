@@ -1,0 +1,35 @@
+namespace AiPMOInsight.Application.Abstractions;
+
+/// <summary>
+/// A single request to the LLM. Carries the fully rendered <see cref="Prompt"/>, the
+/// <see cref="PromptVersion"/> (prompt content hash, stamped onto any findings the response
+/// produces), and the <see cref="SkillName"/> of the calling agent (used for routing / fixtures).
+/// The <b>output contract is the generic type parameter</b> of <see cref="ILlmClient.CompleteAsync"/>
+/// — callers ask for a typed result, never free text.
+/// </summary>
+public sealed record LlmRequest
+{
+    /// <summary>The calling agent's stable name (e.g. <c>Narrative</c>), for routing / fixtures.</summary>
+    public required string SkillName { get; init; }
+
+    /// <summary>The fully rendered prompt text.</summary>
+    public required string Prompt { get; init; }
+
+    /// <summary>Content hash of the prompt; stamped onto findings produced from the response.</summary>
+    public required string PromptVersion { get; init; }
+}
+
+/// <summary>
+/// Port abstracting the LLM runtime (dependency rule: Application defines the interface, the
+/// concrete vendor adapter lives at the Infrastructure boundary and never leaks upward). Every call
+/// requests <b>structured JSON output</b> conforming to <typeparamref name="TOutput"/> — the system
+/// declares the contract and deserialises into it, and never parses free text. In this slice the
+/// only registered implementation is a fake returning fixture responses; the real vendor adapter is
+/// a later change and requires no change here.
+/// </summary>
+public interface ILlmClient
+{
+    /// <summary>Completes <paramref name="request"/> into a value shaped to the declared contract.</summary>
+    Task<TOutput> CompleteAsync<TOutput>(LlmRequest request, CancellationToken cancellationToken)
+        where TOutput : notnull;
+}

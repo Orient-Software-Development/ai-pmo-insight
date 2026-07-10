@@ -34,14 +34,19 @@ public static class AnalyzeUpload
                 return null;
             }
 
-            // STUB analysis: real parsing + the agent pipeline come in a later change. Emit a single
+            // STUB analysis: the real agent pipeline replaces this later in this change. Emit a single
             // finding whose citation points back at the analyzed upload — the one part that is real.
+            // Provenance is stamped so the new schema stays exercised end-to-end.
             var citation = Citation.Create(upload.Id, $"{upload.FileName}#stub");
             var finding = Finding.Create(
                 projectKey: "DUMMY-001",
                 summary: "Stub finding: analysis pipeline not yet implemented (skeleton).",
                 citation: citation,
-                now: timeProvider.GetUtcNow());
+                now: timeProvider.GetUtcNow(),
+                runId: Guid.NewGuid(),
+                producingAgent: "stub",
+                kind: FindingKind.Analysis,
+                confidence: Confidence.Medium);
 
             await findings.AddAsync(finding, cancellationToken);
 

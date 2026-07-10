@@ -29,12 +29,42 @@ internal sealed class FindingConfiguration : IEntityTypeConfiguration<Finding>
             .HasColumnName("summary")
             .IsRequired();
 
+        // Provenance (analysis-pipeline change). Enums persist as strings so the DB stays readable
+        // and stable if enum ordinals shift.
+        builder.Property(f => f.Kind)
+            .HasColumnName("kind")
+            .HasConversion<string>()
+            .HasMaxLength(20)
+            .IsRequired();
+
+        builder.Property(f => f.Confidence)
+            .HasColumnName("confidence")
+            .HasConversion<string>()
+            .HasMaxLength(10)
+            .IsRequired();
+
+        builder.Property(f => f.ProducingAgent)
+            .HasColumnName("producing_agent")
+            .HasMaxLength(100)
+            .IsRequired();
+
+        builder.Property(f => f.RunId)
+            .HasColumnName("run_id")
+            .IsRequired();
+
+        builder.Property(f => f.PromptVersion)
+            .HasColumnName("prompt_version")
+            .HasMaxLength(200);
+
         builder.Property(f => f.CreatedAt)
             .HasColumnName("created_at")
             .IsRequired();
 
         // Findings are read by project key (Level-2 endpoint) — index it.
         builder.HasIndex(f => f.ProjectKey);
+
+        // Re-analysis appends under a new run; grouping/filtering by run is a common access path.
+        builder.HasIndex(f => f.RunId);
 
         builder.OwnsOne(f => f.Citation, citation =>
         {
@@ -46,6 +76,15 @@ internal sealed class FindingConfiguration : IEntityTypeConfiguration<Finding>
                 .HasColumnName("citation_locator")
                 .HasMaxLength(500)
                 .IsRequired();
+
+            // Optional richer evidence (both nullable) — the extended citation shape.
+            citation.Property(c => c.StructuredExcerpt)
+                .HasColumnName("citation_structured_excerpt")
+                .HasMaxLength(500);
+
+            citation.Property(c => c.TextSnippet)
+                .HasColumnName("citation_text_snippet")
+                .HasMaxLength(2000);
         });
 
         builder.Navigation(f => f.Citation).IsRequired();

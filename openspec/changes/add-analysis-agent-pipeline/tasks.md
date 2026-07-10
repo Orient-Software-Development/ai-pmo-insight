@@ -1,17 +1,17 @@
 ## 1. Schema prerequisites (gap §2.1–§2.3, §2.12) — do first, one migration
 
-- [ ] 1.1 Extend `Citation` (Domain): add nullable `StructuredExcerpt` (sheet/row/column or field path) and `TextSnippet` atop `UploadId`/`Locator`; keep guards on the mandatory fields (gap §2.12)
-- [ ] 1.2 Extend `Finding` (Domain): add `Confidence`, `PromptVersion` (nullable, prompt content hash), `RunId`, `ProducingAgent`, and `Kind` (analysis / narrative / challenge / review); keep `Finding.Create` enforcing a non-null citation (gap §2.2)
-- [ ] 1.3 Define an `AnalysisRun` identity + append-on-re-analysis semantics (new `RunId` per run, prior findings retained) (gap §2.3)
-- [ ] 1.4 Add a shared `ConfidencePolicy` (Application): High/Medium/Low from DQ signals for deterministic findings; LLM self-report capped by DQ confidence (gap §2.1 — POC default, documented)
-- [ ] 1.5 EF snake_case configs for the new columns + narrative/challenge/review persistence; one migration `AddAnalysisProvenance` (`--project source/AiPMOInsight.Infrastructure --startup-project source/AiPMOInsight.Api`); commit generated files; confirm Dev auto-migrate via `DbInitializer`
+- [x] 1.1 Extend `Citation` (Domain): add nullable `StructuredExcerpt` (sheet/row/column or field path) and `TextSnippet` atop `UploadId`/`Locator`; keep guards on the mandatory fields (gap §2.12)
+- [x] 1.2 Extend `Finding` (Domain): add `Confidence`, `PromptVersion` (nullable, prompt content hash), `RunId`, `ProducingAgent`, and `Kind` (analysis / narrative / challenge / review); keep `Finding.Create` enforcing a non-null citation (gap §2.2)
+- [x] 1.3 Define an `AnalysisRun` identity + append-on-re-analysis semantics (new `RunId` per run, prior findings retained) (gap §2.3)
+- [x] 1.4 Add a shared `ConfidencePolicy` (Application): High/Medium/Low from DQ signals for deterministic findings; LLM self-report capped by DQ confidence (gap §2.1 — POC default, documented)
+- [x] 1.5 EF snake_case configs for the new columns + narrative/challenge/review persistence; one migration `AddAnalysisProvenance` (`--project source/AiPMOInsight.Infrastructure --startup-project source/AiPMOInsight.Api`); commit generated files; confirm Dev auto-migrate via `DbInitializer`
 
 ## 2. Skill + LLM abstractions
 
-- [ ] 2.1 Define `IAgentSkill<TInput, TOutput>` in Application (typed input/output contract)
-- [ ] 2.2 Define `ILlmClient` port (Application): schema-constrained completion; every call declares a JSON output contract (tool-use / `response_format`) — no free-text parsing
-- [ ] 2.3 Add `Llm` options + config section (provider, model id, per-analysis token budget); API key via env/secret only (mirror `Jwt`) — inert this slice, wired for the next change
-- [ ] 2.4 Add prompt registry (Application): prompt files under `Features/Analysis/Prompts/`, keyed by content hash; the hash is the `PromptVersion` stamped on findings
+- [x] 2.1 Define `IAgentSkill<TInput, TOutput>` in Application (typed input/output contract)
+- [x] 2.2 Define `ILlmClient` port (Application): schema-constrained completion; every call declares a JSON output contract (tool-use / `response_format`) — no free-text parsing
+- [x] 2.3 Add `Llm` options + config section (provider, model id, per-analysis token budget); API key via env/secret only (mirror `Jwt`) — inert this slice, wired for the next change
+- [x] 2.4 Add prompt registry (Application): prompt files under `Features/Analysis/Prompts/`, keyed by content hash; the hash is the `PromptVersion` stamped on findings
 
 ## 3. Data & analysis layer — deterministic, no LLM (agents #1, #2, #3, #5, #6)
 
