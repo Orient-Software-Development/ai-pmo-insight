@@ -70,14 +70,19 @@ The Risk & Issue agent (#4) SHALL be hybrid: it SHALL filter the deterministic R
 - **WHEN** the upload contains structured RAID records
 - **THEN** the Risk & Issue agent produces findings from them deterministically, independent of the LLM path
 
-### Requirement: Narrative synthesis
+### Requirement: Narrative synthesis (hybrid: template-first, LLM fallback)
 
-The Narrative agent (#7, LLM) SHALL synthesize the merged findings into prose describing overall status and a recommendation that names an owner, a deadline, and a rationale. The narrative SHALL be persisted and returned with the project's findings.
+The Narrative agent (#7) SHALL synthesize the merged findings into prose describing overall status and a recommendation that names an owner, a deadline, and a rationale. It SHALL be hybrid: recurring narrative shapes (single-signal RED, two-signal RED with a clear primary/secondary, data-quality-driven "Needs PM Review", routine GREEN) SHALL be rendered deterministically from templates, and only cases that do not fit a template (multi-signal cross-referencing, minute-extracted signals) SHALL fall back to the `ILlmClient`. The narrative SHALL be persisted and returned with the project's findings regardless of which path produced it.
 
-#### Scenario: Narrative produces a recommendation
+#### Scenario: Template path renders a recurring shape without the LLM
 
-- **WHEN** the Narrative agent runs over the merged findings
-- **THEN** it produces a prose status and a recommendation carrying an owner, deadline, and rationale, persisted for the project
+- **WHEN** the merged findings match a recurring narrative shape (e.g. a single dominant RED signal)
+- **THEN** the Narrative agent renders the status and recommendation from a template, with no LLM call, still naming an owner, deadline, and rationale
+
+#### Scenario: Complex case falls back to the LLM
+
+- **WHEN** the merged findings do not fit a template (e.g. multiple cross-referencing signals or a minute-extracted signal)
+- **THEN** the Narrative agent produces the prose and recommendation via the `ILlmClient`, persisted for the project
 
 ### Requirement: Adversarial Challenge critique
 

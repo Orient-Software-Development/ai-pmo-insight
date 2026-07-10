@@ -42,6 +42,9 @@ Add `Confidence`, `PromptVersion` (prompt content hash; null for deterministic a
 **6. Challenge and Review persist their outputs; neither is a keep/drop gate.**
 Per the brief, Challenge attaches a critique (reads #7 + findings) and Review attaches audience-grouped anticipated questions (reads #7 + #8 + findings). **All outputs persist** — the trust story is that the reader *sees* the critique and likely questions, not that findings are silently dropped. Modeled as findings of `Kind = challenge/review` referencing the findings/narrative they concern (single aggregate, one read query). Alternative — separate entities — deferred; the discriminator is cheaper and the read stays one query.
 
+**6b. Narrative (#7) is hybrid — template-first, LLM fallback.**
+~60–70% of narratives fit a small set of recurring shapes (single-signal RED, two-signal RED with a clear primary/secondary, DQ-driven "Needs PM Review", routine GREEN) that render deterministically from templates; only the ~15% genuinely complex cases (multi-signal cross-referencing, minute-extracted signals) call the LLM. This cuts LLM calls and latency materially with no loss of quality on the common cases, and makes most narratives unit-testable without the fake. A classifier decides template-vs-LLM from the merged findings' signal shape; the LLM path stays the safety net. #7 remains one of the four LLM-touching agents — it just reaches for the LLM less often.
+
 **7. Prompt registry = files in repo, versioned by content hash.**
 Prompts for the 4 LLM agents live as files under the Analysis feature; the registry keys each by the hash of its content, and that hash is the `PromptVersion` stamped on findings — so a prompt tweak is traceable to the findings it produced. No DB-stored prompts (PRD).
 
@@ -53,10 +56,10 @@ Prompts for the 4 LLM agents live as files under the Analysis feature; the regis
 |---|---|---|---|
 | #1–#3, #5, #6 | 0 | $0 | ms |
 | #4 (minutes only) | ~20 | ~$0.30 | ~5s parallel |
-| #7 Narrative | ~20 + 1 portfolio | ~$0.30 | ~5s parallel |
+| #7 Narrative (hybrid) | ~6 (templates cover ~60–70%) + 1 portfolio | ~$0.10 | ~2s parallel |
 | #8 Challenge | ~20 | ~$0.30 | ~5s parallel |
 | #9 Review | ~20 | ~$0.15 | ~3s parallel |
-| **Total** | **~80** | **~$1.05** | **~15s wall clock** |
+| **Total** | **~67** | **~$0.85** | **~12s wall clock** |
 
 This slice runs the fake, so cost is $0 and latency is negligible; the table sizes the seam a per-analysis token budget (`Llm` config) will guard once the real adapter lands.
 

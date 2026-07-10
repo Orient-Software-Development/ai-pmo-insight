@@ -27,7 +27,7 @@
 
 - [ ] 4.1 Implement `FakeLlmClient` returning fixture responses keyed by agent/skill; register app-wide this slice (no real adapter)
 - [ ] 4.2 **#4 Risk & Issue (hybrid)** — deterministic RAID-record filtering + LLM minutes extraction via the port; both paths cite their source
-- [ ] 4.3 **#7 Narrative** — prose status + recommendation (owner / deadline / rationale) over merged findings; structured-JSON output
+- [ ] 4.3 **#7 Narrative (hybrid)** — prose status + recommendation (owner / deadline / rationale) over merged findings. Template-first: a classifier renders recurring shapes (single-signal RED, two-signal RED, DQ-driven "Needs PM Review", routine GREEN) deterministically; LLM fallback (structured-JSON) only for complex/multi-signal/minute-extracted cases
 - [ ] 4.4 **#8 Challenge** — adversarial critique of findings + narrative (weak claims, unsupported numbers, alternatives, missing caveats) + deterministic evidence-link/stale-data checks; reads #7 + findings; persists critique (does not delete findings)
 - [ ] 4.5 **#9 Review** — anticipated stakeholder questions grouped by audience (executive / sponsor / data lead / peer PM); reads #7 + #8 + findings; persists output (not a keep/drop gate)
 
