@@ -148,15 +148,17 @@ public class LlmRoutingDependencyInjectionTests
     }
 
     [Fact]
-    public async Task Anthropic_agent_throws_at_call_time_while_other_agents_still_return_fixtures()
+    public async Task Stub_provider_agent_throws_at_call_time_while_other_agents_still_return_fixtures()
     {
-        // #24 end-to-end: a prod-shape config where only Narrative is 'anthropic' must boot, resolve
-        // to the router, throw NotImplementedException when Narrative is called, yet still serve a
-        // fixture for an agent left on the fake default.
+        // End-to-end routing: a prod-shape config where only Narrative is on the still-stubbed
+        // 'openai' provider must boot, resolve to the router, throw NotImplementedException when
+        // Narrative is called, yet still serve a fixture for an agent left on the fake default.
+        // (Anthropic is now a working adapter (#27) — its call path is covered offline by
+        // AnthropicLlmClientTests; OpenAI remains the deterministic stub, split to its own follow-up.)
         var provider = BuildProvider(new()
         {
             ["Llm:Default:Provider"] = "fake",
-            ["Llm:Agents:Narrative:Provider"] = "anthropic",
+            ["Llm:Agents:Narrative:Provider"] = "openai",
         });
         var client = provider.GetRequiredService<ILlmClient>();
 

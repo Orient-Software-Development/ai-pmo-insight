@@ -62,10 +62,17 @@ with GitHub Actions CI and Claude skills.
 > eagerly** via `ILlmClientFactory` and registers a `RoutingLlmClient` (`Infrastructure/Analysis/
 > Llm`) as the sole `ILlmClient` — it dispatches each `CompleteAsync` by `LlmRequest.SkillName`
 > (constant-time dictionary lookup, no per-request factory calls). The factory recognises `fake`
-> (fully working, the no-API-key demo/test path), `anthropic`, and `openai`. **`anthropic`/`openai`
-> are stub adapters** that construct fine (so a prod-shape config boots) but throw
-> `NotImplementedException` on first call — real vendor HTTP wiring is a deliberate follow-up
-> change. An **unknown provider fails at startup**, never mid-request; a startup log line lists the
+> (fully working, the no-API-key demo/test path), `anthropic`, and `openai`. **`anthropic` is a
+> working adapter** (`AnthropicLlmClient`, issue #27): it calls the Anthropic Messages API via the
+> official `Anthropic` NuGet SDK, requesting **structured JSON output** constrained to a schema
+> derived from the `TOutput` contract (`JsonSchemaGenerator`, with a fixed-audience-key override for
+> `ReviewResult`'s dynamic dictionary) and deserialising the returned text block into `TOutput` —
+> never free-text parsing. It honours the resolved `ModelId` (default `claude-opus-4-8`), `ApiKey`,
+> and `PerAnalysisTokenBudget` (→ `MaxTokens`), maps typed `Anthropic.Exceptions.*` to an
+> `LlmProviderException` (naming provider + skill, never the key), and respects the `CancellationToken`.
+> **`openai` is still a stub adapter** (`OpenAiLlmClient : NotWiredLlmClient`) that constructs fine
+> (so a prod-shape config boots) but throws `NotImplementedException` on first call — its real vendor
+> wiring is a deliberate follow-up. An **unknown provider fails at startup**, never mid-request; a startup log line lists the
 > resolved provider per agent (never the `ApiKey`). `ApiKey` is supplied only via env/secret
 > (`Llm__Default__ApiKey`, `Llm__Agents__<SkillName>__ApiKey`), never committed.
 
