@@ -14,6 +14,12 @@ internal sealed class EfFindingRepository(AppDbContext db) : IFindingRepository
         await db.SaveChangesAsync(cancellationToken);
     }
 
+    public async Task AddRangeAsync(IEnumerable<Finding> findings, CancellationToken cancellationToken)
+    {
+        await db.Findings.AddRangeAsync(findings, cancellationToken);
+        await db.SaveChangesAsync(cancellationToken);
+    }
+
     public async Task<IReadOnlyList<Finding>> GetByProjectKeyAsync(string projectKey, CancellationToken cancellationToken) =>
         await db.Findings
             .AsNoTracking()

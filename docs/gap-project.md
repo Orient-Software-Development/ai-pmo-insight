@@ -33,8 +33,8 @@ Explicitly out-of-scope in the current change; belong in their own OpenSpec chan
 
 | # | Feature | Where PRD promises it | Blocking dependency |
 |---|---|---|---|
-| 1.1 | 9-agent orchestrator + `ILlmClient` + prompt registry | Solution §2; Implementation Decisions | LLM runtime choice (§3.1); undesigned gaps §2.1–§2.3 |
-| 1.2 | Real parsers — Orbit CSV/XML/Excel + meeting-minutes `.docx` | Solution §1; Modules to add | Fixture shape locked (§0.1) |
+| 1.1 | 9-agent orchestrator + `ILlmClient` + prompt registry | Solution §2; Implementation Decisions | 🟠 **In flight** — `add-analysis-agent-pipeline` shipped the deterministic layer + trust layer via `FakeLlmClient`; real runtime adapter is the next change (§3.1). Undesigned gaps §2.1–§2.3 resolved. |
+| 1.2 | Real parsers — Orbit CSV/XML/Excel + meeting-minutes `.docx` | Solution §1; Modules to add | Still deferred. #1 Data Collector parses the **dummy Orbit-shaped fixtures** (ClosedXML/System.Xml/OpenXml); hardened real-Orbit parsing (full XSD, anonymized exports, parse-status) remains a later change. |
 | 1.3 | Health-scoring engine — YAML rules + weighted score + overrides | Implementation Decisions | Rule structure can be built without final weights; weights themselves are §3.3 |
 | 1.4 | Level-1 Executive dashboard | Solution §3; user story #3 | Portfolio-level data model (§2.5) |
 | 1.5 | Level-3 Data Quality dashboard | Solution §3; user story #8 | DQ synthesis model (§2.6) |
@@ -52,17 +52,17 @@ These are **non-obvious** gaps. They aren't in the current change AND haven't be
 
 | # | Gap | Why it matters |
 |---|---|---|
-| 2.1 | 🔴 **Confidence-score methodology.** How is "high/medium/low" computed on a finding? Formula over last-update-age + source-consistency + missing-field-count + LLM self-report? Each? All? | Appears on every finding & every recommendation (user stories #4, #5, #6). Undefined → each agent invents its own scale → cross-agent confidence values are incomparable. |
-| 2.2 | 🔴 **Prompt-version / input-snapshot tag on `Finding`.** PRD says *"input snapshot used, so re-analysis after prompt changes is traceable"* — the `Finding` schema today has only `UploadId` + `Locator`. | Prompt tweaks in dev will silently change historical findings unless we tag which prompt version produced each. Schema change is much cheaper before agents ship (§1.1). |
-| 2.3 | 🔴 **Findings lifecycle.** Re-analyzing the same upload: overwrite previous findings? Append with new run id? Version? | Undefined → duplicate findings on re-run, or silent loss of history. Needed before §1.1. |
+| 2.1 | ✅ **Confidence-score methodology.** Resolved in `add-analysis-agent-pipeline`: shared `ConfidencePolicy` derives High/Medium/Low deterministically from DQ signals (missing-field-count + staleness + source-consistency); LLM self-report is `Cap`ped by DQ confidence so the scale is comparable across agents. POC defaults are documented and swappable without a schema change (gap §2.1). | Appears on every finding & every recommendation (user stories #4, #5, #6). |
+| 2.2 | ✅ **Prompt-version / input-snapshot tag on `Finding`.** Resolved: `Finding` now carries `PromptVersion` (prompt **content hash**), `ProducingAgent`, `Kind`, `RunId`, and `Confidence`; `Citation` extended with structured excerpt + text snippet. | Re-analysis after prompt changes is now traceable per finding. |
+| 2.3 | ✅ **Findings lifecycle.** Resolved: re-analyzing the same upload **appends** under a new `RunId`; prior run's findings are retained (never overwritten or silently duplicated). | Defined before agents shipped. |
 | 2.4 | 🔴 **Ingest partial-success semantics.** A fixture has 100 rows, 3 malformed. Fail whole? Succeed with row-level warnings? Store an "ingest report"? | User story #1 asks for *"which parsed cleanly and which need mapping"* — implies row-level status. Not designed anywhere. |
 | 2.5 | 🔴 **Portfolio-level data model.** L1 is inherently cross-project. Findings are grouped by `projectKey`. There is no "portfolio finding" / aggregate type. | Blocks §1.4. Choice: aggregate at read time (query), or materialize portfolio findings (write). Different perf/consistency trade-offs. |
 | 2.6 | 🔴 **Data Quality (L3) synthesis model.** The PRD's L3 examples — *"no risk update in 21 days"*, *"budget actuals missing"* — are **derived** signals, not raw DQ-Agent findings. | Blocks §1.5. Undefined → we'll rebuild the same derivation logic twice (once for scoring's data-quality weight, once for L3). |
-| 2.7 | 🔴 **Evaluation harness design.** PRD calls for *"small evaluation harness with snapshot suite"* to score the *"PMs agree with 80%+"* success criterion. What are the inputs, ground-truth format, scoring rubric? | This is the **gate for calling the POC successful** (success criterion #5). No design → no gate. |
+| 2.7 | 🔴 **Evaluation harness design.** PRD calls for *"small evaluation harness with snapshot suite"* to score the *"PMs agree with 80%+"* success criterion. What are the inputs, ground-truth format, scoring rubric? | Still deferred (own change, after the real `ILlmClient` adapter). CI deliberately does **not** assert live LLM content today — the pipeline is tested end-to-end via `FakeLlmClient` only. This is the **gate for calling the POC successful** (success criterion #5). |
 | 2.8 | 🔴 **LLM cost budget + observability.** Per-analysis token cap? Cost tracking? LLM-specific OTEL spans? | LLM calls at portfolio-scale can burn budget silently. Template has OpenTelemetry but no LLM span conventions or cost/error metrics. |
 | 2.9 | 🔴 **Analysis triggering / scheduling.** On-demand only (current)? Scheduled portfolio runs (nightly / weekly)? Both? | The plan doc's *"portfolio cycle"* implies scheduled. Affects whether we need a job runner (Hangfire / EF-tracked queue / cron). |
 | 2.10 | 🔴 **Audit log.** Who uploaded what, when. Read access log. | Named individuals in meeting minutes + potentially absenteeism data → GDPR / traceability question. PRD earlier had this concept; it was dropped. Revisit before agents land. |
-| 2.11 | 🔴 **Prompt versioning on disk.** PRD says *"belongs in the repo, not a database"* — shape is undecided (per-agent folders? YAML per prompt? git tags on prompt files?). | Once §1.1 lands, retrofitting the prompt layout is annoying. Cheap to decide now. |
+| 2.11 | ✅ **Prompt versioning on disk.** Resolved in `add-analysis-agent-pipeline`: prompt files live in the repo under `Features/Analysis/Prompts/`, keyed and versioned by **content hash**; that hash is the `PromptVersion` stamped on LLM findings. | No database; re-analysis after prompt edits is traceable via the hash. |
 
 ---
 

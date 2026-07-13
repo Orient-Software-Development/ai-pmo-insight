@@ -1,12 +1,15 @@
 import { useState } from 'react';
 import { authFetch } from '../AuthContext';
 
-// Level-2 (individual project status) view. Reads findings for a project key and shows each
-// finding's citation back to its source — the skeleton's trust link. The uploader below exercises
-// the full upload -> analyze -> read flow from the UI.
+const EMPTY_VIEW = { projectKey: '', findings: [], narrative: [], challenge: [], review: [] };
+
+// Level-2 (individual project status) view. Reads the four analysis sections for a project key —
+// KPI findings, the synthesised narrative, the adversarial challenge, and the anticipated review
+// questions — each cited back to its source. The uploader exercises the full upload -> analyze ->
+// read flow from the UI.
 export function ProjectFindings() {
-  const [projectKey, setProjectKey] = useState('DUMMY-001');
-  const [findings, setFindings] = useState([]);
+  const [projectKey, setProjectKey] = useState('ALPHA');
+  const [view, setView] = useState(EMPTY_VIEW);
   const [file, setFile] = useState(null);
   const [status, setStatus] = useState(null);
   const [error, setError] = useState(null);
@@ -18,7 +21,7 @@ export function ProjectFindings() {
     try {
       const res = await authFetch(`/api/projects/${encodeURIComponent(key)}`);
       if (!res.ok) throw new Error(`GET /api/projects/${key} failed (${res.status})`);
-      setFindings(await res.json());
+      setView({ ...EMPTY_VIEW, ...(await res.json()) });
     } catch (e) {
       setError(e.message);
     } finally {
@@ -54,17 +57,16 @@ export function ProjectFindings() {
     }
   }
 
+  const hasAnything =
+    view.findings.length + view.narrative.length + view.challenge.length + view.review.length > 0;
+
   return (
     <div>
-      <h1>Project findings (Level 2)</h1>
-      <p>Read the findings recorded for a project key. Every finding cites the source it came from.</p>
+      <h1>Project status (Level 2)</h1>
+      <p>Upload a project export, analyze it, and read the findings, narrative, challenge, and review — every item cites the source it came from.</p>
 
       <form onSubmit={uploadAnalyzeRead} role="group">
-        <input
-          type="file"
-          aria-label="Fixture file"
-          onChange={e => setFile(e.target.files?.[0] ?? null)}
-        />
+        <input type="file" aria-label="Project export" onChange={e => setFile(e.target.files?.[0] ?? null)} />
         <button type="submit" disabled={!file}>Upload → analyze → read</button>
       </form>
 
@@ -84,26 +86,66 @@ export function ProjectFindings() {
 
       {loading ? (
         <p aria-busy="true">Loading…</p>
+      ) : !hasAnything ? (
+        <p><em>No analysis recorded for this project key yet.</em></p>
       ) : (
-        <table>
-          <thead>
-            <tr><th>Summary</th><th>Cited source</th><th>Created</th></tr>
-          </thead>
-          <tbody>
-            {findings.length === 0 ? (
-              <tr><td colSpan={3}><em>No findings for this project key.</em></td></tr>
-            ) : (
-              findings.map(f => (
-                <tr key={f.id}>
-                  <td>{f.summary}</td>
-                  <td><small>{f.citation?.locator} <br />upload {f.citation?.uploadId}</small></td>
-                  <td>{new Date(f.createdAt).toLocaleString()}</td>
-                </tr>
-              ))
-            )}
-          </tbody>
-        </table>
+        <>
+          <SynthesisSection title="Narrative" items={view.narrative} />
+          <FindingsSection findings={view.findings} />
+          <SynthesisSection title="Challenge" items={view.challenge} />
+          <SynthesisSection title="Review" items={view.review} />
+        </>
       )}
     </div>
+  );
+}
+
+// KPI findings table (analysis agents).
+function FindingsSection({ findings }) {
+  return (
+    <section>
+      <h2>Findings ({findings.length})</h2>
+      <table>
+        <thead>
+          <tr><th>Finding</th><th>Agent</th><th>Confidence</th><th>Cited source</th></tr>
+        </thead>
+        <tbody>
+          {findings.length === 0 ? (
+            <tr><td colSpan={4}><em>No analytic findings.</em></td></tr>
+          ) : (
+            findings.map(f => (
+              <tr key={f.id}>
+                <td>{f.summary}</td>
+                <td>{f.producingAgent}</td>
+                <td>{f.confidence}</td>
+                <td><small>{f.citation?.locator}<br />upload {f.citation?.uploadId}</small></td>
+              </tr>
+            ))
+          )}
+        </tbody>
+      </table>
+    </section>
+  );
+}
+
+// Narrative / Challenge / Review — one synthesised finding each, rendered as prose.
+function SynthesisSection({ title, items }) {
+  if (items.length === 0) return null;
+  return (
+    <section>
+      <h2>{title}</h2>
+      {items.map(item => (
+        <article key={item.id}>
+          <p style={{ whiteSpace: 'pre-wrap', margin: 0 }}>{item.summary}</p>
+          <footer>
+            <small>
+              confidence: {item.confidence}
+              {item.promptVersion ? ` · prompt ${item.promptVersion.slice(0, 14)}…` : ' · template (no LLM)'}
+              {' · '}cites {item.citation?.locator}
+            </small>
+          </footer>
+        </article>
+      ))}
+    </section>
   );
 }

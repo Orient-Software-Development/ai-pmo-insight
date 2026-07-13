@@ -25,34 +25,34 @@
 
 ## 4. FakeLlmClient + LLM-wired agents (#4 partial, #7, #8, #9)
 
-- [ ] 4.1 Implement `FakeLlmClient` returning fixture responses keyed by agent/skill; register app-wide this slice (no real adapter)
-- [ ] 4.2 **#4 Risk & Issue (hybrid)** — deterministic RAID-record filtering + LLM minutes extraction via the port; LLM path invoked only when minutes content is present (no minutes → 0 LLM calls, fully deterministic); both paths cite their source
-- [ ] 4.3 **#7 Narrative (hybrid)** — prose status + recommendation (owner / deadline / rationale) over merged findings. Template-first: a classifier renders recurring shapes (single-signal RED, two-signal RED, DQ-driven "Needs PM Review", routine GREEN) deterministically; LLM fallback (structured-JSON) only for complex/multi-signal/minute-extracted cases
-- [ ] 4.4 **#8 Challenge** — adversarial critique of findings + narrative (weak claims, unsupported numbers, alternatives, missing caveats) + deterministic evidence-link/stale-data checks; reads #7 + findings; persists critique (does not delete findings)
-- [ ] 4.5 **#9 Review** — anticipated stakeholder questions grouped by audience (executive / sponsor / data lead / peer PM); reads #7 + #8 + findings; persists output (not a keep/drop gate)
+- [x] 4.1 Implement `FakeLlmClient` returning fixture responses keyed by agent/skill; register app-wide this slice (no real adapter)
+- [x] 4.2 **#4 Risk & Issue (hybrid)** — deterministic RAID-record filtering + LLM minutes extraction via the port; LLM path invoked only when minutes content is present (no minutes → 0 LLM calls, fully deterministic); both paths cite their source
+- [x] 4.3 **#7 Narrative (hybrid)** — prose status + recommendation (owner / deadline / rationale) over merged findings. Template-first: a classifier renders recurring shapes (single-signal RED, two-signal RED, DQ-driven "Needs PM Review", routine GREEN) deterministically; LLM fallback (structured-JSON) only for complex/multi-signal/minute-extracted cases
+- [x] 4.4 **#8 Challenge** — adversarial critique of findings + narrative (weak claims, unsupported numbers, alternatives, missing caveats) + deterministic evidence-link/stale-data checks; reads #7 + findings; persists critique (does not delete findings)
+- [x] 4.5 **#9 Review** — anticipated stakeholder questions grouped by audience (executive / sponsor / data lead / peer PM); reads #7 + #8 + findings; persists output (not a keep/drop gate)
 
 ## 5. Orchestrator + endpoint
 
-- [ ] 5.1 `AnalysisOrchestrator` (Application): data flow `#1 → #2 → parallel(#3,#4,#5,#6) → merge → #7 → #8 → #9`; sequential where dependent, parallel where independent
-- [ ] 5.2 Derive `projectKey` from parsed records; deterministic fallback `upload:<uploadId>` when absent (replaces `DUMMY-001`)
-- [ ] 5.3 Persist all outputs under one `RunId`; reject any uncited finding before persist
-- [ ] 5.4 Rewire `AnalyzeUpload.Handler` to invoke the orchestrator; keep synchronous; keep `null`→404 for unknown uploads
+- [x] 5.1 `AnalysisOrchestrator` (Application): data flow `#1 → #2 → parallel(#3,#4,#5,#6) → merge → #7 → #8 → #9`; sequential where dependent, parallel where independent
+- [x] 5.2 Derive `projectKey` from parsed records; deterministic fallback `upload:<uploadId>` when absent (replaces `DUMMY-001`)
+- [x] 5.3 Persist all outputs under one `RunId`; reject any uncited finding before persist
+- [x] 5.4 Rewire `AnalyzeUpload.Handler` to invoke the orchestrator; keep synchronous; keep `null`→404 for unknown uploads
 
 ## 6. Read surface + client
 
-- [ ] 6.1 Extend `GetProjectFindings` + `GET /api/projects/{projectKey}` to return findings + narrative + challenge + review
-- [ ] 6.2 Extend the React Level-2 view with four sections: KPI (findings) / Narrative / Challenge / Review
+- [x] 6.1 Extend `GetProjectFindings` + `GET /api/projects/{projectKey}` to return findings + narrative + challenge + review
+- [x] 6.2 Extend the React Level-2 view with four sections: KPI (findings) / Narrative / Challenge / Review
 
 ## 7. Tests
 
-- [ ] 7.1 Unit-test the deterministic agents (#1 parse, #2 DQ, #3/#5/#6 math) directly — no LLM; assert findings, locators, confidence
-- [ ] 7.2 Orchestrator control-flow tests against `FakeLlmClient`: agent order, parallel fan-out, citation + provenance propagation, `projectKey` fallback
-- [ ] 7.3 Integration test via `TestWebAppFactory` (fake LLM): upload fixture → analyze → `GET /api/projects/{projectKey}` returns cited findings + narrative + challenge + review
-- [ ] 7.4 Integration test: analyze unknown `uploadId` → 404; unauthenticated analyze/read → 401; re-analysis appends a new `RunId` (prior findings retained)
-- [ ] 7.5 Do NOT assert live LLM content in CI (evaluation/snapshot harness is a later change, gap §2.7)
+- [x] 7.1 Unit-test the deterministic agents (#1 parse, #2 DQ, #3/#5/#6 math) directly — no LLM; assert findings, locators, confidence
+- [x] 7.2 Orchestrator control-flow tests against `FakeLlmClient`: agent order, parallel fan-out, citation + provenance propagation, `projectKey` fallback
+- [x] 7.3 Integration test via `TestWebAppFactory` (fake LLM): upload fixture → analyze → `GET /api/projects/{projectKey}` returns cited findings + narrative + challenge + review
+- [x] 7.4 Integration test: analyze unknown `uploadId` → 404; unauthenticated analyze/read → 401; re-analysis appends a new `RunId` (prior findings retained)
+- [x] 7.5 Do NOT assert live LLM content in CI (evaluation/snapshot harness is a later change, gap §2.7)
 
 ## 8. Docs + verify
 
-- [ ] 8.1 Update `docs/roadmap.md` (Phase 3 in progress: deterministic layer + trust layer via fake this slice; real adapter next) and `docs/gap-project.md` (§1.1 in flight; §2.1–§2.3, §2.12 resolved; §1.2 real parsers and §2.7 eval harness still deferred)
+- [x] 8.1 Update `docs/roadmap.md` (Phase 3 in progress: deterministic layer + trust layer via fake this slice; real adapter next) and `docs/gap-project.md` (§1.1 in flight; §2.1–§2.3, §2.12 resolved; §1.2 real parsers and §2.7 eval harness still deferred)
 - [ ] 8.2 Run the app, exercise upload → analyze → read end-to-end (API + React 4-section view) on dummy fixtures with `FakeLlmClient`; confirm citations, narrative, challenge, and review render
-- [ ] 8.3 Run `openspec validate add-analysis-agent-pipeline` and the full test suite
+- [x] 8.3 Run `openspec validate add-analysis-agent-pipeline` and the full test suite

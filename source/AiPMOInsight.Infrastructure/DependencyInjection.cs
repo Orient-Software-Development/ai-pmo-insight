@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using AiPMOInsight.Application.Abstractions;
+using AiPMOInsight.Infrastructure.Analysis.Llm;
 using AiPMOInsight.Infrastructure.Analysis.Parsing;
 using AiPMOInsight.Infrastructure.Findings;
 using AiPMOInsight.Infrastructure.Ingest;
@@ -30,6 +31,10 @@ public static class DependencyInjection
 
         // Data Collector (#1) file parsing adapter (ClosedXML / OpenXml / System.Xml).
         services.AddScoped<IUploadParser, UploadParser>();
+
+        // LLM port — this slice registers ONLY the fake (fixture responses, no API key). The real
+        // vendor adapter is a later change, selected via LlmOptions.Provider without touching Application.
+        services.AddSingleton<ILlmClient>(_ => new FakeLlmClient(FakeLlmFixtures.Default()));
 
         return services;
     }

@@ -35,6 +35,8 @@ public class ResourceAgentTests
 
         findings.Should().Contain(f => f.Summary.Contains("over-allocated", StringComparison.OrdinalIgnoreCase));
         findings.Should().OnlyContain(f => f.ProducingAgent == "Resource" && f.Citation.Locator.Length > 0);
+        // Confidence is set deterministically from the DQ signal (clean data → High).
+        findings.Should().OnlyContain(f => f.Confidence == Confidence.High);
     }
 
     [Fact]
