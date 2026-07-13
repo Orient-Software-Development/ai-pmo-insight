@@ -66,10 +66,27 @@ PRD "resource on 5+ projects = Red" key-person risk — and has a **blocked-day*
 (`time-used.csv` + minutes). Some risk/issue rows have `last_updated` >21 days before the PRD date
 (2026-07-09) to exercise the "stale data" rule.
 
+## Uploadable fixtures vs. source CSVs
+
+> **The `.csv` / `.md` files above are the human-readable source, not directly uploadable.** The
+> Data Collector (`UploadParser`) parses only **`.xlsx`/`.xlsm`** (Excel), **`.xml`** (Orbit), and
+> **`.docx`** (minutes). Uploading a `.csv` parses to nothing (`CollectedData.Empty`) and yields
+> **zero findings** — a native CSV parser is deferred (the upload UI should skip/reject `.csv`).
+
+Two ready-to-upload fixtures are generated from the CSVs/markdown above:
+
+| Upload this | Built from | Feeds |
+|-------------|-----------|-------|
+| **`orbit-sample.xlsx`** | `projects.csv`, `timeline-milestones.csv`, `budget.csv`, `resources.csv`, `risks.csv` + `issues.csv` | one workbook (sheets `Projects`/`Milestones`/`Budget`/`Resources`/`RAID`) — the full portfolio in one upload |
+| **`meeting-minutes.docx`** | `meeting-minutes.md` | the ORB-1002 minutes (LLM #4 path) |
+
+> Not yet represented (need new record types / agent rules): `scope-wbs.csv`, `time-used.csv`,
+> `decisions.csv`. These stay CSV-only until a later change adds them.
+
 ## How to upload one to test
 
-The current endpoint stores the file as **opaque bytes** and the analyze step is a stub, so **any
-single file** proves the wiring. Pick any structured CSV or the minutes blob.
+Analysis is **no longer a stub** — the orchestrator runs the 9-agent pipeline and groups findings
+under the `projectKey` parsed from the file. Upload `orbit-sample.xlsx` for a full run.
 
 ```bash
 # 1. log in (dev admin is seeded) — saves auth cookies
@@ -77,16 +94,22 @@ curl -c cookies.txt -X POST "http://localhost:5080/api/auth/login" \
   -H "Content-Type: application/json" \
   -d '{"email":"admin@localhost","password":"Admin123!$"}'
 
-# 2. upload a fixture -> returns { uploadId, fileName }
+# 2. upload the consolidated workbook -> returns { uploadId, fileName }
 curl -b cookies.txt -X POST "http://localhost:5080/api/ingest/upload" \
-  -F "file=@docs/samples/projects.csv"
+  -F "file=@docs/samples/orbit-sample.xlsx"
 
-# 3. analyze the stored upload -> emits one finding citing that upload
+# 3. analyze the stored upload -> runs the pipeline, emits cited findings per project
 curl -b cookies.txt -X POST "http://localhost:5080/api/analyze/<uploadId-from-step-2>"
 
-# 4. read the findings (Level-2 read endpoint; stub groups under DUMMY-001)
-curl -b cookies.txt "http://localhost:5080/api/projects/DUMMY-001"
+# 4. read a project's findings (project keys come from the file: ORB-1001 .. ORB-1006)
+curl -b cookies.txt "http://localhost:5080/api/projects/ORB-1002"
 ```
 
 > On Windows PowerShell, `curl` is an alias for `Invoke-WebRequest`. Either call `curl.exe`
 > explicitly (commands above work as-is) or use `Invoke-RestMethod`.
+
+### Regenerating the fixtures
+
+`orbit-sample.xlsx` and `meeting-minutes.docx` are derived artifacts — regenerate them from the
+CSVs with ClosedXML/OpenXml if the source data changes (generator kept out of the repo; see the
+`add-csv-parser` deferral note in the change history).
