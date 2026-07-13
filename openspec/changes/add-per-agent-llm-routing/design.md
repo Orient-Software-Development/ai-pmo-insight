@@ -69,10 +69,12 @@ the diff is contained to Infrastructure + DI + config + tests.
 ```csharp
 public sealed class LlmProviderOptions
 {
-    public string Provider { get; init; } = "fake";
+    // All defaults are "inherit" sentinels so an agent block with only some fields set
+    // still gets the missing fields from Default via LlmOptions.ResolvedFor(...).
+    public string Provider { get; init; } = string.Empty;
     public string ModelId { get; init; } = string.Empty;
     public string ApiKey  { get; init; } = string.Empty;
-    public int    PerAnalysisTokenBudget { get; init; } = 100_000;
+    public int    PerAnalysisTokenBudget { get; init; } // 0 == "inherit from Default"
 }
 
 public sealed class LlmOptions

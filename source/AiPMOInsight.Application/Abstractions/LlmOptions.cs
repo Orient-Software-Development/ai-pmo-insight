@@ -1,29 +1,61 @@
 namespace AiPMOInsight.Application.Abstractions;
 
 /// <summary>
-/// LLM runtime settings, bound from the <c>Llm</c> configuration section. This is the <b>model-swap
-/// seam</b>: <see cref="Provider"/> selects which <see cref="ILlmClient"/> adapter is used and
-/// <see cref="ModelId"/> which model, so changing models is a config change — no code churn. The
-/// section is inert this slice (only the fake is registered) but is wired now so the real adapter
-/// lands next change without touching Application.
+/// LLM runtime settings bound from the <c>Llm</c> configuration section — the model-swap seam.
+/// <see cref="Default"/> selects the fallback provider/model for any agent without an override;
+/// each entry in <see cref="Agents"/> (keyed case-insensitively by the calling agent's
+/// <c>SkillName</c>: <c>RiskAndIssue</c>, <c>Narrative</c>, <c>Challenge</c>, <c>Review</c>) overrides
+/// individual fields for that agent only. Field-level merge: an empty string on an agent block
+/// means "inherit from <see cref="Default"/>".
 /// <para>
-/// <see cref="ApiKey"/> is never committed: it is supplied per environment via the
-/// <c>Llm__ApiKey</c> secret / env var only (mirrors <c>Jwt__SigningKey</c>).
+/// The legacy flat keys (<see cref="Provider"/>, <see cref="ModelId"/>, <see cref="ApiKey"/>) are
+/// kept for one release for back-compat with the pre-routing shape; they are folded into
+/// <see cref="Default"/> by the DI composition root when <see cref="Default"/>'s <c>Provider</c>
+/// is empty. Newer code SHOULD NOT read these fields directly.
 /// </para>
 /// </summary>
 public sealed class LlmOptions
 {
     public const string SectionName = "Llm";
 
-    /// <summary>Selects the <see cref="ILlmClient"/> adapter (e.g. <c>fake</c>, <c>anthropic</c>).</summary>
-    public string Provider { get; init; } = "fake";
+    /// <summary>Fallback provider settings used by any agent without a specific override.</summary>
+    public LlmProviderOptions Default { get; init; } = new();
 
-    /// <summary>The model identifier passed to the provider (empty for the fake).</summary>
+    /// <summary>Per-agent overrides, keyed by the agent's <c>SkillName</c> (case-insensitive).</summary>
+    public IReadOnlyDictionary<string, LlmProviderOptions> Agents { get; init; } =
+        new Dictionary<string, LlmProviderOptions>(StringComparer.OrdinalIgnoreCase);
+
+    /// <summary>Legacy — pre-routing flat key. Folded into <see cref="Default"/> by DI.</summary>
+    public string Provider { get; init; } = string.Empty;
+
+    /// <summary>Legacy — pre-routing flat key. Folded into <see cref="Default"/> by DI.</summary>
     public string ModelId { get; init; } = string.Empty;
 
-    /// <summary>Upper bound on output tokens per analysis run; guards cost once a real adapter lands.</summary>
-    public int PerAnalysisTokenBudget { get; init; } = 100_000;
-
-    /// <summary>Provider API key — supplied via the <c>Llm__ApiKey</c> secret/env var only, never committed.</summary>
+    /// <summary>Legacy — pre-routing flat key. Folded into <see cref="Default"/> by DI.</summary>
     public string ApiKey { get; init; } = string.Empty;
+
+    /// <summary>
+    /// Returns the effective <see cref="LlmProviderOptions"/> for the given agent, merging any
+    /// per-agent override with <see cref="Default"/> field-by-field (an empty string on the
+    /// override means "inherit"). Returns <see cref="Default"/> when no override is registered.
+    /// </summary>
+    public LlmProviderOptions ResolvedFor(string skillName)
+    {
+        ArgumentNullException.ThrowIfNull(skillName);
+
+        if (!Agents.TryGetValue(skillName, out var over) || over is null)
+        {
+            return Default;
+        }
+
+        return new LlmProviderOptions
+        {
+            Provider = !string.IsNullOrEmpty(over.Provider) ? over.Provider : Default.Provider,
+            ModelId = !string.IsNullOrEmpty(over.ModelId) ? over.ModelId : Default.ModelId,
+            ApiKey = !string.IsNullOrEmpty(over.ApiKey) ? over.ApiKey : Default.ApiKey,
+            PerAnalysisTokenBudget = over.PerAnalysisTokenBudget != 0
+                ? over.PerAnalysisTokenBudget
+                : Default.PerAnalysisTokenBudget,
+        };
+    }
 }
