@@ -111,7 +111,15 @@ jobs:
           echo "Deploying ${IMAGE_NAME}:${VERSION} to ${ENVIRONMENT}"
           echo "TODO: wire your target here — e.g. aws ecs update-service / kubectl set image /"
           echo "      az containerapp update / gcloud run deploy. DB is already migrated."
+          echo "      Inject the LLM key as the CONTAINER env var 'Llm__Default__ApiKey' from \$LLM_API_KEY,"
+          echo "      e.g. --set-env-vars \"Llm__Default__ApiKey=\$LLM_API_KEY\" (Container Apps),"
+          echo "      or the ECS task-definition / k8s secret / Cloud Run --set-env-vars equivalent."
         env:
           IMAGE_NAME: ${{ env.IMAGE_NAME }}
           VERSION: ${{ needs.build-and-push.outputs.version }}
           ENVIRONMENT: ${{ github.event.inputs.environment }}
+          # LLM provider API key for the deployed app. Source: add an Actions secret named
+          # LLM_API_KEY (repo or per-environment: Settings → Secrets and variables → Actions).
+          # This exposes it to the deploy step; the deploy command must forward it to the
+          # container as the env var Llm__Default__ApiKey (see the echo notes above).
+          LLM_API_KEY: ${{ secrets.LLM_API_KEY }}
