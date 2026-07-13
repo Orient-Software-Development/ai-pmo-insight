@@ -50,5 +50,24 @@ with GitHub Actions CI and Claude skills.
 > (`TestWebAppFactory.UseTestAuthentication`); `AuthEndpointsTests` exercises the real cookie/JWT
 > pipeline end-to-end.
 
+> **LLM routing:** the four LLM-backed agents (`RiskAndIssue` #4, `Narrative` #7, `Challenge` #8,
+> `Review` #9) reach the model through the single `ILlmClient` port, but **provider selection is
+> per-agent via config alone** — no agent, prompt, or orchestrator code changes to swap providers.
+> Config is an `Llm.Default` block plus optional `Llm.Agents.<SkillName>` overrides (keyed by the
+> agent's `SkillName`, case-insensitive; any field present on an agent block overrides that field
+> of `Default`, else inherits it — `LlmOptions.ResolvedFor`). A missing agent block falls back to
+> `Default`. `AddInfrastructure` binds the options, folds the legacy flat `Llm.Provider`/`ModelId`/
+> `ApiKey` shape into `Default` (a one-release back-compat; explicit `Default` wins), asserts every
+> `Llm.Agents` key is one of the four known skills, then builds one inner `ILlmClient` **per agent
+> eagerly** via `ILlmClientFactory` and registers a `RoutingLlmClient` (`Infrastructure/Analysis/
+> Llm`) as the sole `ILlmClient` — it dispatches each `CompleteAsync` by `LlmRequest.SkillName`
+> (constant-time dictionary lookup, no per-request factory calls). The factory recognises `fake`
+> (fully working, the no-API-key demo/test path), `anthropic`, and `openai`. **`anthropic`/`openai`
+> are stub adapters** that construct fine (so a prod-shape config boots) but throw
+> `NotImplementedException` on first call — real vendor HTTP wiring is a deliberate follow-up
+> change. An **unknown provider fails at startup**, never mid-request; a startup log line lists the
+> resolved provider per agent (never the `ApiKey`). `ApiKey` is supplied only via env/secret
+> (`Llm__Default__ApiKey`, `Llm__Agents__<SkillName>__ApiKey`), never committed.
+
 > **Client framework:** template param `--client-framework` (`-cf`) = `react` (default) or
 > `none` (API only). Driven by `ClientFramework` symbol → computed `UseReact` / `UseApiOnly`,

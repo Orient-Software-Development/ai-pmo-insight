@@ -31,7 +31,7 @@ public sealed class ChallengeSkill(ILlmClient llm, PromptRegistry prompts)
 {
     private const string PromptKey = "challenge";
 
-    public string Name => "Challenge";
+    public string Name => LlmAgentSkills.Challenge;
 
     public async Task<Finding> ExecuteAsync(ChallengeInput input, CancellationToken cancellationToken)
     {

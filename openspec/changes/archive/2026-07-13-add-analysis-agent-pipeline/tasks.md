@@ -54,5 +54,5 @@
 ## 8. Docs + verify
 
 - [x] 8.1 Update `docs/roadmap.md` (Phase 3 in progress: deterministic layer + trust layer via fake this slice; real adapter next) and `docs/gap-project.md` (§1.1 in flight; §2.1–§2.3, §2.12 resolved; §1.2 real parsers and §2.7 eval harness still deferred)
-- [ ] 8.2 Run the app, exercise upload → analyze → read end-to-end (API + React 4-section view) on dummy fixtures with `FakeLlmClient`; confirm citations, narrative, challenge, and review render
+- [x] 8.2 Run the app, exercise upload → analyze → read end-to-end (API + React 4-section view) on dummy fixtures with `FakeLlmClient`; confirm citations, narrative, challenge, and review render
 - [x] 8.3 Run `openspec validate add-analysis-agent-pipeline` and the full test suite

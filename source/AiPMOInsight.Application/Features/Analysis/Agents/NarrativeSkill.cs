@@ -28,7 +28,7 @@ public sealed class NarrativeSkill(ILlmClient llm, PromptRegistry prompts)
     private const string PromptKey = "narrative";
     private const int ComplexSignalThreshold = 3;
 
-    public string Name => "Narrative";
+    public string Name => LlmAgentSkills.Narrative;
 
     public async Task<Finding> ExecuteAsync(NarrativeInput input, CancellationToken cancellationToken)
     {
@@ -109,7 +109,7 @@ public sealed class NarrativeSkill(ILlmClient llm, PromptRegistry prompts)
             citation: new SourceRef("synthesis:narrative").ToCitation(slice.Run.UploadId),
             now: slice.Run.StartedAt,
             runId: slice.Run.RunId,
-            producingAgent: "Narrative",
+            producingAgent: LlmAgentSkills.Narrative,
             kind: FindingKind.Narrative,
             confidence: confidence,
             promptVersion: promptVersion);

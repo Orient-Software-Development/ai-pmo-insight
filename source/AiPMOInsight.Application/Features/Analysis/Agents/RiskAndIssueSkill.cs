@@ -24,7 +24,7 @@ public sealed class RiskAndIssueSkill(ILlmClient llm, PromptRegistry prompts)
 {
     private const string PromptKey = "risk-and-issue";
 
-    public string Name => "RiskAndIssue";
+    public string Name => LlmAgentSkills.RiskAndIssue;
 
     public async Task<IReadOnlyList<Finding>> ExecuteAsync(AnalysisInput input, CancellationToken cancellationToken)
     {
