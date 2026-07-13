@@ -40,19 +40,23 @@ public static class DependencyInjection
         // routing or per-agent config.
         services.Configure<LlmOptions>(configuration.GetSection(LlmOptions.SectionName));
 
-        var llmOptions = FoldLegacyFlatKeys(BindLlmOptions(configuration));
+        var boundOptions = BindLlmOptions(configuration);
+        var promotedLegacyKeys = LegacyKeysPromotedByFold(boundOptions);
+        var llmOptions = FoldLegacyFlatKeys(boundOptions);
         ValidateAgentKeys(llmOptions);
         var routingClient = BuildRoutingClient(llmOptions);
 
         services.AddSingleton<ILlmClient>(serviceProvider =>
         {
-            // Emit the per-agent resolution once, when the router is first materialized, so ops can
-            // see which provider each agent got. Never logs the ApiKey (R3/R4).
+            // Emit the wiring diagnostics once, when the router is first materialized: the per-agent
+            // resolution (R4) and — when the legacy flat shape was folded — a migration warning
+            // naming the promoted keys (#25). Never logs any ApiKey value (R3).
             var loggerFactory = serviceProvider.GetService<ILoggerFactory>();
             if (loggerFactory is not null)
             {
-                LogResolvedProviders(
-                    loggerFactory.CreateLogger("AiPMOInsight.Infrastructure.Analysis.Llm"), llmOptions);
+                LogRoutingDiagnostics(
+                    loggerFactory.CreateLogger("AiPMOInsight.Infrastructure.Analysis.Llm"),
+                    llmOptions, promotedLegacyKeys);
             }
 
             return routingClient;
@@ -60,10 +64,6 @@ public static class DependencyInjection
 
         return services;
     }
-
-    /// <summary>The four agents whose <c>SkillName</c> may key an <c>Llm.Agents</c> override.</summary>
-    private static readonly IReadOnlySet<string> KnownLlmAgentSkills =
-        new HashSet<string>(StringComparer.OrdinalIgnoreCase) { "RiskAndIssue", "Narrative", "Challenge", "Review" };
 
     private static LlmOptions BindLlmOptions(IConfiguration configuration)
     {
@@ -101,28 +101,60 @@ public static class DependencyInjection
     {
         foreach (var key in options.Agents.Keys)
         {
-            if (!KnownLlmAgentSkills.Contains(key))
+            if (!LlmAgentSkills.All.Contains(key))
             {
                 throw new InvalidOperationException(
                     $"Unknown agent key '{key}' in 'Llm.Agents'. Recognised LLM-backed agents: " +
-                    $"{string.Join(", ", KnownLlmAgentSkills)}. The key must match the agent's SkillName.");
+                    $"{string.Join(", ", LlmAgentSkills.All)}. The key must match the agent's SkillName.");
             }
         }
     }
 
     /// <summary>
-    /// R4: log the resolved provider per agent so ops can see the wiring. Lists <c>Default</c> plus
-    /// each known agent's effective provider; never includes the <c>ApiKey</c> (R3).
+    /// Reports which legacy flat keys the <see cref="FoldLegacyFlatKeys"/> step will promote into
+    /// <c>Llm.Default</c> — used to warn ops at startup. Returns the offending config key names
+    /// (never their values, R3), or an empty list when no fold fires (explicit <c>Default</c> present,
+    /// or no legacy keys set). Kept in sync with the fold predicate below.
     /// </summary>
-    private static void LogResolvedProviders(ILogger logger, LlmOptions options)
+    private static IReadOnlyList<string> LegacyKeysPromotedByFold(LlmOptions options)
+    {
+        if (!string.IsNullOrEmpty(options.Default.Provider))
+        {
+            return Array.Empty<string>();
+        }
+
+        var promoted = new List<string>();
+        if (!string.IsNullOrEmpty(options.Provider)) promoted.Add("Llm:Provider");
+        if (!string.IsNullOrEmpty(options.ModelId)) promoted.Add("Llm:ModelId");
+        if (!string.IsNullOrEmpty(options.ApiKey)) promoted.Add("Llm:ApiKey");
+        if (options.PerAnalysisTokenBudget != 0) promoted.Add("Llm:PerAnalysisTokenBudget");
+        return promoted;
+    }
+
+    /// <summary>
+    /// Logs the routing wiring: an info line with the resolved provider per agent (R4; lists
+    /// <c>Default</c> plus each known agent's effective provider, never the <c>ApiKey</c>, R3), and —
+    /// when <paramref name="promotedLegacyKeys"/> is non-empty — a warning that the deprecated flat
+    /// shape was folded, naming the promoted config keys so ops can migrate deliberately (#25).
+    /// </summary>
+    private static void LogRoutingDiagnostics(
+        ILogger logger, LlmOptions options, IReadOnlyList<string> promotedLegacyKeys)
     {
         var lines = new List<string> { $"Default={ProviderLabel(options.Default.Provider)}" };
-        foreach (var skill in KnownLlmAgentSkills.OrderBy(name => name, StringComparer.Ordinal))
+        foreach (var skill in LlmAgentSkills.All.OrderBy(name => name, StringComparer.Ordinal))
         {
             lines.Add($"{skill}={ProviderLabel(options.ResolvedFor(skill).Provider)}");
         }
 
         logger.LogInformation("LLM routing resolved (provider per agent): {Routing}", string.Join(", ", lines));
+
+        if (promotedLegacyKeys.Count > 0)
+        {
+            logger.LogWarning(
+                "LLM config used the deprecated flat shape; promoted {LegacyKeys} into 'Llm.Default'. " +
+                "Migrate to the 'Llm.Default' block — the legacy flat keys are honoured for one release only.",
+                string.Join(", ", promotedLegacyKeys));
+        }
 
         static string ProviderLabel(string provider) => string.IsNullOrEmpty(provider) ? "(unset)" : provider;
     }

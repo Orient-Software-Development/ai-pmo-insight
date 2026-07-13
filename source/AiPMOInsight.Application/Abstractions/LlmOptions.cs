@@ -46,18 +46,18 @@ public sealed class LlmOptions
     {
         ArgumentNullException.ThrowIfNull(skillName);
 
-        if (!Agents.TryGetValue(skillName, out var over) || over is null)
+        if (!Agents.TryGetValue(skillName, out var agentOverride) || agentOverride is null)
         {
             return Default;
         }
 
         return new LlmProviderOptions
         {
-            Provider = !string.IsNullOrEmpty(over.Provider) ? over.Provider : Default.Provider,
-            ModelId = !string.IsNullOrEmpty(over.ModelId) ? over.ModelId : Default.ModelId,
-            ApiKey = !string.IsNullOrEmpty(over.ApiKey) ? over.ApiKey : Default.ApiKey,
-            PerAnalysisTokenBudget = over.PerAnalysisTokenBudget != 0
-                ? over.PerAnalysisTokenBudget
+            Provider = !string.IsNullOrEmpty(agentOverride.Provider) ? agentOverride.Provider : Default.Provider,
+            ModelId = !string.IsNullOrEmpty(agentOverride.ModelId) ? agentOverride.ModelId : Default.ModelId,
+            ApiKey = !string.IsNullOrEmpty(agentOverride.ApiKey) ? agentOverride.ApiKey : Default.ApiKey,
+            PerAnalysisTokenBudget = agentOverride.PerAnalysisTokenBudget != 0
+                ? agentOverride.PerAnalysisTokenBudget
                 : Default.PerAnalysisTokenBudget,
         };
     }

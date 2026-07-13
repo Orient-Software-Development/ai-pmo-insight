@@ -88,13 +88,12 @@ public class RoutingLlmClientTests
     }
 
     [Fact]
-    public async Task Inner_clients_are_not_rebuilt_per_call()
+    public async Task Inner_clients_are_reused_not_rebuilt_across_N_calls()
     {
-        // If the router were re-resolving inner clients per call, the same inner instance would
-        // not be reused across N calls. We prove reuse by holding the client references and
-        // checking they answered every call — a call-count on a spy is unnecessary since the
-        // router holds the map by reference.
-        var narrative = FakeReturning("narrative");
+        // The router must hold each inner client by reference and dispatch to the same instance
+        // every call — never re-resolve or rebuild per request. We prove it with a counting spy:
+        // one instance receives all N calls (build count = 1, invocation count = N).
+        var narrative = new CountingLlmClient(new Payload("narrative"));
         var router = new RoutingLlmClient(
             @default: FakeReturning("default"),
             perSkill: new Dictionary<string, ILlmClient>(StringComparer.OrdinalIgnoreCase)
@@ -102,10 +101,26 @@ public class RoutingLlmClientTests
                 ["Narrative"] = narrative,
             });
 
-        for (var i = 0; i < 5; i++)
+        const int calls = 5;
+        for (var i = 0; i < calls; i++)
         {
             var r = await router.CompleteAsync<Payload>(RequestFor("Narrative"), CancellationToken.None);
             r.Value.Should().Be("narrative");
+        }
+
+        narrative.CallCount.Should().Be(calls); // same instance served every call
+    }
+
+    /// <summary>A spy inner client that counts how many times it was invoked.</summary>
+    private sealed class CountingLlmClient(Payload response) : ILlmClient
+    {
+        public int CallCount { get; private set; }
+
+        public Task<TOutput> CompleteAsync<TOutput>(LlmRequest request, CancellationToken cancellationToken)
+            where TOutput : notnull
+        {
+            CallCount++;
+            return Task.FromResult((TOutput)(object)response);
         }
     }
 }

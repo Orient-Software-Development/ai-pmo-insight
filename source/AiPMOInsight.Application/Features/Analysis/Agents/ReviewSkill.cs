@@ -27,7 +27,7 @@ public sealed class ReviewSkill(ILlmClient llm, PromptRegistry prompts)
 {
     private const string PromptKey = "review";
 
-    public string Name => "Review";
+    public string Name => LlmAgentSkills.Review;
 
     public async Task<Finding> ExecuteAsync(ReviewInput input, CancellationToken cancellationToken)
     {

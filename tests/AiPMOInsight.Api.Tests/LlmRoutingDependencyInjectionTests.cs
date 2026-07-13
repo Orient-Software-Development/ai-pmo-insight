@@ -1,5 +1,6 @@
 using AwesomeAssertions;
 using AiPMOInsight.Application.Abstractions;
+using AiPMOInsight.Application.Features.Analysis.Agents;
 using AiPMOInsight.Infrastructure;
 using AiPMOInsight.Infrastructure.Analysis.Llm;
 using Microsoft.Extensions.Configuration;
@@ -115,6 +116,59 @@ public class LlmRoutingDependencyInjectionTests
 
         captured.Should().Contain(line => line.Contains("Narrative") && line.Contains("fake"));
         captured.Should().NotContain(line => line.Contains("sk-should-not-be-logged"));
+    }
+
+    [Fact]
+    public void AddInfrastructure_warns_and_names_the_promoted_keys_when_the_legacy_fold_fires()
+    {
+        // #25: folding the deprecated flat shape must emit a startup WARNING naming the promoted
+        // config keys so ops can migrate deliberately — and (R3) never the ApiKey value.
+        var captured = new List<string>();
+        var provider = BuildProvider(new()
+        {
+            ["Llm:Provider"] = "fake",
+            ["Llm:ApiKey"] = "sk-should-not-be-logged",
+        }, captured);
+
+        _ = provider.GetRequiredService<ILlmClient>(); // materialize the routing client → emits diagnostics
+
+        captured.Should().Contain(line => line.Contains("Llm:Provider") && line.Contains("Llm:ApiKey"));
+        captured.Should().NotContain(line => line.Contains("sk-should-not-be-logged"));
+    }
+
+    [Fact]
+    public void AddInfrastructure_does_not_warn_when_the_new_Default_shape_is_used()
+    {
+        var captured = new List<string>();
+        var provider = BuildProvider(new() { ["Llm:Default:Provider"] = "fake" }, captured);
+
+        _ = provider.GetRequiredService<ILlmClient>();
+
+        captured.Should().NotContain(line => line.Contains("deprecated flat shape"));
+    }
+
+    [Fact]
+    public async Task Anthropic_agent_throws_at_call_time_while_other_agents_still_return_fixtures()
+    {
+        // #24 end-to-end: a prod-shape config where only Narrative is 'anthropic' must boot, resolve
+        // to the router, throw NotImplementedException when Narrative is called, yet still serve a
+        // fixture for an agent left on the fake default.
+        var provider = BuildProvider(new()
+        {
+            ["Llm:Default:Provider"] = "fake",
+            ["Llm:Agents:Narrative:Provider"] = "anthropic",
+        });
+        var client = provider.GetRequiredService<ILlmClient>();
+
+        var narrativeCall = () => client.CompleteAsync<NarrativeResult>(
+            new LlmRequest { SkillName = LlmAgentSkills.Narrative, Prompt = "p", PromptVersion = "sha256:v" },
+            CancellationToken.None);
+        await narrativeCall.Should().ThrowAsync<NotImplementedException>();
+
+        var challenge = await client.CompleteAsync<ChallengeResult>(
+            new LlmRequest { SkillName = LlmAgentSkills.Challenge, Prompt = "p", PromptVersion = "sha256:v" },
+            CancellationToken.None);
+        challenge.Should().NotBeNull();
     }
 
     [Fact]
