@@ -1,4 +1,3 @@
-using System.Linq;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -35,12 +34,11 @@ public static class DependencyInjection
         services.AddScoped<IUploadParser, UploadParser>();
 
         // LLM port — routing adapter dispatches per-agent by LlmRequest.SkillName.
-        // Bind + fold once, validate the agent keys, then build the inner clients eagerly via
-        // ILlmClientFactory so that a bad key or unknown provider fails startup (loud), never at
+        // Bind + fold once, validate the agent keys, then build the inner clients eagerly via the
+        // LlmClientFactory so that a bad key or unknown provider fails startup (loud), never at
         // request time (silent). Agent code depends only on ILlmClient and has no awareness of
         // routing or per-agent config.
         services.Configure<LlmOptions>(configuration.GetSection(LlmOptions.SectionName));
-        services.AddSingleton<ILlmClientFactory, LlmClientFactory>();
 
         var llmOptions = FoldLegacyFlatKeys(BindLlmOptions(configuration));
         ValidateAgentKeys(llmOptions);
@@ -131,14 +129,17 @@ public static class DependencyInjection
 
     /// <summary>
     /// One-release back-compat with the pre-routing flat shape: if <c>Llm.Default.Provider</c> was
-    /// not supplied but a legacy <c>Llm.Provider</c> (etc.) is set, promote the legacy keys to the
-    /// <c>Default</c> block. An explicit <c>Default</c> block always wins over the legacy keys.
+    /// not supplied but a legacy <c>Llm.Provider</c> (etc.) is set, promote the legacy keys —
+    /// including <c>Llm.PerAnalysisTokenBudget</c> — to the <c>Default</c> block. An explicit
+    /// <c>Default</c> block always wins over the legacy keys. <c>internal</c> so the composition
+    /// root helper is unit-testable (the folded budget is otherwise unobservable).
     /// </summary>
-    private static LlmOptions FoldLegacyFlatKeys(LlmOptions options)
+    internal static LlmOptions FoldLegacyFlatKeys(LlmOptions options)
     {
         var legacyPresent = !string.IsNullOrEmpty(options.Provider)
             || !string.IsNullOrEmpty(options.ModelId)
-            || !string.IsNullOrEmpty(options.ApiKey);
+            || !string.IsNullOrEmpty(options.ApiKey)
+            || options.PerAnalysisTokenBudget != 0;
 
         if (!string.IsNullOrEmpty(options.Default.Provider) || !legacyPresent)
         {
@@ -152,9 +153,11 @@ public static class DependencyInjection
                 Provider = options.Provider,
                 ModelId = options.ModelId,
                 ApiKey = options.ApiKey,
-                PerAnalysisTokenBudget = options.Default.PerAnalysisTokenBudget != 0
-                    ? options.Default.PerAnalysisTokenBudget
-                    : 100_000,
+                // Explicit Default budget wins; else the legacy flat budget; else the ship default.
+                PerAnalysisTokenBudget =
+                    options.Default.PerAnalysisTokenBudget != 0 ? options.Default.PerAnalysisTokenBudget
+                    : options.PerAnalysisTokenBudget != 0 ? options.PerAnalysisTokenBudget
+                    : LlmProviderOptions.DefaultPerAnalysisTokenBudget,
             },
             Agents = options.Agents,
             // Legacy fields intentionally not copied forward — Default is now authoritative.

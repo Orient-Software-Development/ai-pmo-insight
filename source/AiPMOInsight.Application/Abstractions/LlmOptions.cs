@@ -34,6 +34,9 @@ public sealed class LlmOptions
     /// <summary>Legacy — pre-routing flat key. Folded into <see cref="Default"/> by DI.</summary>
     public string ApiKey { get; init; } = string.Empty;
 
+    /// <summary>Legacy — pre-routing flat key. Folded into <see cref="Default"/> by DI.</summary>
+    public int PerAnalysisTokenBudget { get; init; }
+
     /// <summary>
     /// Returns the effective <see cref="LlmProviderOptions"/> for the given agent, merging any
     /// per-agent override with <see cref="Default"/> field-by-field (an empty string on the

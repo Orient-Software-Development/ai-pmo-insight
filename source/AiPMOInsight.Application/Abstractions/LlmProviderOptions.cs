@@ -12,6 +12,13 @@ namespace AiPMOInsight.Application.Abstractions;
 /// </summary>
 public sealed class LlmProviderOptions
 {
+    /// <summary>
+    /// The per-analysis token budget shipped on the <c>Llm.Default</c> block and used as the
+    /// fallback when neither <c>Default</c> nor a legacy flat key supplies one. Single source of
+    /// truth so <c>appsettings.json</c> and the legacy-fold default cannot drift apart.
+    /// </summary>
+    public const int DefaultPerAnalysisTokenBudget = 100_000;
+
     /// <summary>Selector matched by the client factory (e.g. <c>fake</c>, <c>anthropic</c>, <c>openai</c>).</summary>
     public string Provider { get; init; } = string.Empty;
 

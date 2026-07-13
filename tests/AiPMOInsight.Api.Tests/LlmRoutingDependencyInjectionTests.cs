@@ -117,6 +117,41 @@ public class LlmRoutingDependencyInjectionTests
         captured.Should().NotContain(line => line.Contains("sk-should-not-be-logged"));
     }
 
+    [Fact]
+    public void FoldLegacyFlatKeys_honors_the_legacy_token_budget()
+    {
+        // Spec "Backwards-compatible options binding": a legacy flat Llm.PerAnalysisTokenBudget must
+        // survive the fold into Default, not be discarded for the ship-default.
+        var folded = DependencyInjection.FoldLegacyFlatKeys(
+            new LlmOptions { Provider = "fake", PerAnalysisTokenBudget = 50_000 });
+
+        folded.Default.Provider.Should().Be("fake");
+        folded.Default.PerAnalysisTokenBudget.Should().Be(50_000);
+    }
+
+    [Fact]
+    public void FoldLegacyFlatKeys_uses_the_ship_default_budget_when_no_budget_is_configured()
+    {
+        var folded = DependencyInjection.FoldLegacyFlatKeys(new LlmOptions { Provider = "fake" });
+
+        folded.Default.PerAnalysisTokenBudget.Should().Be(LlmProviderOptions.DefaultPerAnalysisTokenBudget);
+    }
+
+    [Fact]
+    public void FoldLegacyFlatKeys_prefers_an_explicit_Default_budget_over_the_legacy_budget()
+    {
+        // Default.Provider empty → fold happens; an explicitly-set Default budget still wins.
+        var folded = DependencyInjection.FoldLegacyFlatKeys(new LlmOptions
+        {
+            Default = new LlmProviderOptions { PerAnalysisTokenBudget = 250_000 },
+            Provider = "fake",
+            PerAnalysisTokenBudget = 50_000,
+        });
+
+        folded.Default.Provider.Should().Be("fake");
+        folded.Default.PerAnalysisTokenBudget.Should().Be(250_000);
+    }
+
     private static ServiceProvider BuildProvider(
         Dictionary<string, string?> llmSettings, List<string>? capturedLogs = null)
     {
