@@ -145,6 +145,11 @@ These block *decisions*, not the current build:
 
 - What lives in Orbit vs. outside it — especially risks / issues / decisions / minutes
   (top kick-off decision: how much is deterministic scoring vs. LLM-over-text)
+- **Upload spreadsheet shape + tab naming** — one workbook with multiple named tabs, or one
+  workbook per category? And what exact sheet/tab names (or naming rule) does the parser map to
+  each category? Names may be localized / PM-free-typed, so exact-match is brittle. Shapes the
+  Data Collector / parser contract and the `add-multi-file-analyze` merge model. See
+  `docs/gap-project.md` §2.12 (design) + §3.11 (client decision).
 - LLM runtime choice (Claude Agent SDK vs. Semantic Kernel)
 - Health-scoring weights & override rules (client PMO sign-off)
 - Raw-upload retention policy / storage-split posture

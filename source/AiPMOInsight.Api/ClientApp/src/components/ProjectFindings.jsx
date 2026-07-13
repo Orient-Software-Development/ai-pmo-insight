@@ -3,6 +3,13 @@ import { authFetch } from '../AuthContext';
 
 const EMPTY_VIEW = { projectKey: '', findings: [], narrative: [], challenge: [], review: [] };
 
+// The Data Collector (UploadParser) only parses these formats. CSV is intentionally NOT supported —
+// a .csv upload parses to nothing and yields zero findings, so we reject it up front rather than let
+// the user hit a silent empty result.
+const ACCEPTED_EXTENSIONS = ['.xlsx', '.xlsm', '.xml', '.docx'];
+const ACCEPT_ATTR = ACCEPTED_EXTENSIONS.join(',');
+const isAcceptedFile = name => ACCEPTED_EXTENSIONS.some(ext => name.toLowerCase().endsWith(ext));
+
 // Level-2 (individual project status) view. Reads the four analysis sections for a project key —
 // KPI findings, the synthesised narrative, the adversarial challenge, and the anticipated review
 // questions — each cited back to its source. The uploader exercises the full upload -> analyze ->
@@ -29,9 +36,25 @@ export function ProjectFindings() {
     }
   }
 
+  function onFileChange(e) {
+    const picked = e.target.files?.[0] ?? null;
+    if (picked && !isAcceptedFile(picked.name)) {
+      setError(`Unsupported file type "${picked.name}". Upload ${ACCEPTED_EXTENSIONS.join(', ')} — CSV is not supported.`);
+      setFile(null);
+      e.target.value = ''; // let the user re-pick the same-named file after fixing it
+      return;
+    }
+    setError(null);
+    setFile(picked);
+  }
+
   async function uploadAnalyzeRead(e) {
     e.preventDefault();
     if (!file) return;
+    if (!isAcceptedFile(file.name)) { // defensive: state should already prevent this
+      setError(`Unsupported file type "${file.name}". Upload ${ACCEPTED_EXTENSIONS.join(', ')} — CSV is not supported.`);
+      return;
+    }
     setError(null);
     setStatus('Uploading…');
     try {
@@ -66,9 +89,10 @@ export function ProjectFindings() {
       <p>Upload a project export, analyze it, and read the findings, narrative, challenge, and review — every item cites the source it came from.</p>
 
       <form onSubmit={uploadAnalyzeRead} role="group">
-        <input type="file" aria-label="Project export" onChange={e => setFile(e.target.files?.[0] ?? null)} />
+        <input type="file" accept={ACCEPT_ATTR} aria-label="Project export" onChange={onFileChange} />
         <button type="submit" disabled={!file}>Upload → analyze → read</button>
       </form>
+      <p><small>Accepted formats: {ACCEPTED_EXTENSIONS.join(', ')}. CSV is not supported.</small></p>
 
       <form onSubmit={e => { e.preventDefault(); loadFindings(projectKey); }} role="group">
         <input

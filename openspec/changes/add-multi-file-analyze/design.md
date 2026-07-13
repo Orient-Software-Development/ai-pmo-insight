@@ -167,3 +167,13 @@ exactly.
   follow-up refinement.
 - Do we need a `dry-run` mode on multi-file analyze to preview which cross-file rules WOULD fire before
   persisting findings? Deferred — no user-story yet.
+- **Spreadsheet shape + sheet→category mapping is unresolved and affects this change's core assumption.**
+  This design assumes **one workbook per category** (multiple `.xlsx` files, one per slot) and merges N
+  parsed outputs. But the client may instead export **one workbook with multiple named tabs** (Budget,
+  Assignments, Absenteeism, RAID as separate sheets). If so, the "merge N files" model partly inverts
+  into "split one file's tabs into categories," and the batch-upload UX changes (one file, not six). Also
+  unresolved: how the parser maps a sheet/tab to a category — exact sheet name, position, or header
+  inspection — given names may be localized (Nordic client) and free-typed by PMs. Tracked as
+  `docs/gap-project.md` §2.12 (design) and §3.11 (client kick-off decision); depends on the real Orbit
+  export shape (gap §1.2, §3.7). **Confirm the convention before implementing §2 (the merge) and §5.3
+  (the Absenteeism parser),** or the parser may silently read the wrong sheet and drop categories.

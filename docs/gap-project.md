@@ -63,6 +63,7 @@ These are **non-obvious** gaps. They aren't in the current change AND haven't be
 | 2.9 | 🔴 **Analysis triggering / scheduling.** On-demand only (current)? Scheduled portfolio runs (nightly / weekly)? Both? | The plan doc's *"portfolio cycle"* implies scheduled. Affects whether we need a job runner (Hangfire / EF-tracked queue / cron). |
 | 2.10 | 🔴 **Audit log.** Who uploaded what, when. Read access log. | Named individuals in meeting minutes + potentially absenteeism data → GDPR / traceability question. PRD earlier had this concept; it was dropped. Revisit before agents land. |
 | 2.11 | ✅ **Prompt versioning on disk.** Resolved in `add-analysis-agent-pipeline`: prompt files live in the repo under `Features/Analysis/Prompts/`, keyed and versioned by **content hash**; that hash is the `PromptVersion` stamped on LLM findings. | No database; re-analysis after prompt edits is traceable via the hash. |
+| 2.12 | 🔴 **Spreadsheet shape + sheet/tab → category mapping.** *Not decided.* When a user uploads an `.xlsx`, does one workbook hold **multiple named tabs** (one tab per category: Budget, Assignments, Absenteeism, RAID…), or is it **one workbook per category, single tab each**? And how does the Data Collector know which sheet/tab maps to which category — by **exact sheet name**, by **position**, or by **header inspection**? Sheet names may be localized (Nordic client) and free-typed by PMs, so exact-name matching is brittle. The `add-multi-file-analyze` design currently **assumes one file per category** (multiple workbooks); the wireframe sketch (`docs/inputs/pmo-wireframe.html`) shows separate files too, but per `[[project-pmo-wireframe-draft]]` that is a sketch, not authority. | Directly shapes the `IUploadParser` / Data Collector contract and the merge model in `add-multi-file-analyze`. Get it wrong → parser silently reads the wrong sheet, or drops categories with unexpected tab names, and findings quietly go missing. Depends on the real Orbit export shape (§1.2, §3.7) and needs a client-confirmed convention (§3.11). |
 
 ---
 
@@ -82,6 +83,7 @@ Already tracked in the PRD's open-questions list. Each gates a specific piece of
 | 3.8 | 🟡 **Why not Orbit-native AI + Power BI?** — pin down NextWave's differentiator | Scope-clarity — affects whether L1 competes with Orbit's own outputs |
 | 3.9 | 🟡 **Absence handling** — plan doc says *"clarify if possible"* | Resource concentration × absence signal (user story #7) |
 | 3.10 | 🟡 **Activity signal thresholds** — plan doc's *"No moving forward / very slow, medium, okay?"* | Scoring input |
+| 3.11 | 🟡 **Upload spreadsheet convention** — confirm with the client: (a) **one workbook with multiple named tabs** vs **one workbook per category**; (b) the **exact sheet/tab names** (or a stable naming rule) the parser can rely on to map a tab → category; (c) whether names are localized / PM-free-typed. | Fixes the parser/Data-Collector shape (§2.12) and the merge model in `add-multi-file-analyze`. Blocks hardened real-Orbit parsing (§1.2). Tie this to §3.7 (what lives in Orbit) — the same conversation. |
 
 ---
 
