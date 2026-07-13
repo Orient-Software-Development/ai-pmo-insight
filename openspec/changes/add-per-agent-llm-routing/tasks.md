@@ -26,17 +26,17 @@
 
 - [x] 4.1 Add integration test `tests/AiPMOInsight.Api.Tests/LlmRoutingDependencyInjectionTests.cs`: `AddInfrastructure` resolves `ILlmClient` as `RoutingLlmClient`; unknown provider on `Default` fails at `AddInfrastructure`; unknown provider on an `Agents` entry fails naming the skill and provider; legacy flat keys fold into `Default`; explicit `Default` wins over legacy keys. *(Anthropic-throws assertion from the original task text defers to #24.)*
 - [x] 4.2 Update `source/AiPMOInsight.Infrastructure/DependencyInjection.cs`: bind `LlmOptions`, run legacy-fold if `Default.Provider` is empty and legacy keys are set, use `ILlmClientFactory` to build one `ILlmClient` per agent override + `Default` **eagerly** (so unknown provider fails at startup), register `RoutingLlmClient` as the singleton `ILlmClient`. *Empty/absent config now fails loudly instead of silently falling back to fake — this matches design §2 loud-fail intent and spec R3 startup-fail scenario.*
-- [ ] 4.3 Add a startup assertion: every key in `Llm.Agents` matches one of `RiskAndIssue`, `Narrative`, `Challenge`, `Review` (case-insensitive); unknown key → throw naming the offending name. Cover with a test.
-- [ ] 4.4 Emit an `ILogger` info line at startup listing the resolved provider per agent (name → provider). Do not log `ApiKey`. Cover with a log-capture test.
-- [ ] 4.5 Green: DI tests pass; the existing analysis integration tests still pass.
+- [x] 4.3 Add a startup assertion: every key in `Llm.Agents` matches one of `RiskAndIssue`, `Narrative`, `Challenge`, `Review` (case-insensitive); unknown key → throw naming the offending name. Cover with a test.
+- [x] 4.4 Emit an `ILogger` info line at startup listing the resolved provider per agent (name → provider). Do not log `ApiKey`. Cover with a log-capture test.
+- [x] 4.5 Green: DI tests pass; the existing analysis integration tests still pass.
 
 ## 5. Config + docs
 
 - [x] 5.1 Update `source/AiPMOInsight.Api/appsettings.json` to the new shape: `Llm.Default = { Provider: "fake", ModelId: "", PerAnalysisTokenBudget: 100000 }` and an empty `Llm.Agents: {}`. Keep the `//` comment lines documenting env-var override paths (`Llm__Default__ApiKey`, `Llm__Agents__<SkillName>__ApiKey`). *(Landed alongside §1 to unblock the host-boot test that asserts `Default.Provider = "fake"`.)*
-- [ ] 5.2 Update the `## Auth` / LLM section of `CLAUDE.md` to describe the routing seam in one paragraph, matching the tone of the existing sections (provider selection is per-agent; missing agent block falls back to `Default`; stubs for anthropic/openai are wired but throw until the follow-up).
-- [ ] 5.3 Run `dotnet test` end-to-end. Confirm the pre-existing `AnalysisOrchestrator` integration tests still resolve `ILlmClient` and produce findings from the fixtures.
+- [x] 5.2 Update the `## Auth` / LLM section of `CLAUDE.md` to describe the routing seam in one paragraph, matching the tone of the existing sections (provider selection is per-agent; missing agent block falls back to `Default`; stubs for anthropic/openai are wired but throw until the follow-up).
+- [x] 5.3 Run `dotnet test` end-to-end. Confirm the pre-existing `AnalysisOrchestrator` integration tests still resolve `ILlmClient` and produce findings from the fixtures.
 
 ## 6. Validate + hand off
 
-- [ ] 6.1 Run `openspec validate add-per-agent-llm-routing --strict`; fix any reported issue.
-- [ ] 6.2 Summarise the change in the PR description, calling out that vendor HTTP wiring is a deliberate follow-up (link to this change).
+- [x] 6.1 Run `openspec validate add-per-agent-llm-routing --strict`; fix any reported issue.
+- [x] 6.2 Summarise the change in the PR description, calling out that vendor HTTP wiring is a deliberate follow-up (link to this change).
