@@ -1,13 +1,112 @@
+using System.ClientModel;
+using System.Text.Json;
+using OpenAI.Chat;
 using AiPMOInsight.Application.Abstractions;
 
 namespace AiPMOInsight.Infrastructure.Analysis.Llm;
 
 /// <summary>
-/// Stub OpenAI adapter — see <see cref="NotWiredLlmClient"/> for the shared boots-but-throws
-/// behaviour. Recognised by the factory as <c>Provider = "openai"</c>; real vendor wiring lands in
-/// issue #27.
+/// OpenAI Chat Completions adapter. Recognised by the factory as <c>Provider = "openai"</c>.
+/// Requests <b>structured JSON output</b> constrained to a schema derived from <c>TOutput</c>
+/// (<see cref="JsonSchemaGenerator"/>) and deserialises the returned text into <c>TOutput</c> —
+/// never free-text parsing (mirrors <see cref="AnthropicLlmClient"/>). Model / key / token budget
+/// come from the resolved <see cref="LlmProviderOptions"/>. The configured
+/// <see cref="LlmProviderOptions.ApiKey"/> is never surfaced in an exception, log line, or telemetry
+/// (R3 secret-leak guard).
 /// </summary>
-public sealed class OpenAiLlmClient(LlmProviderOptions options) : NotWiredLlmClient(options)
+public sealed class OpenAiLlmClient : ILlmClient
 {
-    protected override string AdapterName => "OpenAI";
+    /// <summary>Model used when the resolved options leave <see cref="LlmProviderOptions.ModelId"/> empty.</summary>
+    private const string DefaultModel = "gpt-4o-mini";
+
+    /// <summary>
+    /// Placeholder used when no key is configured so eager DI construction succeeds (a missing key is
+    /// a request-time 401, not a startup failure — same contract as the Anthropic adapter). Never the
+    /// real key, so it is safe if it ever surfaced.
+    /// </summary>
+    private const string MissingKeyPlaceholder = "missing-api-key";
+
+    private static readonly JsonSerializerOptions DeserializeOptions = new()
+    {
+        PropertyNameCaseInsensitive = true,
+    };
+
+    private readonly LlmProviderOptions _options;
+    private readonly ChatClient _client;
+
+    /// <summary>Production constructor — builds a <see cref="ChatClient"/> from the options' model + key.</summary>
+    public OpenAiLlmClient(LlmProviderOptions options)
+        : this(options, BuildClient(options))
+    {
+    }
+
+    /// <summary>Test seam: inject a pre-built client (e.g. one backed by a mock HTTP transport).</summary>
+    internal OpenAiLlmClient(LlmProviderOptions options, ChatClient client)
+    {
+        _options = options ?? throw new ArgumentNullException(nameof(options));
+        _client = client ?? throw new ArgumentNullException(nameof(client));
+    }
+
+    /// <summary>The model the adapter will use: the configured id, or <see cref="DefaultModel"/> when empty.</summary>
+    internal static string ResolveModel(LlmProviderOptions options) =>
+        string.IsNullOrWhiteSpace(options.ModelId) ? DefaultModel : options.ModelId;
+
+    private static ChatClient BuildClient(LlmProviderOptions options)
+    {
+        ArgumentNullException.ThrowIfNull(options);
+        var key = string.IsNullOrEmpty(options.ApiKey) ? MissingKeyPlaceholder : options.ApiKey;
+        return new ChatClient(ResolveModel(options), new ApiKeyCredential(key));
+    }
+
+    public async Task<TOutput> CompleteAsync<TOutput>(LlmRequest request, CancellationToken cancellationToken)
+        where TOutput : notnull
+    {
+        ArgumentNullException.ThrowIfNull(request);
+        cancellationToken.ThrowIfCancellationRequested();
+
+        var schema = BinaryData.FromString(JsonSchemaGenerator.For<TOutput>().ToJsonString());
+        var options = new ChatCompletionOptions
+        {
+            MaxOutputTokenCount = _options.PerAnalysisTokenBudget,
+            ResponseFormat = ChatResponseFormat.CreateJsonSchemaFormat(
+                jsonSchemaFormatName: typeof(TOutput).Name,
+                jsonSchema: schema,
+                jsonSchemaIsStrict: true),
+        };
+
+        ChatCompletion completion;
+        try
+        {
+            var result = await _client.CompleteChatAsync(
+                [new UserChatMessage(request.Prompt)], options, cancellationToken);
+            completion = result.Value;
+        }
+        catch (OperationCanceledException)
+        {
+            throw; // honour cancellation — never wrap it as a provider failure
+        }
+        catch (ClientResultException ex)
+        {
+            // R3 secret-leak guard: name the provider + skill, never the ApiKey. The SDK exception
+            // (carrying only the server error body + request id) is preserved as the inner exception.
+            throw new LlmProviderException(
+                $"OpenAI call failed for skill '{request.SkillName}' (provider 'openai').", ex);
+        }
+
+        var text = completion.Content
+            .Where(part => part.Kind == ChatMessageContentPartKind.Text)
+            .Select(part => part.Text)
+            .FirstOrDefault(static s => !string.IsNullOrWhiteSpace(s));
+
+        if (text is null)
+        {
+            throw new InvalidOperationException(
+                $"OpenAI returned no text content for skill '{request.SkillName}'.");
+        }
+
+        return JsonSerializer.Deserialize<TOutput>(text, DeserializeOptions)
+            ?? throw new InvalidOperationException(
+                $"OpenAI response for skill '{request.SkillName}' did not deserialise into " +
+                $"{typeof(TOutput).Name}.");
+    }
 }

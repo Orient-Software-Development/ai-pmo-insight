@@ -70,9 +70,15 @@ with GitHub Actions CI and Claude skills.
 > never free-text parsing. It honours the resolved `ModelId` (default `claude-opus-4-8`), `ApiKey`,
 > and `PerAnalysisTokenBudget` (→ `MaxTokens`), maps typed `Anthropic.Exceptions.*` to an
 > `LlmProviderException` (naming provider + skill, never the key), and respects the `CancellationToken`.
-> **`openai` is still a stub adapter** (`OpenAiLlmClient : NotWiredLlmClient`) that constructs fine
-> (so a prod-shape config boots) but throws `NotImplementedException` on first call — its real vendor
-> wiring is a deliberate follow-up. An **unknown provider fails at startup**, never mid-request; a startup log line lists the
+> **`openai` is also a working adapter** (`OpenAiLlmClient`): it calls the OpenAI Chat Completions
+> API via the official `OpenAI` NuGet SDK, requesting the **same structured JSON output** (the
+> `JsonSchemaGenerator` schema is fed to `ChatResponseFormat.CreateJsonSchemaFormat(strict)`, whose
+> subset matches the generator's) and deserialising the returned text into `TOutput`. It honours the
+> resolved `ModelId` (default `gpt-4o-mini`), `ApiKey`, and `PerAnalysisTokenBudget`
+> (→ `MaxOutputTokenCount`), maps `System.ClientModel.ClientResultException` to an
+> `LlmProviderException` (naming provider + skill, never the key), and respects the
+> `CancellationToken`. A missing key is a request-time provider failure, not a startup one (eager DI
+> construction uses a placeholder so a prod-shape config still boots). An **unknown provider fails at startup**, never mid-request; a startup log line lists the
 > resolved provider per agent (never the `ApiKey`). `ApiKey` is supplied only via env/secret
 > (`Llm__Default__ApiKey`, `Llm__Agents__<SkillName>__ApiKey`), never committed.
 

@@ -148,24 +148,22 @@ public class LlmRoutingDependencyInjectionTests
     }
 
     [Fact]
-    public async Task Stub_provider_agent_throws_at_call_time_while_other_agents_still_return_fixtures()
+    public async Task Vendor_provider_agent_boots_eagerly_while_other_agents_still_return_fixtures()
     {
-        // End-to-end routing: a prod-shape config where only Narrative is on the still-stubbed
-        // 'openai' provider must boot, resolve to the router, throw NotImplementedException when
-        // Narrative is called, yet still serve a fixture for an agent left on the fake default.
-        // (Anthropic is now a working adapter (#27) — its call path is covered offline by
-        // AnthropicLlmClientTests; OpenAI remains the deterministic stub, split to its own follow-up.)
+        // End-to-end routing: a prod-shape config where Narrative is on the real 'openai' vendor
+        // adapter must build eagerly at DI time (a missing key is a request-time failure, not a
+        // startup one — see LlmClientFactory), resolve to the router, and still serve a fixture for
+        // an agent left on the fake default. The openai agent is not called here: its live behaviour
+        // is covered offline by OpenAiLlmClientTests (calling it would need a real key + network).
         var provider = BuildProvider(new()
         {
             ["Llm:Default:Provider"] = "fake",
             ["Llm:Agents:Narrative:Provider"] = "openai",
         });
-        var client = provider.GetRequiredService<ILlmClient>();
 
-        var narrativeCall = () => client.CompleteAsync<NarrativeResult>(
-            new LlmRequest { SkillName = LlmAgentSkills.Narrative, Prompt = "p", PromptVersion = "sha256:v" },
-            CancellationToken.None);
-        await narrativeCall.Should().ThrowAsync<NotImplementedException>();
+        // GetRequiredService materialises the router, which eagerly constructed every per-agent
+        // inner client (including the openai one) — no throw means boot succeeded.
+        var client = provider.GetRequiredService<ILlmClient>();
 
         var challenge = await client.CompleteAsync<ChallengeResult>(
             new LlmRequest { SkillName = LlmAgentSkills.Challenge, Prompt = "p", PromptVersion = "sha256:v" },

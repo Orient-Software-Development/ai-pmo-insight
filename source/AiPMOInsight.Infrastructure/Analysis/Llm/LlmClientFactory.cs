@@ -5,9 +5,10 @@ namespace AiPMOInsight.Infrastructure.Analysis.Llm;
 /// <summary>
 /// The single-file provider switch. Recognised selectors: <c>fake</c>, <c>anthropic</c>,
 /// <c>openai</c>. Recognition is case-insensitive. <c>fake</c> returns a fully working
-/// <see cref="FakeLlmClient"/>; <c>anthropic</c> / <c>openai</c> return stub adapters that construct
-/// successfully (so a prod-shape config boots) but throw <see cref="NotImplementedException"/> when
-/// actually called — real vendor HTTP wiring is a deliberate follow-up change. Any other value —
+/// <see cref="FakeLlmClient"/>; <c>anthropic</c> and <c>openai</c> return working vendor adapters
+/// (<see cref="AnthropicLlmClient"/> / <see cref="OpenAiLlmClient"/>) that call the provider's API
+/// with structured JSON output. All three construct successfully so a prod-shape config boots; a
+/// missing key surfaces as a request-time provider failure, never at startup. Any other value —
 /// including empty — fails startup with a message naming both the requested provider and the agent's
 /// <c>SkillName</c>, so misconfiguration cannot slip past DI registration and surface only at
 /// request time.
