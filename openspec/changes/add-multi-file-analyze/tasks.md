@@ -6,6 +6,11 @@
 - [ ] 1.4 Delete the transitional default in step 1.2 once the tree compiles clean; every call site now passes an explicit `uploadId`.
 - [ ] 1.5 Green: existing analysis + orchestrator tests still pass; new SourceRef tests pass.
 
+> ⚠️ **Open decision blocks §2 and §5.3** — the spreadsheet shape (one workbook per category vs. one
+> workbook with multiple named tabs) and the sheet→category mapping rule are **not yet decided**. See
+> design.md Open Questions + `docs/gap-project.md` §2.12 / §3.11. Confirm the convention with the client
+> before implementing the merge (§2) and the Absenteeism parser (§5.3).
+
 ## 2. Data Collector merge (TDD)
 
 - [ ] 2.1 Add `tests/AiPMOInsight.Application.Tests/Analysis/DataCollectorMergeTests.cs` (red): parsing two uploads produces one `CollectedData` whose category lists are the union of both files' records; each record's `SourceRef.UploadId` matches the file it came from; no cross-file dedup.
