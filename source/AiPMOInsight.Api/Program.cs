@@ -55,6 +55,10 @@ var jwt = builder.Configuration.GetSection(JwtOptions.SectionName).Get<JwtOption
 builder.Services.Configure<JwtOptions>(builder.Configuration.GetSection(JwtOptions.SectionName));
 builder.Services.AddScoped<ITokenService, TokenService>();
 
+// LLM runtime settings (model-swap seam). Inert this slice — only the fake client is registered —
+// but bound now so the real adapter next change is a config-only swap. API key via Llm__ApiKey env.
+builder.Services.Configure<LlmOptions>(builder.Configuration.GetSection(LlmOptions.SectionName));
+
 builder.Services
     .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>

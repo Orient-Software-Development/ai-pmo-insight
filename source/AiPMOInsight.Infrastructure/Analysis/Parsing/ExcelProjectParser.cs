@@ -1,0 +1,137 @@
+using System.Globalization;
+using AiPMOInsight.Application.Features.Analysis.Model;
+using ClosedXML.Excel;
+
+namespace AiPMOInsight.Infrastructure.Analysis.Parsing;
+
+/// <summary>
+/// Parses a dummy Orbit-shaped Excel workbook (ClosedXML) into typed records. Reads the sheets that
+/// are present — Projects, Milestones, Budget, Resources, RAID — mapping columns by header name so
+/// column order is not load-bearing. Every record carries a <see cref="SourceRef"/> pointing at its
+/// sheet + row so downstream findings can cite it.
+/// </summary>
+internal static class ExcelProjectParser
+{
+    public static CollectedData Parse(byte[] content)
+    {
+        using var stream = new MemoryStream(content);
+        using var workbook = new XLWorkbook(stream);
+
+        return new CollectedData
+        {
+            Projects = ReadProjects(workbook),
+            Milestones = ReadMilestones(workbook),
+            BudgetLines = ReadBudget(workbook),
+            Assignments = ReadResources(workbook),
+            RaidItems = ReadRaid(workbook),
+            Minutes = [],
+        };
+    }
+
+    private static List<ProjectRecord> ReadProjects(XLWorkbook wb) =>
+        ReadSheet(wb, "Projects", (cell, source) => new ProjectRecord
+        {
+            Key = cell("Key"),
+            Name = cell("Name"),
+            PercentComplete = ParseDouble(cell("PercentComplete")),
+            LastUpdated = ParseDate(cell("LastUpdated")),
+            Source = source,
+        });
+
+    private static List<MilestoneRecord> ReadMilestones(XLWorkbook wb) =>
+        ReadSheet(wb, "Milestones", (cell, source) => new MilestoneRecord
+        {
+            ProjectKey = cell("ProjectKey"),
+            Name = cell("Name"),
+            DueDate = ParseDate(cell("DueDate")),
+            CompletedDate = ParseDate(cell("CompletedDate")),
+            Status = NullIfBlank(cell("Status")),
+            DependsOn = NullIfBlank(cell("DependsOn")),
+            Source = source,
+        });
+
+    private static List<BudgetLineRecord> ReadBudget(XLWorkbook wb) =>
+        ReadSheet(wb, "Budget", (cell, source) => new BudgetLineRecord
+        {
+            ProjectKey = cell("ProjectKey"),
+            Category = cell("Category"),
+            Budget = ParseDecimal(cell("Budget")),
+            Forecast = ParseDecimal(cell("Forecast")),
+            Actual = ParseDecimal(cell("Actual")),
+            Source = source,
+        });
+
+    private static List<AssignmentRecord> ReadResources(XLWorkbook wb) =>
+        ReadSheet(wb, "Resources", (cell, source) => new AssignmentRecord
+        {
+            ProjectKey = cell("ProjectKey"),
+            Person = cell("Person"),
+            Role = cell("Role"),
+            AllocationPercent = ParseDouble(cell("AllocationPercent")) ?? 0,
+            CapacityPercent = ParseDouble(cell("CapacityPercent")) ?? 100,
+            OnLeave = ParseBool(cell("OnLeave")),
+            Source = source,
+        });
+
+    private static List<RaidItemRecord> ReadRaid(XLWorkbook wb) =>
+        ReadSheet(wb, "RAID", (cell, source) => new RaidItemRecord
+        {
+            ProjectKey = cell("ProjectKey"),
+            Type = ParseRaidType(cell("Type")),
+            Description = cell("Description"),
+            Severity = NullIfBlank(cell("Severity")),
+            Status = NullIfBlank(cell("Status")),
+            Source = source,
+        });
+
+    /// <summary>
+    /// Reads every data row of a sheet (if present) via a header-name column accessor, building one
+    /// record per row with a sheet!row source locator.
+    /// </summary>
+    private static List<T> ReadSheet<T>(XLWorkbook wb, string sheetName, Func<Func<string, string>, SourceRef, T> map)
+    {
+        var results = new List<T>();
+        if (!wb.TryGetWorksheet(sheetName, out var ws))
+        {
+            return results;
+        }
+
+        var columns = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
+        foreach (var headerCell in ws.Row(1).CellsUsed())
+        {
+            columns[headerCell.GetString().Trim()] = headerCell.Address.ColumnNumber;
+        }
+
+        foreach (var row in ws.RowsUsed().Skip(1))
+        {
+            string Cell(string header) =>
+                columns.TryGetValue(header, out var col) ? row.Cell(col).GetString().Trim() : string.Empty;
+
+            var source = new SourceRef(
+                Locator: $"{sheetName}!row{row.RowNumber()}",
+                StructuredExcerpt: $"sheet={sheetName};row={row.RowNumber()}");
+
+            results.Add(map(Cell, source));
+        }
+
+        return results;
+    }
+
+    private static string? NullIfBlank(string value) => string.IsNullOrWhiteSpace(value) ? null : value;
+
+    private static double? ParseDouble(string value) =>
+        double.TryParse(value, NumberStyles.Any, CultureInfo.InvariantCulture, out var d) ? d : null;
+
+    private static decimal ParseDecimal(string value) =>
+        decimal.TryParse(value, NumberStyles.Any, CultureInfo.InvariantCulture, out var d) ? d : 0m;
+
+    private static DateTimeOffset? ParseDate(string value) =>
+        DateTimeOffset.TryParse(value, CultureInfo.InvariantCulture, DateTimeStyles.AssumeUniversal, out var dt)
+            ? dt
+            : null;
+
+    private static bool ParseBool(string value) => bool.TryParse(value, out var b) && b;
+
+    private static RaidType ParseRaidType(string value) =>
+        Enum.TryParse<RaidType>(value, ignoreCase: true, out var type) ? type : RaidType.Risk;
+}

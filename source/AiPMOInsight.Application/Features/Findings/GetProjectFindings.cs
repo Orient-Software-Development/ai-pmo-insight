@@ -5,31 +5,69 @@ using AiPMOInsight.Domain.Findings;
 namespace AiPMOInsight.Application.Features.Findings;
 
 /// <summary>
-/// Vertical slice: the Level-2 (individual project status) read path. Returns the findings recorded
-/// for a project key, each with its citation. Query + handler colocated.
+/// Vertical slice: the Level-2 (individual project status) read path. Returns the <b>latest analysis
+/// run</b> for a project key, partitioned into four sections — analytic findings, the narrative, the
+/// challenge critique, and the review — each finding with its citation and provenance. Prior runs
+/// remain persisted (re-analysis appends) but the Level-2 view shows the current picture. An
+/// unanalyzed key returns empty sections (200).
 /// </summary>
 public static class GetProjectFindings
 {
-    public sealed record Query(string ProjectKey) : IRequest<IReadOnlyList<Result>>;
+    public sealed record Query(string ProjectKey) : IRequest<Result>;
 
-    public sealed record Result(Guid Id, string ProjectKey, string Summary, CitationResult Citation, DateTimeOffset CreatedAt);
+    public sealed record Result(
+        string ProjectKey,
+        IReadOnlyList<FindingView> Findings,
+        IReadOnlyList<FindingView> Narrative,
+        IReadOnlyList<FindingView> Challenge,
+        IReadOnlyList<FindingView> Review);
 
-    public sealed record CitationResult(Guid UploadId, string Locator);
+    public sealed record FindingView(
+        Guid Id,
+        string ProjectKey,
+        string Summary,
+        string Kind,
+        string Confidence,
+        string ProducingAgent,
+        string? PromptVersion,
+        Guid RunId,
+        CitationView Citation,
+        DateTimeOffset CreatedAt);
 
-    internal sealed class Handler(IFindingRepository repository) : IRequestHandler<Query, IReadOnlyList<Result>>
+    public sealed record CitationView(Guid UploadId, string Locator, string? StructuredExcerpt, string? TextSnippet);
+
+    internal sealed class Handler(IFindingRepository repository) : IRequestHandler<Query, Result>
     {
-        public async Task<IReadOnlyList<Result>> Handle(Query request, CancellationToken cancellationToken)
+        public async Task<Result> Handle(Query request, CancellationToken cancellationToken)
         {
-            var findings = await repository.GetByProjectKeyAsync(request.ProjectKey, cancellationToken);
+            var all = await repository.GetByProjectKeyAsync(request.ProjectKey, cancellationToken);
+            if (all.Count == 0)
+            {
+                return new Result(request.ProjectKey, [], [], [], []);
+            }
 
-            return findings
-                .Select(f => new Result(
-                    f.Id,
-                    f.ProjectKey,
-                    f.Summary,
-                    new CitationResult(f.Citation.UploadId, f.Citation.Locator),
-                    f.CreatedAt))
-                .ToList();
+            // Show the latest run only (re-analysis appends; prior runs stay persisted).
+            var latestRunId = all.MaxBy(f => f.CreatedAt)!.RunId;
+            var latest = all.Where(f => f.RunId == latestRunId).Select(ToView).ToList();
+
+            return new Result(
+                request.ProjectKey,
+                latest.Where(f => f.Kind == nameof(FindingKind.Analysis)).ToList(),
+                latest.Where(f => f.Kind == nameof(FindingKind.Narrative)).ToList(),
+                latest.Where(f => f.Kind == nameof(FindingKind.Challenge)).ToList(),
+                latest.Where(f => f.Kind == nameof(FindingKind.Review)).ToList());
         }
+
+        private static FindingView ToView(Finding f) =>
+            new(f.Id,
+                f.ProjectKey,
+                f.Summary,
+                f.Kind.ToString(),
+                f.Confidence.ToString(),
+                f.ProducingAgent,
+                f.PromptVersion,
+                f.RunId,
+                new CitationView(f.Citation.UploadId, f.Citation.Locator, f.Citation.StructuredExcerpt, f.Citation.TextSnippet),
+                f.CreatedAt);
     }
 }

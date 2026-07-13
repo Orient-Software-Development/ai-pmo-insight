@@ -10,5 +10,8 @@ public interface IFindingRepository
 {
     Task AddAsync(Finding finding, CancellationToken cancellationToken);
 
+    /// <summary>Persists a whole run's findings in one unit of work.</summary>
+    Task AddRangeAsync(IEnumerable<Finding> findings, CancellationToken cancellationToken);
+
     Task<IReadOnlyList<Finding>> GetByProjectKeyAsync(string projectKey, CancellationToken cancellationToken);
 }

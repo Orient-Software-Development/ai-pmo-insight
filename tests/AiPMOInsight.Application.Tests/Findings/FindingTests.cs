@@ -6,10 +6,33 @@ namespace AiPMOInsight.Application.Tests.Findings;
 
 public class FindingTests
 {
+    private static Finding Create(
+        string projectKey = "PRJ-1",
+        string summary = "summary",
+        Citation? citation = null,
+        Guid? runId = null,
+        string producingAgent = "test",
+        FindingKind kind = FindingKind.Analysis,
+        Confidence confidence = Confidence.Medium,
+        string? promptVersion = null) =>
+        Finding.Create(
+            projectKey,
+            summary,
+            citation ?? Citation.Create(Guid.NewGuid(), "file.csv#row1"),
+            DateTimeOffset.UtcNow,
+            runId ?? Guid.NewGuid(),
+            producingAgent,
+            kind,
+            confidence,
+            promptVersion);
+
     [Fact]
     public void Create_requires_a_citation()
     {
-        var act = () => Finding.Create("DUMMY-001", "summary", citation: null!, DateTimeOffset.UtcNow);
+        // Call the factory directly so the null citation is not coalesced away by the helper.
+        var act = () => Finding.Create(
+            "PRJ-1", "summary", citation: null!, DateTimeOffset.UtcNow,
+            runId: Guid.NewGuid(), producingAgent: "test", kind: FindingKind.Analysis, confidence: Confidence.Medium);
 
         act.Should().Throw<ArgumentNullException>();
     }
@@ -17,21 +40,52 @@ public class FindingTests
     [Fact]
     public void Create_rejects_blank_project_key()
     {
-        var citation = Citation.Create(Guid.NewGuid(), "file.csv#row1");
-
-        var act = () => Finding.Create("  ", "summary", citation, DateTimeOffset.UtcNow);
+        var act = () => Create(projectKey: "  ");
 
         act.Should().Throw<ArgumentException>();
     }
 
     [Fact]
-    public void Citation_rejects_empty_upload_id_and_locator()
+    public void Create_rejects_blank_producing_agent()
     {
-        var emptyUpload = () => Citation.Create(Guid.Empty, "loc");
-        var emptyLocator = () => Citation.Create(Guid.NewGuid(), "  ");
+        var act = () => Create(producingAgent: "  ");
 
-        emptyUpload.Should().Throw<ArgumentException>();
-        emptyLocator.Should().Throw<ArgumentException>();
+        act.Should().Throw<ArgumentException>();
+    }
+
+    [Fact]
+    public void Create_rejects_empty_run_id()
+    {
+        var act = () => Create(runId: Guid.Empty);
+
+        act.Should().Throw<ArgumentException>();
+    }
+
+    [Fact]
+    public void Create_carries_provenance_through()
+    {
+        var runId = Guid.NewGuid();
+
+        var finding = Create(
+            runId: runId,
+            producingAgent: "Financial",
+            kind: FindingKind.Narrative,
+            confidence: Confidence.High,
+            promptVersion: "sha256:abc123");
+
+        finding.RunId.Should().Be(runId);
+        finding.ProducingAgent.Should().Be("Financial");
+        finding.Kind.Should().Be(FindingKind.Narrative);
+        finding.Confidence.Should().Be(Confidence.High);
+        finding.PromptVersion.Should().Be("sha256:abc123");
+    }
+
+    [Fact]
+    public void Create_defaults_prompt_version_to_null_for_deterministic_findings()
+    {
+        var finding = Create();
+
+        finding.PromptVersion.Should().BeNull();
     }
 
     [Fact]
@@ -40,7 +94,7 @@ public class FindingTests
         var uploadId = Guid.NewGuid();
         var citation = Citation.Create(uploadId, "file.csv#row1");
 
-        var finding = Finding.Create("DUMMY-001", "summary", citation, DateTimeOffset.UtcNow);
+        var finding = Create(citation: citation);
 
         finding.Citation.UploadId.Should().Be(uploadId);
         finding.Citation.Locator.Should().Be("file.csv#row1");

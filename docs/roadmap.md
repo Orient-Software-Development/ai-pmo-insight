@@ -6,7 +6,7 @@ Status of the POC build. Grounds truth against the code in this repo, the PRD
 
 **Legend:** ✅ done · 🟡 partial / stubbed · ⬜ not started · 🔒 out of POC scope
 
-> Last reviewed: 2026-07-09.
+> Last reviewed: 2026-07-10.
 
 ---
 
@@ -41,12 +41,11 @@ The current slice. Proves the *architecture* end-to-end; the *intelligence* is d
 - ✅ Minimal read-only React view — `components/ProjectFindings.jsx`
 - ✅ Dummy Orbit-shaped sample fixtures — `docs/samples/` (one file per input category)
 
-**Stubbed on purpose (this is the *only* fake part of the flow):**
-- 🟡 Analysis logic — emits **one hard-coded finding** grouped under `DUMMY-001`; no parsing,
-  no LLM (`AnalyzeUpload.cs`). File content is stored but not interpreted.
-
-**Not yet in this slice:**
-- ⬜ Golden-file / integration test asserting fixture upload → cited finding on the read endpoint
+**Superseded by Phase 3 (`add-analysis-agent-pipeline`):**
+- ✅ The `DUMMY-001` hard-coded-finding stub is gone — `AnalyzeUpload` now drives the real
+  orchestrator, and `projectKey` derives from the parsed source (deterministic `upload:{id}` fallback).
+- ✅ Integration test asserting fixture upload → analyze → cited findings + narrative/challenge/review
+  on the read endpoint (`FindingsFlowTests.cs`).
 
 ---
 
@@ -81,13 +80,24 @@ The suggested 9-agent pipeline (PRD marks the exact split as "Assumption but not
 > the **real `ILlmClient` adapter is the next change** (after the runtime is chosen at kick-off,
 > gap §3.1). Data flow: `#1 → #2 → parallel(#3,#4,#5,#6) → #7 → #8 → #9 → persist`.
 
-- ⬜ LLM client abstraction (runtime TBD: Claude Agent SDK vs. Semantic Kernel)
-- ⬜ Orchestrator + per-skill prompt registry (one orchestrator + N skills, not N services)
-- ⬜ Agents: Data Collector, Data Quality, Status, Risk & Issue, Financial, Resource, Narrative
-- ⬜ **Challenge** + **Review** agents (the adversarial trust layer — PRD user story #9)
-- ⬜ Citations propagate through every agent-produced finding
-- ⬜ LLM-over-text path for unstructured meeting minutes
-- ⬜ Duplicate-identity detection surfaced for PMO confirmation (PRD user story #2)
+**Shipped this slice (`add-analysis-agent-pipeline`) — deterministic layer + trust layer via `FakeLlmClient`:**
+- 🟡 `ILlmClient` port defined; only `FakeLlmClient` (fixture responses) registered — no API key
+  needed. **Real runtime adapter is the next change** (after §3.1; runtime TBD: Claude Agent SDK vs. Semantic Kernel)
+- ✅ `AnalysisOrchestrator` + per-skill prompt registry (prompts on disk, **content-hash versioned**;
+  one orchestrator + N skills, not N services). Data flow `#1 → #2 → parallel(#3,#4,#5,#6) → #7 → #8 → #9 → persist`
+- ✅ Deterministic agents (pure C#, no LLM): Data Collector (#1), Data Quality (#2 + confidence signal),
+  Status (#3), Financial (#5), Resource (#6)
+- ✅ Narrative (#7) — hybrid template-first, LLM fallback via the fake client
+- ✅ **Challenge** (#8) + **Review** (#9) agents (the adversarial trust layer — PRD user story #9) — via fake client
+- ✅ Citations + provenance (producing agent, confidence, kind, prompt version, run id) propagate
+  through every finding; re-analysis **appends** under a new `RunId` (prior findings retained)
+- 🟡 Risk & Issue (#4) LLM-over-text path for meeting minutes — wired via the fake client (fires only
+  when minutes are present; real extraction quality pending the real adapter)
+
+**Deferred to later changes:**
+- ⬜ Hardened real-Orbit parsers (gap §1.2 — #1 targets dummy fixtures for now)
+- ⬜ Evaluation / snapshot harness for LLM output quality (gap §2.7)
+- ⬜ Duplicate-identity detection surfaced for PMO confirmation (PRD user story #2; gap §1.7)
 
 ---
 

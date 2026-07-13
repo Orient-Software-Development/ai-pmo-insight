@@ -17,7 +17,7 @@ The walking skeleton (`add-ingest-findings-skeleton`) proved the architecture: u
 - **#6 Resource** — allocation variance, capacity pressure, missing roles, concentration × absence (math).
 
 **Trust + hybrid layer — wired via `FakeLlmClient` this slice (shape real, behavior stubbed):**
-- **#4 Risk & Issue (hybrid)** — deterministic RAID-record filtering **+** LLM extraction of risks from unstructured meeting minutes.
+- **#4 Risk & Issue (hybrid)** — deterministic RAID-record filtering **+** LLM extraction of risks from unstructured meeting minutes. The LLM path fires **only when minutes are present**; with no minutes, #4 is fully deterministic (0 LLM calls).
 - **#7 Narrative (LLM, hybrid)** — prose synthesis: overall status + recommendation (owner / deadline / rationale). **Template-first**: ~60–70% of narratives fit recurring shapes (single-signal RED, two-signal RED with clear primary/secondary, DQ-driven "Needs PM Review", routine GREEN) rendered deterministically from templates; the LLM handles the ~15% genuinely complex cases (multi-signal cross-referencing, minute-extracted signals). Cuts LLM calls without losing synthesis quality.
 - **#8 Challenge (LLM, hybrid)** — adversarial critique of findings + narrative (weak claims, unsupported numbers, alt interpretations, missing caveats) with deterministic checks for broken evidence links / stale data. Reads #7 + findings.
 - **#9 Review (LLM, hybrid)** — predicts stakeholder questions **grouped by audience** (executive / sponsor / data lead / peer PM). Reads #7 + #8 + findings. **Not a keep/drop gate — all outputs persist.**
@@ -44,7 +44,7 @@ The walking skeleton (`add-ingest-findings-skeleton`) proved the architecture: u
 - **Domain** — additive `Finding` fields (producing agent, confidence, kind, `PromptVersion`, `RunId`); **`Citation` extended** (structured excerpt + text snippet, nullable). Typed records live in Application as run-scoped models, not EF entities. `Finding.Create` still enforces the citation invariant.
 - **Configuration** — an `Llm` section (provider, model id, per-analysis token budget) + API key via env/secret only (mirrors `Jwt`); unused by the fake but wired for the next change.
 - **API / Client** — no new endpoints; `POST /api/analyze/{uploadId}` deepens (same contract); `GET /api/projects/{projectKey}` and the React Level-2 view gain the narrative/challenge/review sections.
-- **Dependencies** — OpenXml SDK (+ EPPlus — **flagged: EPPlus is commercial-licensed since v5; ClosedXML is a license-friendly alternative**, decided in tasks). **No LLM runtime package this slice** (fake only).
+- **Dependencies** — **ClosedXML (MIT)** for Excel (decision: EPPlus rejected on commercial licensing since v5; raw OpenXml too low-level), `System.Xml` for Orbit XML, DocumentFormat.OpenXml for `.docx` minutes. **No LLM runtime package this slice** (fake only).
 - **Tests** — deterministic agents unit-tested directly (no LLM); orchestrator control-flow + citation propagation against `FakeLlmClient`; integration test via `TestWebAppFactory` (fake) asserting fixture upload → analyze → findings + narrative/challenge/review on the read endpoint. Live LLM content never asserted in CI (evaluation/snapshot harness is a later change, gap §2.7).
 - **Docs** — `docs/roadmap.md` (Phase 3 in progress, deterministic-first + fake LLM this slice; real adapter next) and `docs/gap-project.md` (§1.1 in flight; §2.1–§2.3 + §2.12 resolved here; real parsers §1.2 and eval harness §2.7 still deferred).
 

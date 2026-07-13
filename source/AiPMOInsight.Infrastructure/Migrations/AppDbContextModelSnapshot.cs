@@ -29,15 +29,42 @@ namespace AiPMOInsight.Infrastructure.Migrations
                         .HasColumnType("uuid")
                         .HasColumnName("id");
 
+                    b.Property<string>("Confidence")
+                        .IsRequired()
+                        .HasMaxLength(10)
+                        .HasColumnType("character varying(10)")
+                        .HasColumnName("confidence");
+
                     b.Property<DateTimeOffset>("CreatedAt")
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("created_at");
+
+                    b.Property<string>("Kind")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)")
+                        .HasColumnName("kind");
+
+                    b.Property<string>("ProducingAgent")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("producing_agent");
 
                     b.Property<string>("ProjectKey")
                         .IsRequired()
                         .HasMaxLength(200)
                         .HasColumnType("character varying(200)")
                         .HasColumnName("project_key");
+
+                    b.Property<string>("PromptVersion")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)")
+                        .HasColumnName("prompt_version");
+
+                    b.Property<Guid>("RunId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("run_id");
 
                     b.Property<string>("Summary")
                         .IsRequired()
@@ -47,6 +74,8 @@ namespace AiPMOInsight.Infrastructure.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("ProjectKey");
+
+                    b.HasIndex("RunId");
 
                     b.ToTable("findings", (string)null);
                 });
@@ -244,6 +273,16 @@ namespace AiPMOInsight.Infrastructure.Migrations
                                 .HasMaxLength(500)
                                 .HasColumnType("character varying(500)")
                                 .HasColumnName("citation_locator");
+
+                            b1.Property<string>("StructuredExcerpt")
+                                .HasMaxLength(500)
+                                .HasColumnType("character varying(500)")
+                                .HasColumnName("citation_structured_excerpt");
+
+                            b1.Property<string>("TextSnippet")
+                                .HasMaxLength(2000)
+                                .HasColumnType("character varying(2000)")
+                                .HasColumnName("citation_text_snippet");
 
                             b1.Property<Guid>("UploadId")
                                 .HasColumnType("uuid")

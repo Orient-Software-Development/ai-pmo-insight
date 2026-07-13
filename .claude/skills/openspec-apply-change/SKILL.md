@@ -67,14 +67,17 @@ Implement tasks from an OpenSpec change.
    - Remaining tasks overview
    - Dynamic instruction from CLI
 
-6. **Implement tasks (loop until done or blocked)**
+6. **Implement tasks test-first — TDD red/green/refactor (loop until done or blocked)**
 
-   For each pending task:
-   - Show which task is being worked on
-   - Make the code changes required
-   - Keep changes minimal and focused
-   - Mark task complete in the tasks file: `- [ ]` → `- [x]`
-   - Continue to next task
+   Drive every task with tests **before** code. If the project has a dedicated TDD skill/protocol, follow it for the red-green-refactor mechanics. For each pending task:
+   - Show which task is being worked on.
+   - **Red** — write the test(s) that pin the task's expected behavior FIRST, derived from the change's specs/scenarios and design. Run them and watch them fail for the *right* reason (behavior missing, not an unintended compile error).
+   - **Green** — write the minimal code to make those tests pass. Keep changes focused.
+   - **Refactor** — clean up the code and tests while keeping them green.
+   - Confirm the suite is green, then mark the task complete: `- [ ]` → `- [x]`.
+   - Continue to next task.
+
+   **Test-first exceptions:** some tasks have no directly testable behavior of their own (config sections, DI/wiring, EF migrations, prompt/asset files, docs). For these, extend the nearest test that exercises the behavior they enable (or an integration test) rather than inventing a hollow unit test; if genuinely untestable, say so, implement directly, and still verify the suite stays green.
 
    **Pause if:**
    - Task is unclear → ask for clarification
@@ -96,11 +99,13 @@ Implement tasks from an OpenSpec change.
 ## Implementing: <change-name> (schema: <schema-name>)
 
 Working on task 3/7: <task description>
-[...implementation happening...]
+  🔴 Red — wrote failing test(s): <what they assert>
+  🟢 Green — minimal code, tests pass
+  🔧 Refactor — <cleanup, still green>
 ✓ Task complete
 
 Working on task 4/7: <task description>
-[...implementation happening...]
+...
 ✓ Task complete
 ```
 
@@ -144,6 +149,8 @@ What would you like to do?
 **Guardrails**
 - Keep going through tasks until done or blocked
 - Always read context files before starting (from the apply instructions output)
+- **Work test-first**: write failing tests before implementation for each task with observable behavior (red → green → refactor); only skip the literal test for non-behavioral tasks (config, wiring, migrations, asset files, docs), and note why
+- **Keep the suite green after each task** before moving to the next; don't mark a task `- [x]` until its tests pass
 - If task is ambiguous, pause and ask before implementing
 - If implementation reveals issues, pause and suggest artifact updates
 - Keep code changes minimal and scoped to each task

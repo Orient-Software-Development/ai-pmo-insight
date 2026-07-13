@@ -16,6 +16,11 @@
     <ProjectReference Include="..\AiPMOInsight.Domain\AiPMOInsight.Domain.csproj" />
   </ItemGroup>
 
+  <!-- LLM agent prompts: embedded so the registry can version them by content hash at runtime. -->
+  <ItemGroup>
+    <EmbeddedResource Include="Features\Analysis\Prompts\*.prompt.md" />
+  </ItemGroup>
+
   <ItemGroup>
     <InternalsVisibleTo Include="AiPMOInsight.Application.Tests" />
   </ItemGroup>

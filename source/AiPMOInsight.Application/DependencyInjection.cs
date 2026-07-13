@@ -1,5 +1,8 @@
 using System.Reflection;
 using Microsoft.Extensions.DependencyInjection;
+using AiPMOInsight.Application.Features.Analysis;
+using AiPMOInsight.Application.Features.Analysis.Agents;
+using AiPMOInsight.Application.Features.Analysis.Prompts;
 using AiPMOInsight.Application.Messaging;
 
 namespace AiPMOInsight.Application;
@@ -30,6 +33,21 @@ public static class DependencyInjection
 
         // Pipeline behaviors run outermost-first in registration order.
         services.AddTransient(typeof(IPipelineBehavior<,>), typeof(LoggingBehavior<,>));
+
+        // Analysis pipeline: the prompt registry (content-hash versioned), the 9 agent skills, and
+        // the orchestrator. The LLM port (ILlmClient) and parser port (IUploadParser) are supplied
+        // by Infrastructure.
+        services.AddSingleton(PromptRegistry.FromEmbeddedResources());
+        services.AddScoped<DataCollectorSkill>();
+        services.AddScoped<DataQualitySkill>();
+        services.AddScoped<StatusSkill>();
+        services.AddScoped<RiskAndIssueSkill>();
+        services.AddScoped<FinancialSkill>();
+        services.AddScoped<ResourceSkill>();
+        services.AddScoped<NarrativeSkill>();
+        services.AddScoped<ChallengeSkill>();
+        services.AddScoped<ReviewSkill>();
+        services.AddScoped<AnalysisOrchestrator>();
 
         return services;
     }

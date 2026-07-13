@@ -58,7 +58,7 @@ The system SHALL define an `ILlmClient` port in Application that abstracts the L
 
 ### Requirement: Risk & Issue agent combines deterministic RAID with LLM minutes extraction
 
-The Risk & Issue agent (#4) SHALL be hybrid: it SHALL filter the deterministic RAID records in code, and it SHALL extract risks and issues from unstructured meeting-minute content via the `ILlmClient` (fake in this slice). Findings from either path SHALL carry a citation to their source record or minutes locator.
+The Risk & Issue agent (#4) SHALL be hybrid: it SHALL filter the deterministic RAID records in code, and it SHALL extract risks and issues from unstructured meeting-minute content via the `ILlmClient` (fake in this slice). The LLM path SHALL be invoked **only when the upload contains meeting-minute content** — when no minutes are present, #4 SHALL run purely deterministically and make no LLM call. Findings from either path SHALL carry a citation to their source record or minutes locator.
 
 #### Scenario: Risks extracted from meeting minutes
 
@@ -69,6 +69,11 @@ The Risk & Issue agent (#4) SHALL be hybrid: it SHALL filter the deterministic R
 
 - **WHEN** the upload contains structured RAID records
 - **THEN** the Risk & Issue agent produces findings from them deterministically, independent of the LLM path
+
+#### Scenario: No minutes means no LLM call
+
+- **WHEN** the upload contains no meeting-minute content
+- **THEN** the Risk & Issue agent produces only its deterministic RAID findings and makes no LLM call
 
 ### Requirement: Narrative synthesis (hybrid: template-first, LLM fallback)
 
