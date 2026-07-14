@@ -27,7 +27,10 @@ internal sealed class EfFindingRepository(AppDbContext db) : IFindingRepository
             .OrderBy(f => f.CreatedAt)
             .ToListAsync(cancellationToken);
 
-    // Stub — implemented in task 1.6 (kept compiling so the RED test fails on assertion, not build).
-    public Task<IReadOnlyList<Finding>> GetByUploadIdAsync(Guid uploadId, CancellationToken cancellationToken) =>
-        Task.FromResult<IReadOnlyList<Finding>>([]);
+    public async Task<IReadOnlyList<Finding>> GetByUploadIdAsync(Guid uploadId, CancellationToken cancellationToken) =>
+        await db.Findings
+            .AsNoTracking()
+            .Where(f => f.Citation.UploadId == uploadId)
+            .OrderBy(f => f.CreatedAt)
+            .ToListAsync(cancellationToken);
 }

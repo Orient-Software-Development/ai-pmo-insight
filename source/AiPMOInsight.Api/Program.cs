@@ -182,6 +182,7 @@ app.MapAuthEndpoints();
 app.MapProfileEndpoints();
 app.MapIngestEndpoints();
 app.MapFindingsEndpoints();
+app.MapUploadHistoryEndpoints();
 
 
 // SPA client-side routing: serve index.html for unmatched non-API routes.

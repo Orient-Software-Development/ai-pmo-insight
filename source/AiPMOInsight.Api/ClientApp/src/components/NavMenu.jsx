@@ -20,6 +20,7 @@ export function NavMenu() {
         <ul>
           <li><Link to="/">Home</Link></li>
           <li><Link to="/projects">Project findings</Link></li>
+          <li><Link to="/history">History</Link></li>
         </ul>
         <ul>
           {isAuthenticated ? (

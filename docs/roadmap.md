@@ -35,6 +35,9 @@ The current slice. Proves the *architecture* end-to-end; the *intelligence* is d
 - ✅ Analyze endpoint (separate seam, synchronous) — `POST /api/analyze/{uploadId}`
   (`FindingsEndpoints.cs`, `AnalyzeUpload.cs`)
 - ✅ Level-2 read endpoint — `GET /api/projects/{projectKey}` (`GetProjectFindings.cs`)
+- ✅ History read surface — `GET /api/uploads` (list, newest-first) + `GET /api/uploads/{id}/findings`
+  (latest run, four sections); React `/history` page (`add-upload-history`: `GetUploads.cs`,
+  `GetUploadFindings.cs`, `UploadHistoryEndpoints.cs`, `History.jsx`). Shared-workspace, view-only.
 - ✅ Domain: `Finding` aggregate + mandatory `Citation` value object
   (`Finding.cs`, `Citation.cs`) — every finding cites its source upload
 - ✅ Persistence: `Upload` + `Finding` EF entities + `InitialCreate` migration, auto-migrated in Dev

@@ -85,6 +85,10 @@ internal sealed class FindingConfiguration : IEntityTypeConfiguration<Finding>
             citation.Property(c => c.TextSnippet)
                 .HasColumnName("citation_text_snippet")
                 .HasMaxLength(2000);
+
+            // Findings are read by cited upload id (upload-history endpoint) — index it, matching
+            // the by-project-key and by-run access paths above.
+            citation.HasIndex(c => c.UploadId);
         });
 
         builder.Navigation(f => f.Citation).IsRequired();
