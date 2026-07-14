@@ -14,6 +14,8 @@ public class GetProjectFindingsTests
         public Task AddRangeAsync(IEnumerable<Finding> f, CancellationToken cancellationToken) => Task.CompletedTask;
         public Task<IReadOnlyList<Finding>> GetByProjectKeyAsync(string projectKey, CancellationToken cancellationToken) =>
             Task.FromResult<IReadOnlyList<Finding>>(findings.Where(f => f.ProjectKey == projectKey).ToList());
+        public Task<IReadOnlyList<Finding>> GetByUploadIdAsync(Guid uploadId, CancellationToken cancellationToken) =>
+            Task.FromResult<IReadOnlyList<Finding>>(findings.Where(f => f.Citation.UploadId == uploadId).ToList());
     }
 
     private static Finding Make(Guid runId, FindingKind kind, DateTimeOffset createdAt, string agent = "X")

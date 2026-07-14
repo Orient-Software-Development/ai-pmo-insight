@@ -18,4 +18,8 @@ internal sealed class EfUploadRepository(AppDbContext db) : IUploadRepository
         await db.Uploads
             .AsNoTracking()
             .FirstOrDefaultAsync(u => u.Id == uploadId, cancellationToken);
+
+    // Stub — implemented in task 1.3 (kept compiling so the RED test fails on assertion, not build).
+    public Task<IReadOnlyList<Upload>> ListAsync(CancellationToken cancellationToken) =>
+        Task.FromResult<IReadOnlyList<Upload>>([]);
 }

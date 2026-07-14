@@ -26,4 +26,8 @@ internal sealed class EfFindingRepository(AppDbContext db) : IFindingRepository
             .Where(f => f.ProjectKey == projectKey)
             .OrderBy(f => f.CreatedAt)
             .ToListAsync(cancellationToken);
+
+    // Stub — implemented in task 1.6 (kept compiling so the RED test fails on assertion, not build).
+    public Task<IReadOnlyList<Finding>> GetByUploadIdAsync(Guid uploadId, CancellationToken cancellationToken) =>
+        Task.FromResult<IReadOnlyList<Finding>>([]);
 }
