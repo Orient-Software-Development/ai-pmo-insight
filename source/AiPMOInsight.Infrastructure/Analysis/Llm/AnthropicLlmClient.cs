@@ -54,11 +54,14 @@ public sealed class AnthropicLlmClient : ILlmClient
         var model = string.IsNullOrWhiteSpace(_options.ModelId) ? DefaultModel : _options.ModelId;
         var schema = ToSchemaDictionary(JsonSchemaGenerator.For<TOutput>());
 
+        // Adaptive extended thinking is a per-model capability — Haiku 4.5 rejects it outright,
+        // Opus/Sonnet accept and benefit from it. Opt in per agent via
+        // LlmProviderOptions.EnableExtendedThinking so the client works across any Claude model.
         var parameters = new MessageCreateParams
         {
             Model = model,
             MaxTokens = _options.PerAnalysisTokenBudget,
-            Thinking = new ThinkingConfigAdaptive(),
+            Thinking = _options.EnableExtendedThinking == true ? new ThinkingConfigAdaptive() : null,
             OutputConfig = new OutputConfig { Format = new JsonOutputFormat { Schema = schema } },
             Messages = [new() { Role = Role.User, Content = request.Prompt }],
         };

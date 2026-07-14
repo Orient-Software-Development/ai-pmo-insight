@@ -34,4 +34,13 @@ public sealed class LlmProviderOptions
     /// the <c>Llm.Default</c> block ships with a real number in <c>appsettings.json</c>.
     /// </summary>
     public int PerAnalysisTokenBudget { get; init; }
+
+    /// <summary>
+    /// Opt-in to Anthropic's adaptive extended-thinking feature — a per-model capability, not
+    /// something every Claude accepts (Haiku 4.5, for example, rejects the request). Honoured
+    /// only by the Anthropic adapter; ignored by other providers. Merge semantics:
+    /// <c>null</c> on an agent block means "inherit from <see cref="LlmOptions.Default"/>";
+    /// an explicit <c>false</c> disables it even when <see cref="LlmOptions.Default"/> has it on.
+    /// </summary>
+    public bool? EnableExtendedThinking { get; init; }
 }
