@@ -50,10 +50,29 @@ public sealed class AnalysisOrchestrator(
             projectKeys = [$"upload:{upload.Id}"]; // deterministic fallback when no project id is present
         }
 
-        var produced = new List<Finding>();
-        foreach (var projectKey in projectKeys)
+        // Projects are independent — analyse them in parallel with bounded concurrency so wall-clock
+        // doesn't scale linearly with project count. The cap keeps burst pressure off vendor rate
+        // limits; ordering of the returned list is preserved because Task.WhenAll returns results
+        // in the same order as its inputs.
+        const int maxProjectConcurrency = 2;
+        using var throttle = new SemaphoreSlim(maxProjectConcurrency, maxProjectConcurrency);
+        var perProject = await Task.WhenAll(projectKeys.Select(async projectKey =>
         {
-            produced.AddRange(await AnalyzeProjectAsync(run, projectKey, data, cancellationToken));
+            await throttle.WaitAsync(cancellationToken);
+            try
+            {
+                return await AnalyzeProjectAsync(run, projectKey, data, cancellationToken);
+            }
+            finally
+            {
+                throttle.Release();
+            }
+        }));
+
+        var produced = new List<Finding>();
+        foreach (var findings in perProject)
+        {
+            produced.AddRange(findings);
         }
 
         // Reject any uncited finding before persisting (invariant already enforced at creation).

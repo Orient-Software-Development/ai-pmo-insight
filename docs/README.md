@@ -6,6 +6,7 @@ Two kinds of documents live here — keep them separate.
 
 Describe how the system **is**. Long-lived, edited in place as the system changes.
 
+- [analysis-pipeline.md](analysis-pipeline.md) — 9-agent flow, LLM fan-out per project
 - [authentication.md](authentication.md) — JWT-cookie auth design
 - [database.md](database.md) — schema, EF migrations, persistence
 - [gap.md](gap.md)

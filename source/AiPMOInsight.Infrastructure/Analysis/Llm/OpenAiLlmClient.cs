@@ -74,11 +74,17 @@ public sealed class OpenAiLlmClient : ILlmClient
                 jsonSchemaIsStrict: true),
         };
 
+        // OpenAI performs prefix caching automatically on identical initial content across calls;
+        // splitting the stable instructional prompt into a system message keeps the front of the
+        // input identical between per-project calls in one upload so caching kicks in.
+        var messages = string.IsNullOrWhiteSpace(request.SystemPrompt)
+            ? (IReadOnlyList<ChatMessage>)[new UserChatMessage(request.Prompt)]
+            : [new SystemChatMessage(request.SystemPrompt), new UserChatMessage(request.Prompt)];
+
         ChatCompletion completion;
         try
         {
-            var result = await _client.CompleteChatAsync(
-                [new UserChatMessage(request.Prompt)], options, cancellationToken);
+            var result = await _client.CompleteChatAsync(messages, options, cancellationToken);
             completion = result.Value;
         }
         catch (OperationCanceledException)
