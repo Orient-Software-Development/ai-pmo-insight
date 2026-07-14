@@ -95,5 +95,32 @@ with GitHub Actions CI and Claude skills.
 > resolved provider per agent (never the `ApiKey`). `ApiKey` is supplied only via env/secret
 > (`Llm__Default__ApiKey`, `Llm__Agents__<SkillName>__ApiKey`), never committed.
 
+> **Health scoring (Phase 4, `add-health-scoring`):** the per-project **Red/Amber/Green (RAG)** health
+> score ("RAG" here = the health colour, never retrieval-augmented generation). **Findings are
+> self-describing:** an `Analysis` finding now carries a structured `HealthArea`
+> (Schedule/Budget/Risk/Resource/DataQuality) and `Severity` (Green/Amber/Red) — the deterministic
+> agents (#2 DataQuality, #3 Status, #5 Financial, #6 Resource) plus the RAID/minutes agent (#4 Risk)
+> stamp them via `FindingFactory` (surfacing the RAG band they already compute), and `Finding.Create`
+> enforces `Kind==Analysis ⇒ Area+Severity non-null` (mirrors the citation invariant); non-analysis
+> findings leave both null. Enums persist as strings (`area`/`severity` columns,
+> `AddFindingAreaSeverity` migration). **Scoring is a re-runnable query, not a pipeline step**
+> (`Application/Features/HealthScoring`): `HealthScoringService` is pure/deterministic — resolve the
+> **latest run per project** (newest `CreatedAt`, so a run spanning projects still keys per project),
+> group its `Analysis` findings by `Area`, reduce each area to its **worst** severity, map via the
+> configured Severity→number table, take a **weight-normalised weighted average** over the areas
+> present (absent areas don't dilute), and bucket by inclusive lower-bound thresholds → `rawScore` +
+> `rawBucket`. **Overrides set a worst-case floor** (`min Red` beats `min Amber` beats raw; a floor
+> never lowers severity; an absent signal never fires) and the result is **auditable** (`rawScore`,
+> `rawBucket`, ordered `appliedOverrides` naming the tripping finding + citation, `finalBucket`,
+> aggregate `confidence`, per-area breakdown). Very-low aggregate `confidence` → a separate
+> **"Needs PM Review"** flag, orthogonal to the colour. All weights/thresholds/mappings/overrides are
+> **external, validated config** (`HealthScoringOptions`, `HealthScoring` section in appsettings —
+> **JSON, not YAML**; bound + `Validate()`d at startup in `AddInfrastructure`, failing fast and naming
+> the offending key). **The shipped numbers are the PRD's EXAMPLE placeholders** (`IsPlaceholder:true`,
+> header-commented; a startup **warning** log line says so) — replace with PMO-agreed values before
+> go-live. Read surface: `GET /api/projects/{projectKey}/health` (`HealthScoringEndpoints` →
+> `ScoreProject` slice; authorized, view-only; unknown project → 404, findings-but-nothing-scoreable →
+> 200 with a null `Score`). Dashboard consumption of the score is Phase 5.
+
 > **Client framework:** template param `--client-framework` (`-cf`) = `react` (default) or
 > `none` (API only). Driven by `ClientFramework` symbol → computed `UseReact` / `UseApiOnly`,

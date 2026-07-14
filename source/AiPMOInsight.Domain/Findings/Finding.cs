@@ -41,6 +41,19 @@ public sealed class Finding
     /// <summary>Content hash of the prompt used, for LLM-produced findings; null for deterministic agents.</summary>
     public string? PromptVersion { get; init; }
 
+    /// <summary>
+    /// The structured health dimension this finding speaks to — non-null only for
+    /// <see cref="FindingKind.Analysis"/> findings (the health scorer groups on it); null for
+    /// Narrative/Challenge/Review.
+    /// </summary>
+    public HealthArea? Area { get; init; }
+
+    /// <summary>
+    /// The RAG severity this finding carries — non-null only for <see cref="FindingKind.Analysis"/>
+    /// findings; null for Narrative/Challenge/Review. Distinct from <see cref="Confidence"/> (trust).
+    /// </summary>
+    public Severity? Severity { get; init; }
+
     public required DateTimeOffset CreatedAt { get; init; }
 
     public static Finding Create(
@@ -52,7 +65,9 @@ public sealed class Finding
         string producingAgent,
         FindingKind kind,
         Confidence confidence,
-        string? promptVersion = null)
+        string? promptVersion = null,
+        HealthArea? area = null,
+        Severity? severity = null)
     {
         if (string.IsNullOrWhiteSpace(projectKey))
         {
@@ -77,6 +92,28 @@ public sealed class Finding
         // The invariant that makes findings trustworthy: no citation, no finding.
         ArgumentNullException.ThrowIfNull(citation);
 
+        // Analysis findings must be self-describing for the health scorer (mirrors the citation
+        // invariant): an Analysis finding without an Area/Severity would silently drop out of the
+        // weighted score. Non-analysis findings carry neither — force them null regardless of input
+        // so the "only Analysis findings have area/severity" rule holds structurally.
+        if (kind == FindingKind.Analysis)
+        {
+            if (area is null)
+            {
+                throw new ArgumentException("Analysis findings require a health Area.", nameof(area));
+            }
+
+            if (severity is null)
+            {
+                throw new ArgumentException("Analysis findings require a Severity.", nameof(severity));
+            }
+        }
+        else
+        {
+            area = null;
+            severity = null;
+        }
+
         return new Finding
         {
             Id = Guid.NewGuid(),
@@ -88,6 +125,8 @@ public sealed class Finding
             ProducingAgent = producingAgent,
             RunId = runId,
             PromptVersion = promptVersion,
+            Area = area,
+            Severity = severity,
             CreatedAt = now,
         };
     }

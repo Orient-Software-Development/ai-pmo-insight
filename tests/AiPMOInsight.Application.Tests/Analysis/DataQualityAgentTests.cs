@@ -67,4 +67,44 @@ public class DataQualityAgentTests
 
         result.Signal.SourceConsistent.Should().BeFalse();
     }
+
+    [Fact]
+    public async Task Every_flag_carries_the_data_quality_area()
+    {
+        var data = AnalysisFixtures.Data(
+            projects: [AnalysisFixtures.Project(name: "  ", percentComplete: null, lastUpdated: AnalysisFixtures.RunTime.AddDays(-120))]);
+        var slice = AnalysisFixtures.Slice(data: data);
+
+        var result = await Run(slice);
+
+        result.Findings.Should().NotBeEmpty();
+        result.Findings.Should().OnlyContain(f => f.Area == HealthArea.DataQuality && f.Severity != null);
+    }
+
+    [Fact]
+    public async Task Missing_field_flag_is_amber()
+    {
+        var data = AnalysisFixtures.Data(
+            projects: [AnalysisFixtures.Project(name: "  ", lastUpdated: AnalysisFixtures.RunTime.AddDays(-3))]);
+        var slice = AnalysisFixtures.Slice(data: data);
+
+        var result = await Run(slice);
+
+        result.Findings.Should().Contain(f => f.Summary.Contains("name is missing", StringComparison.OrdinalIgnoreCase)
+                                              && f.Severity == Severity.Amber);
+    }
+
+    [Fact]
+    public async Task Inconsistent_source_flag_is_red()
+    {
+        var data = AnalysisFixtures.Data(
+            projects: [AnalysisFixtures.Project(lastUpdated: AnalysisFixtures.RunTime.AddDays(-3))],
+            budgetLines: [new BudgetLineRecord { ProjectKey = "GHOST", Category = "Dev", Budget = 1, Forecast = 1, Actual = 1, Source = AnalysisFixtures.Source }]);
+        var slice = AnalysisFixtures.Slice(data: data);
+
+        var result = await Run(slice);
+
+        result.Findings.Should().Contain(f => f.Summary.Contains("inconsistent", StringComparison.OrdinalIgnoreCase)
+                                              && f.Severity == Severity.Red);
+    }
 }

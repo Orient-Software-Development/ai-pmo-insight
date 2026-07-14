@@ -39,7 +39,7 @@ public sealed class FinancialSkill : IAgentSkill<AnalysisInput, IReadOnlyList<Fi
                 var overPercent = (line.Forecast - line.Budget) / line.Budget * 100m;
                 findings.Add(Finding(slice, confidence,
                     $"'{line.Category}' forecast exceeds budget by {overPercent:F0}% (forecast {line.Forecast:N0} vs budget {line.Budget:N0}).",
-                    line.Source));
+                    line.Source, OverrunBand(overPercent)));
             }
 
             var spendPercent = (double)(line.Actual / line.Budget) * 100;
@@ -47,7 +47,7 @@ public sealed class FinancialSkill : IAgentSkill<AnalysisInput, IReadOnlyList<Fi
             {
                 findings.Add(Finding(slice, confidence,
                     $"'{line.Category}' spend is running ahead of progress ({spendPercent:F0}% of budget spent at {progress:F0}% complete).",
-                    line.Source));
+                    line.Source, Severity.Amber));
             }
         }
 
@@ -57,12 +57,21 @@ public sealed class FinancialSkill : IAgentSkill<AnalysisInput, IReadOnlyList<Fi
             var source = lines.First(l => l.Forecast > l.Budget).Source;
             findings.Add(Finding(slice, confidence,
                 $"Total financial exposure across budget lines is {exposure:N0}.",
-                source));
+                source, Severity.Amber));
         }
 
         return Task.FromResult<IReadOnlyList<Finding>>(findings);
     }
 
-    private static Finding Finding(ProjectSlice slice, Confidence confidence, string summary, SourceRef source) =>
-        FindingFactory.Analysis(slice, "Financial", summary, source, confidence);
+    // A forecast overrun of more than this share of budget is treated as critical (Red). EXAMPLE band
+    // — mirrors the PRD's "forecast overrun >15% → Red"; final numbers are the PMO's.
+    private const decimal CriticalOverrunPercent = 15m;
+
+    /// <summary>RAG severity for a forecast-overrun percentage — the Budget-area signal for scoring.</summary>
+    private static Severity OverrunBand(decimal overPercent) =>
+        overPercent > CriticalOverrunPercent ? Severity.Red : Severity.Amber;
+
+    private static Finding Finding(
+        ProjectSlice slice, Confidence confidence, string summary, SourceRef source, Severity severity) =>
+        FindingFactory.Analysis(slice, "Financial", summary, source, confidence, HealthArea.Budget, severity);
 }

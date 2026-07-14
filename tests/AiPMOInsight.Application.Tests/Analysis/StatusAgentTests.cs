@@ -66,4 +66,36 @@ public class StatusAgentTests
         first.Should().OnlyContain(f => f.Confidence == Confidence.Medium);
         first.Select(f => f.Summary).Should().BeEquivalentTo(second.Select(f => f.Summary));
     }
+
+    [Fact]
+    public async Task Every_finding_carries_the_schedule_area()
+    {
+        var findings = await Run(
+            DataQualitySignal.Clean(),
+            Milestone("Design", "2026-05-01", "2026-06-10"),
+            Milestone("Beta", "2026-06-15", completed: null));
+
+        findings.Should().NotBeEmpty();
+        findings.Should().OnlyContain(f => f.Area == HealthArea.Schedule && f.Severity != null);
+    }
+
+    [Fact]
+    public async Task Major_schedule_variance_is_red()
+    {
+        // Completed ~40 days after the due date → "major" band → Red.
+        var findings = await Run(DataQualitySignal.Clean(), Milestone("Design", "2026-05-01", "2026-06-10"));
+
+        findings.Should().Contain(f => f.Summary.Contains("late", StringComparison.OrdinalIgnoreCase)
+                                       && f.Severity == Severity.Red);
+    }
+
+    [Fact]
+    public async Task Minor_schedule_variance_is_green()
+    {
+        // Completed 3 days after the due date → "minor" band → Green (a variance, but not alarming).
+        var findings = await Run(DataQualitySignal.Clean(), Milestone("Design", "2026-05-01", "2026-05-04"));
+
+        findings.Should().Contain(f => f.Summary.Contains("late", StringComparison.OrdinalIgnoreCase)
+                                       && f.Severity == Severity.Green);
+    }
 }

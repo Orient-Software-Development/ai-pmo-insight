@@ -209,11 +209,27 @@ public class LlmRoutingDependencyInjectionTests
     private static ServiceProvider BuildProvider(
         Dictionary<string, string?> llmSettings, List<string>? capturedLogs = null)
     {
-        // AddInfrastructure requires a connection-string entry to satisfy its DbContext guard;
-        // the value is irrelevant here — none of these tests touch the DB.
+        // AddInfrastructure requires a connection-string entry to satisfy its DbContext guard, and a
+        // valid HealthScoring section to satisfy its startup validation; the values are irrelevant
+        // here — none of these tests touch the DB or scoring.
         var settings = new Dictionary<string, string?>(llmSettings)
         {
             ["ConnectionStrings:AppDb"] = "Host=stub;Database=stub;Username=stub;Password=stub",
+            ["HealthScoring:WeightTotal"] = "100",
+            ["HealthScoring:Weights:Schedule"] = "20",
+            ["HealthScoring:Weights:Budget"] = "30",
+            ["HealthScoring:Weights:Risk"] = "30",
+            ["HealthScoring:Weights:Resource"] = "15",
+            ["HealthScoring:Weights:DataQuality"] = "5",
+            ["HealthScoring:SeverityScores:Green"] = "100",
+            ["HealthScoring:SeverityScores:Amber"] = "70",
+            ["HealthScoring:SeverityScores:Red"] = "30",
+            ["HealthScoring:Thresholds:Green"] = "80",
+            ["HealthScoring:Thresholds:Amber"] = "60",
+            ["HealthScoring:ConfidenceScores:Low"] = "30",
+            ["HealthScoring:ConfidenceScores:Medium"] = "70",
+            ["HealthScoring:ConfidenceScores:High"] = "100",
+            ["HealthScoring:ConfidenceFloor"] = "50",
         };
         var configuration = new ConfigurationBuilder().AddInMemoryCollection(settings).Build();
         var services = new ServiceCollection();

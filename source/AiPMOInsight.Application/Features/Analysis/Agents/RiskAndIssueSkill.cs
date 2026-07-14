@@ -39,7 +39,8 @@ public sealed class RiskAndIssueSkill(ILlmClient llm, PromptRegistry prompts)
         {
             var severity = raid.Severity is null ? string.Empty : $" [{raid.Severity}]";
             findings.Add(FindingFactory.Analysis(
-                slice, Name, $"{raid.Type}{severity}: {raid.Description}", raid.Source, dqConfidence));
+                slice, Name, $"{raid.Type}{severity}: {raid.Description}", raid.Source, dqConfidence,
+                HealthArea.Risk, RiskSeverity(raid.Severity)));
         }
 
         // LLM minutes path — only when minutes exist for this project.
@@ -76,9 +77,27 @@ public sealed class RiskAndIssueSkill(ILlmClient llm, PromptRegistry prompts)
                 producingAgent: Name,
                 kind: FindingKind.Analysis,
                 confidence: confidence,
-                promptVersion: prompt.Version));
+                promptVersion: prompt.Version,
+                area: HealthArea.Risk,
+                severity: RiskSeverity(risk.Severity)));
         }
 
         return findings;
+    }
+
+    /// <summary>
+    /// Maps a free-text risk/issue severity label (from a RAID record or the LLM extraction) to the
+    /// RAG severity the health scorer reads for the Risk area. Unknown/blank labels default to Amber
+    /// (a caution) rather than Green, so an unclassified risk is never silently treated as healthy.
+    /// </summary>
+    private static Severity RiskSeverity(string? label)
+    {
+        var text = label?.Trim().ToLowerInvariant();
+        return text switch
+        {
+            "critical" or "high" or "severe" or "major" => Severity.Red,
+            "low" or "minor" or "informational" or "info" => Severity.Green,
+            _ => Severity.Amber,
+        };
     }
 }

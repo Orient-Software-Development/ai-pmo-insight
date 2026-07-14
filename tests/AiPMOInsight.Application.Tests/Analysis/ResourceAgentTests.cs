@@ -64,4 +64,32 @@ public class ResourceAgentTests
 
         findings.Should().BeEmpty();
     }
+
+    [Fact]
+    public async Task Every_finding_carries_the_resource_area()
+    {
+        var findings = await Run(Assign("Sam", "Engineer", allocation: 130, capacity: 100));
+
+        findings.Should().NotBeEmpty();
+        findings.Should().OnlyContain(f => f.Area == HealthArea.Resource && f.Severity != null);
+    }
+
+    [Fact]
+    public async Task Heavily_over_allocated_person_is_red()
+    {
+        // 30 points over capacity → beyond the critical band → Red.
+        var findings = await Run(Assign("Sam", "Project Manager", allocation: 130, capacity: 100));
+
+        findings.Should().Contain(f => f.Summary.Contains("over-allocated", StringComparison.OrdinalIgnoreCase)
+                                       && f.Severity == Severity.Red);
+    }
+
+    [Fact]
+    public async Task A_person_on_leave_with_a_heavy_allocation_is_red()
+    {
+        var findings = await Run(Assign("Sam", "Project Manager", allocation: 80, onLeave: true));
+
+        findings.Should().Contain(f => f.Summary.Contains("leave", StringComparison.OrdinalIgnoreCase)
+                                       && f.Severity == Severity.Red);
+    }
 }

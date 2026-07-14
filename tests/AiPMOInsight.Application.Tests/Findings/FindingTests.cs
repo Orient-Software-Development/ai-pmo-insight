@@ -14,7 +14,9 @@ public class FindingTests
         string producingAgent = "test",
         FindingKind kind = FindingKind.Analysis,
         Confidence confidence = Confidence.Medium,
-        string? promptVersion = null) =>
+        string? promptVersion = null,
+        HealthArea? area = HealthArea.Schedule,
+        Severity? severity = Severity.Amber) =>
         Finding.Create(
             projectKey,
             summary,
@@ -24,7 +26,9 @@ public class FindingTests
             producingAgent,
             kind,
             confidence,
-            promptVersion);
+            promptVersion,
+            area,
+            severity);
 
     [Fact]
     public void Create_requires_a_citation()
@@ -98,5 +102,44 @@ public class FindingTests
 
         finding.Citation.UploadId.Should().Be(uploadId);
         finding.Citation.Locator.Should().Be("file.csv#row1");
+    }
+
+    [Fact]
+    public void Analysis_finding_carries_area_and_severity()
+    {
+        var finding = Create(kind: FindingKind.Analysis, area: HealthArea.Budget, severity: Severity.Red);
+
+        finding.Area.Should().Be(HealthArea.Budget);
+        finding.Severity.Should().Be(Severity.Red);
+    }
+
+    [Theory]
+    [InlineData(FindingKind.Narrative)]
+    [InlineData(FindingKind.Challenge)]
+    [InlineData(FindingKind.Review)]
+    public void Non_analysis_findings_have_no_area_or_severity(FindingKind kind)
+    {
+        // Even if an area/severity is passed, a non-analysis finding leaves them null (the fields
+        // only describe deterministic Analysis findings).
+        var finding = Create(kind: kind, area: HealthArea.Schedule, severity: Severity.Amber);
+
+        finding.Area.Should().BeNull();
+        finding.Severity.Should().BeNull();
+    }
+
+    [Fact]
+    public void Create_throws_when_analysis_finding_has_no_area()
+    {
+        var act = () => Create(kind: FindingKind.Analysis, area: null, severity: Severity.Amber);
+
+        act.Should().Throw<ArgumentException>();
+    }
+
+    [Fact]
+    public void Create_throws_when_analysis_finding_has_no_severity()
+    {
+        var act = () => Create(kind: FindingKind.Analysis, area: HealthArea.Schedule, severity: null);
+
+        act.Should().Throw<ArgumentException>();
     }
 }

@@ -11,13 +11,20 @@ namespace AiPMOInsight.Application.Features.Analysis.Agents;
 /// </summary>
 internal static class FindingFactory
 {
-    /// <summary>An analytic (Kind = Analysis) finding citing the record it derives from.</summary>
+    /// <summary>
+    /// An analytic (Kind = Analysis) finding citing the record it derives from, self-describing with
+    /// the structured health <paramref name="area"/> and <paramref name="severity"/> the agent
+    /// computed (so the health scorer reads a signal, not prose). Both are mandatory for Analysis
+    /// findings (the <see cref="Finding.Create"/> invariant enforces it).
+    /// </summary>
     public static Finding Analysis(
         ProjectSlice slice,
         string producingAgent,
         string summary,
         SourceRef source,
-        Confidence confidence) =>
+        Confidence confidence,
+        HealthArea area,
+        Severity severity) =>
         Finding.Create(
             projectKey: slice.ProjectKey,
             summary: summary,
@@ -26,5 +33,7 @@ internal static class FindingFactory
             runId: slice.Run.RunId,
             producingAgent: producingAgent,
             kind: FindingKind.Analysis,
-            confidence: confidence);
+            confidence: confidence,
+            area: area,
+            severity: severity);
 }

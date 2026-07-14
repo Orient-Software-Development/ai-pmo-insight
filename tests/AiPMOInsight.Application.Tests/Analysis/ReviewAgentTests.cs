@@ -36,7 +36,8 @@ public class ReviewAgentTests
     {
         var run = AnalysisRun.Start(Guid.NewGuid(), AnalysisFixtures.RunTime);
         return Finding.Create("ALPHA", summary, new SourceRef("x").ToCitation(run.UploadId),
-            run.StartedAt, run.RunId, agent, kind, Confidence.Medium);
+            run.StartedAt, run.RunId, agent, kind, Confidence.Medium,
+            area: HealthArea.Schedule, severity: Severity.Amber);
     }
 
     private static Task<Finding> Run(StubLlm llm, IReadOnlyList<Finding> findings)
