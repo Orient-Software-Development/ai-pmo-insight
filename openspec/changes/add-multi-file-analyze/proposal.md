@@ -7,7 +7,7 @@ The PRD (`docs/prds/poc-ai-pmo-insight.md`) independently lists ~10 input catego
 ## What Changes
 
 - **New batch ingest endpoint** — accept multiple files in one request and return per-file `uploadId`s (existing single-file endpoint remains untouched for back-compat with the current UI and integration tests).
-- **New multi-file analyze endpoint** — accept a set of `uploadId`s belonging to the same project; the orchestrator merges each Data Collector output into ONE `CollectedData` before agent fan-out, so #2–#6 see the union of all inputs (existing single-uploadId endpoint remains).
+- **New multi-file analyze endpoint** — accept a set of `uploadId`s (expected to describe the same project, but not enforced at the boundary — the orchestrator's per-`projectKey` loop groups records regardless); the orchestrator merges each Data Collector output into ONE `CollectedData` before agent fan-out, so #2–#6 see the union of all inputs (existing single-uploadId endpoint remains).
 - **Per-record upload provenance preserved through the merge** — every parsed record already carries a `SourceRef`; the merge additionally preserves which `uploadId` a record came from, so cited findings resolve back to the specific file/sheet/row and not just "one of the uploads".
 - **Tracer-bullet cross-file rule** — Resource (#6) gains one new deterministic finding that fires only when assignments **and** absenteeism data are present in the same run (assignments × absenteeism cross-link by employee → key-person / overlap risk). Proves the whole merge path end-to-end.
 - **React drag-and-drop upload UI** — the current single-input replaces with the wireframe's category-labelled multi-slot drop zone; users upload all their project files at once, then trigger a single analyze.
@@ -20,7 +20,7 @@ Non-breaking: every existing endpoint and integration test continues to work. Mu
 
 ### New Capabilities
 
-- `multi-file-ingest`: The multi-file upload contract, the multi-uploadId analyze endpoint, and the guarantees around per-file provenance preservation through the merge into `CollectedData`. Owns the batch endpoint semantics, the "same-project" precondition, and the failure modes for mismatched or missing uploads.
+- `multi-file-ingest`: The multi-file upload contract, the multi-uploadId analyze endpoint, and the guarantees around per-file provenance preservation through the merge into `CollectedData`. Owns the batch endpoint semantics and the failure modes for mismatched or missing uploads. (A same-project precondition is explicitly out of scope for this change — see the analysis-pipeline requirement and design Open Questions.)
 
 ### Modified Capabilities
 
