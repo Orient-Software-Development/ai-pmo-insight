@@ -14,4 +14,7 @@ public interface IFindingRepository
     Task AddRangeAsync(IEnumerable<Finding> findings, CancellationToken cancellationToken);
 
     Task<IReadOnlyList<Finding>> GetByProjectKeyAsync(string projectKey, CancellationToken cancellationToken);
+
+    /// <summary>All findings citing the given upload, oldest-first. Used by the history read surface.</summary>
+    Task<IReadOnlyList<Finding>> GetByUploadIdAsync(Guid uploadId, CancellationToken cancellationToken);
 }

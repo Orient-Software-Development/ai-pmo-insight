@@ -18,4 +18,10 @@ internal sealed class EfUploadRepository(AppDbContext db) : IUploadRepository
         await db.Uploads
             .AsNoTracking()
             .FirstOrDefaultAsync(u => u.Id == uploadId, cancellationToken);
+
+    public async Task<IReadOnlyList<Upload>> ListAsync(CancellationToken cancellationToken) =>
+        await db.Uploads
+            .AsNoTracking()
+            .OrderByDescending(u => u.UploadedAt)
+            .ToListAsync(cancellationToken);
 }

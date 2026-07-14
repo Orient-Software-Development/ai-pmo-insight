@@ -53,7 +53,8 @@ public sealed class RiskAndIssueSkill(ILlmClient llm, PromptRegistry prompts)
         var request = new LlmRequest
         {
             SkillName = Name,
-            Prompt = $"{prompt.Content}\n\nMINUTES:\n{string.Join("\n", minutes.Select(m => m.Text))}",
+            SystemPrompt = prompt.Content,
+            Prompt = $"MINUTES:\n{string.Join("\n", minutes.Select(m => m.Text))}",
             PromptVersion = prompt.Version,
         };
 

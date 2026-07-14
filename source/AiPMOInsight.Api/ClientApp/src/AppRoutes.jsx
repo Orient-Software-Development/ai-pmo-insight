@@ -1,5 +1,6 @@
 import { Home } from './components/Home';
 import { ProjectFindings } from './components/ProjectFindings';
+import { History } from './components/History';
 import { Login } from './components/Login';
 import { ChangePassword } from './components/ChangePassword';
 import { RequireAuth } from './AuthContext';
@@ -19,6 +20,15 @@ const AppRoutes = [
     element: (
       <RequireAuth>
         <ProjectFindings />
+      </RequireAuth>
+    ),
+  },
+  {
+    // Protected: redirects to /login when signed out.
+    path: '/history',
+    element: (
+      <RequireAuth>
+        <History />
       </RequireAuth>
     ),
   },

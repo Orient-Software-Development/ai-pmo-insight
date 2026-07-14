@@ -1,6 +1,8 @@
 using System.Text;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
+using Npgsql;
+using OpenTelemetry.Logs;
 using OpenTelemetry.Metrics;
 using OpenTelemetry.Resources;
 using OpenTelemetry.Trace;
@@ -107,9 +109,11 @@ builder.Services
     .AddHealthChecks()
     .AddDbContextCheck<AppDbContext>("database", tags: ["ready"]);
 
-// OpenTelemetry: traces + metrics for ASP.NET Core, HttpClient, and the runtime, exported via
-// OTLP. The exporter honors the standard OTEL_EXPORTER_OTLP_* env vars (endpoint defaults to
-// http://localhost:4317); point it at your collector in each environment.
+// OpenTelemetry: traces, metrics, and logs for ASP.NET Core, HttpClient, EF Core, Npgsql, and the
+// runtime, exported via OTLP. The exporter honors the standard OTEL_EXPORTER_OTLP_* env vars
+// (endpoint defaults to http://localhost:4317); point it at your collector in each environment.
+// All three signals share one resource, so a backend (e.g. the LGTM stack in docker-compose)
+// correlates a trace with its own logs.
 builder.Services
     .AddOpenTelemetry()
     .ConfigureResource(resource => resource.AddService(
@@ -118,12 +122,28 @@ builder.Services
     .WithTracing(tracing => tracing
         .AddAspNetCoreInstrumentation()
         .AddHttpClientInstrumentation()
+        // EF Core span per LINQ query. The 1.16+ instrumentation emits the rendered SQL as the
+        // span's db.statement attribute.
+        .AddEntityFrameworkCoreInstrumentation()
+        // Npgsql-level span for the driver's connection/command timing, complementing the EF span.
+        .AddNpgsql()
         .AddOtlpExporter())
     .WithMetrics(metrics => metrics
         .AddAspNetCoreInstrumentation()
         .AddHttpClientInstrumentation()
         .AddRuntimeInstrumentation()
-        .AddOtlpExporter());
+        // Npgsql's built-in Meter — connection-pool depth, command counts/timing, prepared-statement
+        // stats. Subscribing here is enough; no separate AddNpgsqlInstrumentation call is needed.
+        .AddMeter("Npgsql")
+        .AddOtlpExporter())
+    // Route the ILogger pipeline through OTLP too (survives the ClearProviders above, since it is
+    // registered here). IncludeFormattedMessage keeps the rendered text; IncludeScopes carries scope
+    // values — and the trace/span id stamped above — onto each exported log record.
+    .WithLogging(logging => logging.AddOtlpExporter(), options =>
+    {
+        options.IncludeFormattedMessage = true;
+        options.IncludeScopes = true;
+    });
 
 builder.Services.AddOpenApi();
 
@@ -162,6 +182,7 @@ app.MapAuthEndpoints();
 app.MapProfileEndpoints();
 app.MapIngestEndpoints();
 app.MapFindingsEndpoints();
+app.MapUploadHistoryEndpoints();
 
 
 // SPA client-side routing: serve index.html for unmatched non-API routes.

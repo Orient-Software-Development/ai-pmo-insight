@@ -50,6 +50,19 @@ with GitHub Actions CI and Claude skills.
 > (`TestWebAppFactory.UseTestAuthentication`); `AuthEndpointsTests` exercises the real cookie/JWT
 > pipeline end-to-end.
 
+> **History (read surface):** two authenticated read-only endpoints under `/api/uploads` browse past
+> uploads and their analysis — `GET /api/uploads` lists uploads newest-first (id/fileName/uploadedAt,
+> never content) and `GET /api/uploads/{id}/findings` returns that upload's **latest** run in the same
+> four sections as the project view (analysis/narrative/challenge/review); unknown id → 404, known
+> upload with no findings → 200 empty. Slices `GetUploads` / `GetUploadFindings`
+> (`Application/Features/History`) over `IUploadRepository.ListAsync` +
+> `IFindingRepository.GetByUploadIdAsync` (findings link to an upload via the owned
+> `citation_upload_id` column, indexed by the `AddCitationUploadIdIndex` migration). Endpoints in
+> `UploadHistoryEndpoints`; React `History` page at `/history`. **Shared-workspace visibility** — any
+> authenticated caller sees all uploads (no per-user scoping; `Upload` has no `UserId`). View-only:
+> no re-analyze, delete, search, or pagination. Multi-file batch grouping deferred to
+> `add-multi-file-analyze`.
+
 > **LLM routing:** the four LLM-backed agents (`RiskAndIssue` #4, `Narrative` #7, `Challenge` #8,
 > `Review` #9) reach the model through the single `ILlmClient` port, but **provider selection is
 > per-agent via config alone** — no agent, prompt, or orchestrator code changes to swap providers.

@@ -54,11 +54,38 @@ public sealed class AnthropicLlmClient : ILlmClient
         var model = string.IsNullOrWhiteSpace(_options.ModelId) ? DefaultModel : _options.ModelId;
         var schema = ToSchemaDictionary(JsonSchemaGenerator.For<TOutput>());
 
+        // Adaptive extended thinking is a per-model capability — Haiku 4.5 rejects it outright,
+        // Opus/Sonnet accept and benefit from it. Opt in per agent via
+        // LlmProviderOptions.EnableExtendedThinking so the client works across any Claude model.
+        ThinkingConfigParam? thinking = null;
+        if (_options.EnableExtendedThinking == true)
+        {
+            thinking = new ThinkingConfigAdaptive();
+        }
+
+        // Prompt caching: when the caller supplies a SystemPrompt, ship it as an ephemeral-cached
+        // system block. Repeat calls within the 5-minute TTL that share the same prefix skip
+        // ~90% of the input token cost. Absent SystemPrompt keeps the legacy single-user-message
+        // shape so nothing changes for callers that haven't opted in.
+        MessageCreateParamsSystem? system = null;
+        if (!string.IsNullOrWhiteSpace(request.SystemPrompt))
+        {
+            system = new List<TextBlockParam>
+            {
+                new()
+                {
+                    Text = request.SystemPrompt!,
+                    CacheControl = new CacheControlEphemeral(),
+                },
+            };
+        }
+
         var parameters = new MessageCreateParams
         {
             Model = model,
             MaxTokens = _options.PerAnalysisTokenBudget,
-            Thinking = new ThinkingConfigAdaptive(),
+            Thinking = thinking,
+            System = system,
             OutputConfig = new OutputConfig { Format = new JsonOutputFormat { Schema = schema } },
             Messages = [new() { Role = Role.User, Content = request.Prompt }],
         };

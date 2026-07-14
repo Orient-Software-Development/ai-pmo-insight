@@ -73,6 +73,6 @@
 - [x] 7.2 Run `dotnet test` end-to-end; confirm the `AnalysisOrchestrator` integration tests still
       resolve `ILlmClient` and produce findings from the `fake` fixtures (no live key in CI).
 - [x] 7.3 Run `openspec validate add-vendor-llm-adapters --strict`; fix any reported issue.
-- [ ] 7.4 (Hand-off — user action) Open the PR: state OpenAI is split into its own follow-up and link
+- [x] 7.4 (Hand-off — user action) Open the PR: state OpenAI is split into its own follow-up and link
       that issue; confirm only the adapter(s) + tests + DI/docs note changed. Also create the sibling
       "OpenAI vendor adapter" follow-up issue.

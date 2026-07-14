@@ -59,7 +59,8 @@ public sealed class NarrativeSkill(ILlmClient llm, PromptRegistry prompts)
         var request = new LlmRequest
         {
             SkillName = Name,
-            Prompt = $"{prompt.Content}\n\nFINDINGS:\n{string.Join("\n", findings.Select(f => $"- {f.Summary}"))}",
+            SystemPrompt = prompt.Content,
+            Prompt = $"FINDINGS:\n{string.Join("\n", findings.Select(f => $"- {f.Summary}"))}",
             PromptVersion = prompt.Version,
         };
 

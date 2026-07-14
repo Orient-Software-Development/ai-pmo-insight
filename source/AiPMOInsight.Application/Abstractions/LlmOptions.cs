@@ -59,6 +59,7 @@ public sealed class LlmOptions
             PerAnalysisTokenBudget = agentOverride.PerAnalysisTokenBudget != 0
                 ? agentOverride.PerAnalysisTokenBudget
                 : Default.PerAnalysisTokenBudget,
+            EnableExtendedThinking = agentOverride.EnableExtendedThinking ?? Default.EnableExtendedThinking,
         };
     }
 }

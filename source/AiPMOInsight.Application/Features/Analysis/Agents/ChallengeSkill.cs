@@ -53,7 +53,8 @@ public sealed class ChallengeSkill(ILlmClient llm, PromptRegistry prompts)
             var request = new LlmRequest
             {
                 SkillName = Name,
-                Prompt = $"{prompt.Content}\n\nNARRATIVE:\n{input.Narrative.Summary}\n\nFINDINGS:\n" +
+                SystemPrompt = prompt.Content,
+                Prompt = $"NARRATIVE:\n{input.Narrative.Summary}\n\nFINDINGS:\n" +
                          string.Join("\n", analysisFindings.Select(f => $"- {f.Summary}")),
                 PromptVersion = prompt.Version,
             };
