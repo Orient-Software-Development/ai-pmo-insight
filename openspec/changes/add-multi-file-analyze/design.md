@@ -64,14 +64,32 @@ themselves and their citation invariants stay put.
 **Choice:** Extend `SourceRef` (in
 [`TypedRecords.cs`](../../../source/AiPMOInsight.Application/Features/Analysis/Model/TypedRecords.cs)) to
 carry the originating `Guid UploadId` alongside its existing `Locator` / excerpts. `SourceRef.ToCitation()`
-stops taking `uploadId` as a parameter and uses the field. Every parser call site (`UploadParser`) is
-already single-file, so it already knows the `uploadId` — it just needs to stamp it onto every `SourceRef`
-it emits.
+stops taking `uploadId` as a parameter and uses the field.
+
+**Threading the `uploadId` to the parser (correction).** The parser does **not** currently receive an
+`uploadId`: `UploadPayload` is `(string FileName, byte[] Content)` and `IUploadParser.Parse(fileName,
+content)` has no id — today the id enters only at `ToCitation(slice.Run.UploadId)` from run scope. So the
+`uploadId` must be threaded in explicitly: add `Guid UploadId` to `UploadPayload`, pass it through
+`IUploadParser.Parse` and `DataCollectorSkill` into the three **format** parsers
+(`ExcelProjectParser`, `OrbitXmlParser`, `DocxMinutesParser`) — which is where `SourceRef`s are actually
+constructed, not `UploadParser.cs` (that only dispatches on extension). Each format parser stamps the id
+onto every `SourceRef` it emits.
+
+**Synthesis findings (#7 Narrative, #8 Challenge, #9 Review, and the `RiskAndIssue` synthesis site).**
+Four of the five `ToCitation` call sites build a run-level `SourceRef` inline (e.g.
+`new SourceRef("synthesis:narrative")`) that is **not** derived from any single file, and today pass
+`slice.Run.UploadId`. Two things must be handled or these break: (a) with the `Guid.Empty` assertion added
+to `ToCitation()` (Decision-adjacent, task 1.2) an inline `SourceRef` with no id would throw at runtime;
+(b) in a multi-file run there is no single `slice.Run.UploadId`. **Decision:** a synthesis finding cites
+the run's **primary upload** — defined as the first `uploadId` in the request order (the same order the
+merge uses, see §3). The orchestrator stamps that primary id onto the synthesis `SourceRef`s. This keeps
+the "every finding cites exactly one file" invariant intact while making the citation deterministic; a
+future change may introduce a dedicated run-level citation kind if product wants "spans all files."
 
 **Rationale:** `SourceRef` is the single carrier of provenance; adding `uploadId` here means every
-downstream `Finding.Create` call automatically gets the right one, without threading a per-call parameter
-through the orchestrator. Zero risk of the wrong `uploadId` ending up on a finding — the field travels
-with the record.
+downstream `Finding.Create` call over a *parsed record* automatically gets the right one, without threading
+a per-call parameter through the orchestrator. Zero risk of the wrong `uploadId` ending up on a
+record-derived finding — the field travels with the record.
 
 **Alternatives considered:**
 - **Per-record dictionary lookup at citation time** (`Dictionary<recordRef, uploadId>` in the orchestrator).
@@ -104,8 +122,16 @@ deterministic agents surface the duplication as a finding instead of hiding it.
 `CollectedData` contains BOTH assignment records and — this is new — absenteeism records for the same
 employee on the same project. It emits a `Kind = Analysis`, `ProducingAgent = "Resource"` finding
 citing the assignment record, with the absenteeism date range in `StructuredExcerpt`. The absenteeism
-category needs a new record type (`AbsenceRecord` — Person, Start, End, `SourceRef`) and matching parsing
-inside `UploadParser` (a new `.xlsx` shape).
+category needs a new record type (`AbsenceRecord` — Person, ProjectKey, Start, End, `SourceRef`) and
+matching parsing inside the Excel parser (a new `.xlsx` shape).
+
+**Relationship to the existing `OnLeave` flag.** `AssignmentRecord` already carries `bool OnLeave` (parsed
+from the `Resources` sheet). That flag is a *point-in-time* boolean on the assignment itself; the new
+`AbsenceRecord` is a *dated span from a separate source* (start/end), which is what a key-person/overlap
+window needs. They are complementary, not duplicates: `OnLeave` says "currently away," `AbsenceRecord` says
+"away from X to Y." The cross-file rule keys on `AbsenceRecord` spans; `OnLeave` stays as-is and is not
+folded into the new type. If a future export supplies only `OnLeave`, the cross-file rule simply does not
+fire (no `Absences` present) — consistent with the "silent skip when a category is absent" spec.
 
 **Rationale:** this is the *concrete* signal the wireframe advertises. Delivering it end-to-end (parser →
 records → merged `CollectedData` → agent rule → cited finding → read view) proves every layer of the

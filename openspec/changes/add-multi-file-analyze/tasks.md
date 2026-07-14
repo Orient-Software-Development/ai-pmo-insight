@@ -1,10 +1,12 @@
 ## 1. Provenance on `SourceRef` (TDD)
 
-- [ ] 1.1 Extend the `SourceRef` tests (or add new ones under `tests/AiPMOInsight.Application.Tests/Analysis/`) that pin: `SourceRef` carries a `Guid UploadId`; `ToCitation()` returns a citation whose `UploadId` equals that field; `ToCitation()` no longer takes an `uploadId` parameter.
+- [ ] 1.1 Extend the `SourceRef` tests (or add new ones under `tests/AiPMOInsight.Application.Tests/Analysis/`) that pin: `SourceRef` carries a `Guid UploadId`; `ToCitation()` returns a citation whose `UploadId` equals that field; `ToCitation()` no longer takes an `uploadId` parameter; `ToCitation()` throws when `UploadId` is `Guid.Empty`.
 - [ ] 1.2 Update `source/AiPMOInsight.Application/Features/Analysis/Model/TypedRecords.cs`: `SourceRef` gains `Guid UploadId`; `ToCitation()` uses it. Land with `UploadId` init-default `Guid.Empty` for transitional compile; add a runtime assertion in `ToCitation()` that rejects `Guid.Empty`.
-- [ ] 1.3 Update every `SourceRef` construction site in `source/AiPMOInsight.Infrastructure/Analysis/Parsing/UploadParser.cs` and `tests/**/*` fixtures to stamp the correct `uploadId`.
-- [ ] 1.4 Delete the transitional default in step 1.2 once the tree compiles clean; every call site now passes an explicit `uploadId`.
-- [ ] 1.5 Green: existing analysis + orchestrator tests still pass; new SourceRef tests pass.
+- [ ] 1.3 **Thread `uploadId` into the parser** (it is not there today — `UploadPayload` is `(FileName, Content)` and `IUploadParser.Parse(fileName, content)` has no id). Add `Guid UploadId` to `UploadPayload`; pass it through `IUploadParser.Parse` and `DataCollectorSkill` into the **format** parsers.
+- [ ] 1.4 Update every `SourceRef` construction site — in `source/AiPMOInsight.Infrastructure/Analysis/Parsing/ExcelProjectParser.cs`, `OrbitXmlParser.cs`, and `DocxMinutesParser.cs` (NOT `UploadParser.cs`, which only dispatches), plus `tests/**/*` fixtures — to stamp the threaded `uploadId`.
+- [ ] 1.5 **Synthesis findings get the run's primary upload** (design §2). The four run-level `ToCitation` sites — `NarrativeSkill`, `ChallengeSkill`, `ReviewSkill`, and the `RiskAndIssue` synthesis site — build an inline `SourceRef` with no id and today pass `slice.Run.UploadId`. Give their `SourceRef` the run's **primary** `uploadId` (first in request order) so the `Guid.Empty` assertion passes and multi-file runs still cite exactly one file. Add a test: a multi-file run's synthesis findings cite the first `uploadId` of the request.
+- [ ] 1.6 Delete the transitional default in step 1.2 once the tree compiles clean; every call site now passes an explicit `uploadId`.
+- [ ] 1.7 Green: existing analysis + orchestrator tests still pass; new SourceRef + synthesis-citation tests pass.
 
 > ⚠️ **Open decision blocks §2 and §5.3** — the spreadsheet shape (one workbook per category vs. one
 > workbook with multiple named tabs) and the sheet→category mapping rule are **not yet decided**. See
