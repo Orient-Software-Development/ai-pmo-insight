@@ -141,8 +141,32 @@ The suggested 9-agent pipeline (PRD marks the exact split as "Assumption but not
   system. **Backed & live:** G/A/R counts, aggregate confidence + "Needs PM Review" count, worst-first
   intervention list (status/confidence/reason + cited finding). **Flagged as follow-on** (exceed the
   finding shape): € financial exposure, per-decision detail, key-person risk, owned/dated recommendations.
-  Next: retrofit the L2 view onto the shared design system.
-- ✅ **Level 3 — Data Quality** — `add-data-quality-dashboard`. New portfolio-wide read: a
+- ✅ **Analyze flow UI + L2 retrofit** — `add-analyze-flow-and-l2-retrofit` (#38). New `/upload` cold-start
+  page (`Upload.jsx`) extracts the upload → analyze flow out of the L2 view — drop zone, this-upload
+  panel, coarse request-lifecycle pipeline stepper — and becomes the post-login landing route. The L2
+  view (`/projects`) is retrofitted onto the shared Phase 5 design system: project header (key, RAG chip,
+  confidence, score-overridden indicator, project switcher) + styled cited sections; the `?key=` hand-off
+  from `/upload` auto-loads the analyzed project. Presentation-only (no backend/data-path change;
+  `ProjectStatusDashboardDataTests` stays green). **Flagged as follow-on:** per-file parse status,
+  duplicate-identity merge (US-2), live per-agent progress (US-9), dated milestones, per-decision detail.
+- ✅ **Auth UI rebuild + token-base retrofit** — `add-phase5-auth-ui` (#33). The three auth surfaces
+  rebuilt to the wireframe: `Login.jsx` (centered card, tab toggle, register-mode rules hint, red-stripe
+  error), `ChangePassword.jsx` (settings card, green success reveal restating fresh-session behaviour,
+  `navigate(-1)` cancel with `/` fallback), and `NavMenu.jsx` (avatar-chip trigger opening a **disclosure**
+  panel — not ARIA menu — with header + Change password + danger-styled Log out; closes on outside
+  mousedown / Escape / route change; nav tabs hidden on `/login` via `useLocation`). The wireframe token
+  base (`--paper` / `--ink*` / `--panel*` / `--rule*` / `--accent*` / `--sev-*` / `--font-display` +
+  `--font-ui` + `--font-mono`) lands as CSS custom properties in `styles.scss`, both themes, hybrid over
+  Pico (Pico keeps form/reset/button primitives). L1 and L2 retrofitted in the same change to consume
+  the new tokens — no JSX or data-path change; `ProjectStatusDashboardDataTests` +
+  `ExecutivePortfolioEndpointsTests` + `AuthEndpointsTests` all stay green. Presentation-only — no
+  `/api/auth/*`, cookie/JWT, or Identity change.
+- ✅ **History rich detail** — `add-history-rich-detail` (#36). `/history` rebuilt as a master-detail audit
+  surface (US-9/US-10): master list + detail (run-provenance header, four cited sections, score audit reusing
+  `GET /api/projects/{key}/health` per project — labelled current, per-run historical audit a follow-on).
+  Presentation-only (no backend change). Flagged follow-ons: uploader, LLM model, project count, multi-file,
+  live status.
+- ✅ **Level 3 — Data Quality** — `add-data-quality-dashboard` (#35). New portfolio-wide read: a
   `SummarizeDataQuality` slice reusing `DistinctProjectKeysAsync` (enumeration) + the pure
   `HealthScoringService` (confidence), exposed at `GET /api/data-quality/summary` (zeroed 200 on empty
   store). L3 React view (`/data-quality`) built to the v2 wireframe on the shared design system.

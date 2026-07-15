@@ -1,4 +1,59 @@
 // App-specific overrides on top of Pico CSS.
+//
+// ── Design-system rule (add-phase5-auth-ui) ────────────────────────────────────────────────
+// Wireframe token base (--paper / --ink* / --panel* / --rule* / --accent* / --sev-* / --font-*) is the
+// single source of truth for new or retrofitted selectors. NEW/RETROFITTED CODE MUST REFERENCE ONLY
+// THESE TOKENS — never --pico-*. --pico-* survives only in unretrofitted selectors and inside Pico's
+// own form/reset/button primitives, which we intentionally keep underneath.
+
+:root {
+  --paper: #F7F6F3;
+  --panel: #FFFFFF;
+  --panel-alt: #FBFAF6;
+  --ink: #17181C;
+  --ink-mute: #55575E;
+  --ink-faint: #8A8B92;
+  --rule: #E3E1DA;
+  --rule-strong: #C8C5BB;
+  --accent: #3A5F8A;
+  --accent-ink: #23405F;
+  --accent-tint: rgba(58, 95, 138, 0.08);
+  --sev-green: #2E7D5B;
+  --sev-amber: #C08A2E;
+  --sev-red: #B0342C;
+  --sev-green-bg: rgba(46, 125, 91, 0.09);
+  --sev-amber-bg: rgba(192, 138, 46, 0.11);
+  --sev-red-bg: rgba(176, 52, 44, 0.10);
+  --shadow-soft: 0 1px 0 rgba(23, 24, 28, 0.03);
+  --font-display: Georgia, "Iowan Old Style", "Palatino Linotype", "Book Antiqua", serif;
+  --font-ui: -apple-system, BlinkMacSystemFont, "Segoe UI Variable", "Segoe UI", "Inter", system-ui, sans-serif;
+  --font-mono: ui-monospace, "SF Mono", "Cascadia Mono", "JetBrains Mono", Menlo, Consolas, monospace;
+}
+
+@mixin wireframe-dark {
+  --paper: #14161B;
+  --panel: #1B1E24;
+  --panel-alt: #20242C;
+  --ink: #EDEBE4;
+  --ink-mute: #B3B4B9;
+  --ink-faint: #7E8087;
+  --rule: #2B2E36;
+  --rule-strong: #3B3F49;
+  --accent: #8AAFD8;
+  --accent-ink: #B8CFE7;
+  --accent-tint: rgba(138, 175, 216, 0.12);
+  --sev-green: #6BB58C;
+  --sev-amber: #E0B564;
+  --sev-red: #E27A6E;
+  --sev-green-bg: rgba(107, 181, 140, 0.14);
+  --sev-amber-bg: rgba(224, 181, 100, 0.16);
+  --sev-red-bg: rgba(226, 122, 110, 0.16);
+  --shadow-soft: 0 1px 0 rgba(0, 0, 0, 0.3);
+}
+:root[data-theme='dark'] { @include wireframe-dark; }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) { @include wireframe-dark; }
+}
 
 header.container {
   nav {
@@ -10,13 +65,117 @@ header.container {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  padding: 0.4rem 0.6rem;
-  border-radius: var(--pico-border-radius);
+  padding: 4px 9px;
+  background: transparent;
+  border: 1px solid var(--rule);
+  border-radius: 3px;
+  color: var(--ink-mute);
+  font-size: 11.5px;
+  font-family: inherit;
+  letter-spacing: 0.04em;
+  cursor: pointer;
+  &:hover { color: var(--ink); border-color: var(--rule-strong); background: transparent; }
 }
 
 main.container {
   padding-top: 1rem;
   padding-bottom: 2rem;
+}
+
+// ── Wireframe-style nav shell (add-nav-tabs-wireframe-style) ────────────────────────────────
+// Replaces the flat Pico <ul> nav with a three-cell flex row: brand · nav-tabs · nav-meta.
+// Active tab derived from useLocation() by pathname prefix.
+
+header.app-nav {
+  background: var(--paper);
+  border-bottom: 1px solid var(--rule);
+  padding: 0;
+  .nav-inner {
+    max-width: 1240px;
+    margin: 0 auto;
+    padding: 14px 32px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 24px;
+    @media (max-width: 640px) { flex-wrap: wrap; }
+  }
+}
+.nav-brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  text-decoration: none;
+  color: inherit;
+  &:hover { text-decoration: none; }
+  .nav-brand-mark {
+    width: 26px;
+    height: 26px;
+    display: grid;
+    place-items: center;
+    background: var(--ink);
+    color: var(--paper);
+    border-radius: 3px;
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 15px;
+    letter-spacing: -0.02em;
+  }
+  .nav-brand-name {
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 16.5px;
+    color: var(--ink);
+    letter-spacing: -0.005em;
+  }
+}
+.nav-tabs {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  @media (max-width: 640px) { flex-wrap: wrap; }
+}
+button.nav-tab,
+a.nav-tab {
+  padding: 8px 14px;
+  border-radius: 3px;
+  color: var(--ink-mute);
+  font-size: 13.5px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  background: transparent;
+  border: 0;
+  font-family: inherit;
+  text-decoration: none;
+  width: auto;
+  &:hover {
+    color: var(--ink);
+    background: var(--accent-tint);
+    text-decoration: none;
+  }
+  .num {
+    font-family: var(--font-mono);
+    font-size: 10.5px;
+    color: var(--ink-faint);
+    letter-spacing: 0.06em;
+  }
+  &.active {
+    background: var(--panel);
+    color: var(--ink);
+    box-shadow: inset 0 0 0 1px var(--rule);
+    .num { color: var(--accent); }
+  }
+  svg { flex-shrink: 0; }
+}
+.nav-meta {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  color: var(--ink-faint);
+  font-size: 12px;
+  font-family: var(--font-mono);
 }
 
 // ── Level-2 RAG health banner (add-project-status-dashboard) ────────────────────────────────
@@ -30,8 +189,8 @@ main.container {
   --rag-amber-bg: #fff4e0;
   --rag-green: #1b5e20;
   --rag-green-bg: #e7f5e9;
-  --rag-none: var(--pico-muted-border-color);
-  --rag-none-bg: var(--pico-card-sectioning-background-color);
+  --rag-none: var(--rule);
+  --rag-none-bg: var(--panel-alt);
 }
 
 // Dark theme — explicit toggle and system-auto both covered.
@@ -49,9 +208,9 @@ main.container {
 }
 
 .rag-banner {
-  border: 1px solid var(--pico-muted-border-color);
+  border: 1px solid var(--rule);
   border-left-width: 6px;
-  border-radius: var(--pico-border-radius);
+  border-radius: 3px;
   padding: 0.75rem 1rem;
   margin-bottom: 1.25rem;
 
@@ -66,8 +225,8 @@ main.container {
     align-items: center;
     gap: 0.5rem 1rem;
   }
-  .rag-score { font-weight: 600; }
-  .rag-confidence { color: var(--pico-muted-color); font-size: 0.9em; }
+  .rag-score { font-weight: 600; font-variant-numeric: tabular-nums; }
+  .rag-confidence { color: var(--ink-mute); font-size: 0.9em; }
   details { margin-top: 0.75rem; margin-bottom: 0; }
   table { margin-bottom: 0; }
 }
@@ -98,7 +257,7 @@ main.container {
   &.rag-red { color: var(--rag-red); background: var(--rag-red-bg); }
   &.rag-amber { color: var(--rag-amber); background: var(--rag-amber-bg); }
   &.rag-green { color: var(--rag-green); background: var(--rag-green-bg); }
-  &.rag-none { color: var(--pico-muted-color); background: var(--rag-none-bg); }
+  &.rag-none { color: var(--ink-mute); background: var(--rag-none-bg); }
 }
 
 .rag-review {
@@ -106,7 +265,7 @@ main.container {
   color: var(--rag-amber);
 }
 
-.l2-gap-note { color: var(--pico-muted-color); }
+.l2-gap-note { color: var(--ink-mute); }
 
 // ── Shared dashboard design system (add-executive-portfolio-dashboard) ──────────────────────
 // Extracted from the v2 wireframe (data-page="l1") as reusable pieces so the L2 view can adopt the
@@ -119,12 +278,12 @@ main.container {
   font-size: 0.7rem;
   letter-spacing: 0.14em;
   text-transform: uppercase;
-  color: var(--pico-muted-color);
+  color: var(--ink-mute);
   .num {
-    font-family: var(--pico-font-family-monospace, monospace);
-    background: var(--pico-card-sectioning-background-color);
-    border: 1px solid var(--pico-muted-border-color);
-    border-radius: var(--pico-border-radius);
+    font-family: var(--font-mono);
+    background: var(--panel-alt);
+    border: 1px solid var(--rule);
+    border-radius: 3px;
     padding: 0.05rem 0.4rem;
   }
 }
@@ -133,8 +292,8 @@ main.container {
 .summary-strip {
   display: grid;
   grid-template-columns: 1.4fr 1fr 1fr 1fr;
-  border: 1px solid var(--pico-muted-border-color);
-  border-radius: var(--pico-border-radius);
+  border: 1px solid var(--rule);
+  border-radius: 3px;
   margin: 1.5rem 0 2rem;
 
   @media (max-width: 800px) { grid-template-columns: 1fr 1fr; }
@@ -142,24 +301,25 @@ main.container {
 }
 .summary-cell {
   padding: 1.25rem 1.4rem;
-  border-right: 1px solid var(--pico-muted-border-color);
+  border-right: 1px solid var(--rule);
   &:last-child { border-right: 0; }
 }
 .summary-label {
   font-size: 0.7rem;
   letter-spacing: 0.12em;
   text-transform: uppercase;
-  color: var(--pico-muted-color);
+  color: var(--ink-mute);
 }
 .summary-value {
   font-size: 2rem;
   font-weight: 700;
+  font-variant-numeric: tabular-nums;
   margin-top: 0.3rem;
-  span { font-size: 0.9rem; font-weight: 400; color: var(--pico-muted-color); }
+  span { font-size: 0.9rem; font-weight: 400; color: var(--ink-mute); }
   &.total { font-size: 2.6rem; }
-  &.flagged { color: var(--pico-muted-border-color); }
+  &.flagged { color: var(--rule-strong); }
 }
-.summary-sub { margin-top: 0.35rem; font-size: 0.8rem; color: var(--pico-muted-color); }
+.summary-sub { margin-top: 0.35rem; font-size: 0.8rem; color: var(--ink-mute); }
 
 // L3 confidence hero — the portfolio data-confidence number against the publish threshold.
 .conf-hero {
@@ -190,7 +350,7 @@ main.container {
   margin-top: 0.9rem;
   border-radius: 3px;
   overflow: hidden;
-  background: var(--pico-muted-border-color);
+  background: var(--rule);
   .seg { height: 100%; }
   .seg.rag-red { background: var(--rag-red); }
   .seg.rag-amber { background: var(--rag-amber); }
@@ -201,7 +361,7 @@ main.container {
   gap: 1.1rem;
   margin-top: 0.6rem;
   font-size: 0.78rem;
-  color: var(--pico-muted-color);
+  color: var(--ink-mute);
   .dot {
     display: inline-block;
     width: 8px; height: 8px;
@@ -220,8 +380,8 @@ main.container {
   justify-content: space-between;
   gap: 1rem;
   margin: 1.75rem 0 0.6rem;
-  .sec-title { margin: 0; }
-  .sec-kicker { font-size: 0.78rem; color: var(--pico-muted-color); }
+  .sec-title { margin: 0; font-family: var(--font-display); }
+  .sec-kicker { font-size: 0.78rem; color: var(--ink-mute); }
 }
 
 // Records table (intervention list) with severity row accent + sev chip.
@@ -229,7 +389,7 @@ main.container {
   tr.severity { border-left: 4px solid transparent; }
   tr.severity.rag-red > td:first-child { box-shadow: inset 4px 0 0 var(--rag-red); }
   tr.severity.rag-amber > td:first-child { box-shadow: inset 4px 0 0 var(--rag-amber); }
-  .cite { font-size: 0.78rem; color: var(--pico-muted-color); }
+  .cite { font-size: 0.78rem; color: var(--ink-mute); font-family: var(--font-mono); }
   .conf { font-variant-numeric: tabular-nums; }
 }
 .sev {
@@ -254,10 +414,420 @@ main.container {
   @media (max-width: 800px) { grid-template-columns: 1fr; }
 }
 .flagged-panel {
-  border: 1px dashed var(--pico-muted-border-color);
-  border-radius: var(--pico-border-radius);
+  border: 1px dashed var(--rule);
+  border-radius: 3px;
   padding: 1rem 1.2rem;
-  background: var(--pico-card-sectioning-background-color);
+  background: var(--panel-alt);
   &.wide { grid-column: 1 / -1; }
 }
-.flagged-note { color: var(--pico-muted-color); font-size: 0.82rem; margin: 0.4rem 0 0; }
+.flagged-note { color: var(--ink-mute); font-size: 0.82rem; margin: 0.4rem 0 0; }
+
+// ── Analyze/upload flow + L2 retrofit (add-analyze-flow-and-l2-retrofit) ─────────────────────
+// Reuses the shared tokens above (--rag-*, .records, .sev, .flagged-*) so /upload, L1 and L2 read as
+// one system. Theme-aware; status is never colour-only.
+
+.block { margin: 1.5rem 0; }
+
+// Upload drop zone.
+.dropzone {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 2.25rem 1.5rem;
+  border: 2px dashed var(--rule);
+  border-radius: 3px;
+  background: var(--panel-alt);
+  cursor: pointer;
+  text-align: center;
+  transition: border-color 0.15s, background 0.15s;
+
+  &.over { border-color: var(--accent); background: var(--panel); }
+  .dropzone-main { font-weight: 600; color: var(--ink); }
+  .dropzone-sub { font-size: 0.8rem; color: var(--ink-mute); }
+}
+
+// Analysis-pipeline stepper (labelled placeholder — no live per-agent telemetry).
+.pipeline {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  .pipeline-step {
+    font-family: var(--font-mono);
+    font-size: 0.78rem;
+    padding: 0.2rem 0.55rem;
+    border: 1px solid var(--rule);
+    border-radius: 3px;
+    color: var(--ink-mute);
+    background: var(--panel-alt);
+    &.done { color: var(--rag-green); border-color: var(--rag-green); }
+  }
+}
+
+.analyze-done { margin-top: 1.25rem; }
+
+// L2 project header: identity line + RAG headline chip + switcher.
+.l2-header {
+  border-bottom: 1px solid var(--rule);
+  padding-bottom: 1rem;
+  margin-bottom: 1.25rem;
+
+  .l2-title-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.6rem 0.9rem;
+    h1 { margin: 0.2rem 0; font-family: var(--font-display); }
+  }
+  .conf { color: var(--ink-mute); font-size: 0.9rem; font-variant-numeric: tabular-nums; }
+  .l2-overridden {
+    font-size: 0.72rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--sev-amber);
+    border: 1px solid var(--sev-amber);
+    border-radius: 3px;
+    padding: 0.1rem 0.45rem;
+  }
+  .l2-switcher {
+    margin-top: 0.75rem;
+    max-width: 26rem;
+    margin-bottom: 0;
+  }
+}
+
+// ── Auth UI: sign-in, change-password, user-menu (add-phase5-auth-ui) ────────────────────────
+// New surfaces consume wireframe tokens only. Theme-aware via the token base.
+
+// Global page-title (Georgia display) — reused by change-password and every h1.page-title elsewhere.
+h1.page-title {
+  font-family: var(--font-display);
+  color: var(--ink);
+  letter-spacing: -0.01em;
+}
+.page-lede {
+  color: var(--ink-mute);
+  max-width: 44em;
+  margin-bottom: 1.5rem;
+}
+
+// Sign-in page (centered card).
+main.auth-page {
+  min-height: calc(100vh - 90px);
+  display: grid;
+  place-items: center;
+  padding: 40px 20px 60px;
+}
+.auth-card {
+  max-width: 400px;
+  width: 100%;
+  background: var(--panel);
+  border: 1px solid var(--rule);
+  border-radius: 4px;
+  padding: 32px 32px 28px;
+  box-shadow: var(--shadow-soft);
+}
+.auth-header {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding-bottom: 20px;
+  border-bottom: 1px solid var(--rule);
+  margin-bottom: 22px;
+}
+.brand-mark {
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  background: var(--ink);
+  color: var(--paper);
+  border-radius: 3px;
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 18px;
+}
+.brand-name {
+  font-family: var(--font-display);
+  font-size: 18px;
+  color: var(--ink);
+  font-weight: 500;
+  letter-spacing: -0.005em;
+}
+.brand-sub {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--ink-faint);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  margin-top: 2px;
+}
+.auth-tabs {
+  display: flex;
+  gap: 3px;
+  border: 1px solid var(--rule);
+  border-radius: 3px;
+  padding: 3px;
+  margin-bottom: 24px;
+  background: var(--panel-alt);
+}
+button.auth-tab {
+  flex: 1;
+  padding: 8px 14px;
+  border: 0;
+  background: transparent;
+  border-radius: 2px;
+  color: var(--ink-mute);
+  font-family: inherit;
+  font-size: 13px;
+  cursor: pointer;
+  &:hover { color: var(--ink); background: transparent; }
+  &.active {
+    background: var(--panel);
+    color: var(--ink);
+    box-shadow: 0 0 0 1px var(--rule);
+  }
+}
+
+// Field row (used in auth-card and settings-card).
+.field {
+  display: block;
+  margin-bottom: 16px;
+  .field-label {
+    display: block;
+    font-size: 11px;
+    color: var(--ink-mute);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    margin-bottom: 6px;
+    font-weight: 600;
+  }
+  input {
+    display: block;
+    width: 100%;
+    padding: 9px 12px;
+    border: 1px solid var(--rule);
+    border-radius: 3px;
+    background: var(--paper);
+    color: var(--ink);
+    font-family: inherit;
+    font-size: 14px;
+    &:focus {
+      outline: 2px solid var(--accent);
+      outline-offset: 1px;
+      border-color: var(--accent);
+    }
+  }
+  .field-hint {
+    margin-top: 6px;
+    font-size: 11.5px;
+    color: var(--ink-faint);
+    font-family: var(--font-mono);
+    line-height: 1.45;
+  }
+}
+
+.auth-error {
+  padding: 10px 14px;
+  background: var(--sev-red-bg);
+  border: 1px solid var(--sev-red);
+  border-left-width: 3px;
+  border-radius: 3px;
+  color: var(--sev-red);
+  font-size: 13px;
+  margin-bottom: 16px;
+  b { color: var(--sev-red); font-weight: 600; }
+}
+button.auth-submit {
+  width: 100%;
+  padding: 11px;
+  font-size: 14px;
+  margin-top: 4px;
+  background: var(--ink);
+  color: var(--paper);
+  border: 1px solid var(--ink);
+  border-radius: 3px;
+  cursor: pointer;
+  &:hover:not(:disabled) { background: var(--accent-ink); border-color: var(--accent-ink); }
+  &:disabled { opacity: 0.6; cursor: not-allowed; }
+}
+.auth-note {
+  margin-top: 22px;
+  font-size: 11.5px;
+  color: var(--ink-faint);
+  font-family: var(--font-mono);
+  text-align: center;
+  max-width: 400px;
+  letter-spacing: 0.02em;
+  code {
+    background: var(--panel-alt);
+    padding: 1px 5px;
+    border-radius: 2px;
+    color: var(--ink-mute);
+  }
+}
+
+// Change-password settings card.
+.settings-card {
+  max-width: 480px;
+  margin-top: 28px;
+  background: var(--panel);
+  border: 1px solid var(--rule);
+  border-radius: 3px;
+  padding: 24px 28px;
+}
+.settings-actions {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+  margin-top: 8px;
+  padding-top: 20px;
+  border-top: 1px solid var(--rule);
+  button[type="submit"] {
+    width: auto;
+    padding: 9px 18px;
+    background: var(--ink);
+    color: var(--paper);
+    border: 1px solid var(--ink);
+    border-radius: 3px;
+    font-family: inherit;
+    font-size: 13px;
+    cursor: pointer;
+    &:hover:not(:disabled) { background: var(--accent-ink); border-color: var(--accent-ink); }
+    &:disabled { opacity: 0.6; cursor: not-allowed; }
+  }
+}
+button.link-inline {
+  width: auto;
+  background: transparent;
+  border: 0;
+  padding: 0;
+  color: var(--accent);
+  font-family: inherit;
+  font-size: 13px;
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  &:hover { color: var(--accent-ink); background: transparent; }
+}
+.success-panel {
+  display: grid;
+  grid-template-columns: 28px 1fr;
+  gap: 14px;
+  padding: 16px 20px;
+  background: var(--sev-green-bg);
+  border: 1px solid var(--sev-green);
+  border-left-width: 3px;
+  border-radius: 3px;
+  align-items: start;
+  max-width: 480px;
+  margin-top: 20px;
+  .success-icon {
+    color: var(--sev-green);
+    font-size: 18px;
+    line-height: 1;
+    padding-top: 2px;
+    font-weight: 700;
+  }
+  .success-title {
+    font-weight: 600;
+    color: var(--ink);
+    font-size: 14px;
+    margin-bottom: 4px;
+  }
+  p {
+    margin: 0;
+    font-size: 13.5px;
+    color: var(--ink);
+    line-height: 1.5;
+  }
+}
+
+// User-menu (disclosure, not ARIA menu).
+.user-menu { position: relative; }
+button.user-menu-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 10px 4px 4px;
+  width: auto;
+  background: transparent;
+  border: 1px solid var(--rule);
+  border-radius: 3px;
+  color: var(--ink-mute);
+  font-family: inherit;
+  font-size: 12.5px;
+  cursor: pointer;
+  &:hover { color: var(--ink); border-color: var(--rule-strong); background: transparent; }
+  &[aria-expanded="true"] { border-color: var(--accent); color: var(--ink); }
+  .chevron {
+    font-size: 10px;
+    color: var(--ink-faint);
+    margin-left: 2px;
+  }
+}
+.user-avatar {
+  display: grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  background: var(--accent);
+  color: #fff;
+  border-radius: 50%;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  font-family: var(--font-ui);
+}
+.user-menu-panel {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  min-width: 240px;
+  background: var(--panel);
+  border: 1px solid var(--rule);
+  border-radius: 3px;
+  box-shadow: 0 6px 16px rgba(0,0,0,0.08);
+  z-index: 50;
+  overflow: hidden;
+}
+.user-menu-header {
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--rule);
+  background: var(--panel-alt);
+  .u-name { font-size: 13px; color: var(--ink); font-weight: 500; }
+  .u-email { font-size: 12px; color: var(--ink-mute); margin-top: 1px; }
+  .u-role {
+    font-family: var(--font-mono);
+    font-size: 10.5px;
+    color: var(--ink-faint);
+    margin-top: 6px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+}
+.menu-item,
+button.menu-item,
+a.menu-item {
+  display: block;
+  width: 100%;
+  text-align: left;
+  background: transparent;
+  border: 0;
+  padding: 10px 14px;
+  font-family: inherit;
+  font-size: 13px;
+  color: var(--ink);
+  text-decoration: none;
+  cursor: pointer;
+  border-bottom: 1px solid var(--rule);
+  border-radius: 0;
+  &:last-child { border-bottom: 0; }
+  &:hover { background: var(--accent-tint); color: var(--accent-ink); text-decoration: none; }
+  &.danger { color: var(--sev-red); }
+  &.danger:hover { background: var(--sev-red-bg); color: var(--sev-red); }
+}
+
+@media (max-width: 640px) {
+  .user-menu-btn .user-email { display: none; }
+}

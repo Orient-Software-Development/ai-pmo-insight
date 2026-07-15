@@ -162,6 +162,69 @@ with GitHub Actions CI and Claude skills.
 > (`FindingRepositoryDistinctKeysTests`, `ScorePortfolioTests`, `ExecutivePortfolioEndpointsTests`); **L3
 > Data Quality will reuse `DistinctProjectKeysAsync`** for enumeration.
 
+> **Analyze flow UI + L2 retrofit (Phase 5, `add-analyze-flow-and-l2-retrofit`, #38):** two UI-only
+> wireframe pages, **presentation-only — no backend/API/finding-shape change.** (1) A new **`/upload`
+> cold-start page** (`Upload.jsx`, `RequireAuth`) extracts the upload → analyze flow out of
+> `ProjectFindings.jsx` into its own surface — drop zone (accepts `.xlsx .xlsm .xml .docx`; CSV rejected
+> up front, unchanged), a "this upload" panel, and a **coarse request-lifecycle pipeline stepper**
+> (uploading → analyzing → done/failed over `POST /api/ingest/upload` then `POST /api/analyze/{id}`). It is
+> the **post-login landing route** (`Login.jsx` → `/upload`; coordinates with the auth-UI change #33). On
+> success it links to `/projects?key=<analyzed key>`. (2) The **L2 view** (`/projects`,
+> `ProjectFindings.jsx`) is **retrofitted onto the shared Phase 5 design system** L1 established (`--rag-*`,
+> `records`, `sev`, `eyebrow`, `block`, `flagged-*`): a project header (key + name, RAG chip from
+> `FinalBucket`, confidence, a **score-overridden** indicator when `FinalBucket≠RawBucket`, a project
+> switcher) above the `HealthBanner` (score audit) and the four cited sections. The **data path is
+> unchanged** — the `Promise.allSettled` findings+health read and the `healthState` mapping are preserved,
+> and `?key=` auto-loads on mount; the change is styling/layout only, so **`ProjectStatusDashboardDataTests`
+> stays green** (the repo has no JS harness — the render is `/verify`-checked in the running app).
+> **Presentation-only boundary holds** (dashed placeholders, never fabricated): per-file parse status,
+> **duplicate-identity merge (US-2)**, **live per-agent progress (US-9)** on `/upload`; **dated milestones**
+> and **per-decision owner/deadline** on L2 (the Narrative stays the closest recommendation surface).
+
+> **Auth UI rebuild + token-base retrofit (Phase 5, `add-phase5-auth-ui`, #33):** the three auth surfaces
+> rebuilt to the wireframe, **presentation-only — no `/api/auth/*` / cookie / JWT / Identity change.**
+> `Login.jsx` is a centered `.auth-card` with a `Log in` / `Create account` tab toggle (submit label
+> follows mode), a Register-mode-only ASP.NET Identity rules hint, and a red-stripe `.auth-error` panel;
+> post-login `navigate('/upload')` preserved. `ChangePassword.jsx` is a `.settings-card` (three fields +
+> rules hint under "new") with a green `.success-panel` restating the fresh-session behaviour; cancel is
+> `navigate(-1)` with `/` fallback (no more hard-coded `/projects`); success panel resets on unmount.
+> `NavMenu.jsx` replaces the flat right-hand link list with an **avatar-chip + email + chevron** trigger
+> opening a **disclosure** popover (deliberately *not* an ARIA menu — no `role="menu"`, no roving
+> tabindex, no arrow-key nav; Tab is sufficient for two items and screen readers get an honest
+> contract) with a header (email + role chip from `user.roles.join(' · ')`) and two items: `<Link>`
+> Change password + danger-styled `<button>` Log out. Panel closes on outside `mousedown` (not `click`,
+> to avoid a re-render race), Escape (returns focus to the trigger), and route change. Nav-tabs +
+> user-menu are hidden on `/login` via `useLocation().pathname === '/login'` (not a body class). The
+> wireframe token base — `--paper` / `--ink*` / `--panel*` / `--rule*` / `--accent*` / `--sev-*` / `--font-display`
+> (Georgia) / `--font-ui` (system) / `--font-mono` (ui-monospace) — lands in `styles.scss` on `:root` with
+> a `@mixin wireframe-dark` mirror under `data-theme='dark'` + `prefers-color-scheme: dark`. Strategy is
+> **hybrid**: Pico stays underneath for form/reset/button primitives; new or retrofitted selectors
+> reference **only wireframe tokens** (a design-system comment at the top of `styles.scss` records the
+> rule). L1 (`ExecutivePortfolio.jsx`) and L2 (`ProjectFindings.jsx`) retrofitted in the same change to
+> consume the new tokens — CSS-only, no JSX or data-path change; `AuthEndpointsTests` (14),
+> `ProjectStatusDashboardDataTests` + `ExecutivePortfolioEndpointsTests` (5), and the full backend suite
+> (227) all stay green. Avatar initials derived from `user.userName` (split local on `.`/`-`, first
+> letter of first two parts; fallback to `??`).
+> **History rich detail (Phase 5, `add-history-rich-detail`, #36):** the `/history` page (`History.jsx`)
+> rebuilt into a **master-detail audit surface** (US-9/US-10), **presentation-only — no backend/API/
+> finding-shape change.** A sticky master list of uploads (newest-first, from `GET /api/uploads`) + a detail
+> panel for the selected upload's latest run: a **run-provenance header** (run id, run date, distinct prompt
+> hash(es) — all derived from the findings response's `RunId`/`CreatedAt`/`PromptVersion`), the **four cited
+> sections** (Analysis/Narrative #7/Challenge #8/Review #9) restyled on the shared design system, and a
+> **Score-audit section (US-10)** that **reuses `GET /api/projects/{key}/health`** per distinct project key
+> in the run (`Promise.allSettled`, independent) — rendered by reusing the L2 `HealthBanner` (bucket +
+> cited applied-override trail). Because that read is per-project-**latest**-run, the section is labelled the
+> project's **current** health with an explicit caveat that a strict **per-run historical** audit is a
+> follow-on (chosen over adding a backend read, to keep the change presentation-only). Strictly **read-only**
+> (no re-analyze/delete/edit/search/pagination). Render mapping in a pure `history.js` helper
+> (`uploadStatus`/`runProvenance`/`projectKeys`; mirrors `health.js`/`dataQuality.js`), reusing
+> `bucketColour`+`healthState`. **Presentation-only boundary holds** (flagged, never fabricated): **uploader**
+> (`Upload` has no `UserId`), **LLM model** (not on `FindingView`), **project count**/**multi-file summary**
+> (one file per upload; batch grouping = deferred `add-multi-file-analyze`), and **live Running/Failed
+> status** (analysis is synchronous — only coarse Analyzed/Not-analyzed is derivable). No JS harness — the
+> data path is locked by the existing `UploadHistoryEndpointsTests` + health-endpoint tests; render
+> `/verify`-checked in the running app.
+
 > **Dashboards (Phase 5, Level 3 — `add-data-quality-dashboard`):** the **Data Quality read surface**
 > (React, route `/data-quality`, `DataQuality.jsx`) — the last of the three dashboard levels. Like L1 it
 > is a **read over the findings store, not new analysis** (no LLM): a `SummarizeDataQuality` slice

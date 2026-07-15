@@ -34,54 +34,90 @@ export function ChangePassword() {
     }
   }
 
+  function cancel() {
+    // navigate(-1) falls back to the app root when there is no history entry (fresh tab).
+    if (window.history.length > 1) {
+      navigate(-1);
+    } else {
+      navigate('/');
+    }
+  }
+
   return (
-    <div>
-      <h1>Change password</h1>
+    <main className="container">
+      <div className="eyebrow">Account · security</div>
+      <h1 className="page-title">Change password</h1>
+      <p className="page-lede">
+        Changing your password signs you out on every other device — this one stays signed in with a
+        fresh session. Every open refresh-token chain for your account is revoked.
+      </p>
+
+      <div className="settings-card">
+        <form onSubmit={submit}>
+          <label className="field">
+            <span className="field-label">Current password</span>
+            <input
+              type="password"
+              value={currentPassword}
+              autoComplete="current-password"
+              onChange={e => setCurrentPassword(e.target.value)}
+              required
+            />
+          </label>
+
+          <label className="field">
+            <span className="field-label">New password</span>
+            <input
+              type="password"
+              value={newPassword}
+              autoComplete="new-password"
+              onChange={e => setNewPassword(e.target.value)}
+              required
+            />
+            <div className="field-hint">
+              Minimum 8 characters, mixing upper + lower + digit + symbol (ASP.NET Identity default).
+            </div>
+          </label>
+
+          <label className="field">
+            <span className="field-label">Confirm new password</span>
+            <input
+              type="password"
+              value={confirm}
+              autoComplete="new-password"
+              onChange={e => setConfirm(e.target.value)}
+              required
+            />
+          </label>
+
+          {error && (
+            <div className="auth-error" role="alert">
+              <b>Change failed.</b> {error}
+            </div>
+          )}
+
+          <div className="settings-actions">
+            <button type="submit" aria-busy={busy} disabled={busy}>
+              Change password
+            </button>
+            <button type="button" className="link-inline" onClick={cancel}>
+              Cancel
+            </button>
+          </div>
+        </form>
+      </div>
 
       {done && (
-        <p style={{ color: 'var(--pico-ins-color)' }}>
-          Password changed. Other devices have been signed out.
-        </p>
+        <div className="success-panel" role="status">
+          <div className="success-icon" aria-hidden="true">✓</div>
+          <div>
+            <div className="success-title">Password changed</div>
+            <p>
+              Other devices have been signed out. This device stays signed in with a fresh session.
+            </p>
+          </div>
+        </div>
       )}
-
-      <form onSubmit={submit}>
-        <label>
-          Current password
-          <input
-            type="password"
-            value={currentPassword}
-            autoComplete="current-password"
-            onChange={e => setCurrentPassword(e.target.value)}
-            required
-          />
-        </label>
-        <label>
-          New password
-          <input
-            type="password"
-            value={newPassword}
-            autoComplete="new-password"
-            onChange={e => setNewPassword(e.target.value)}
-            required
-          />
-        </label>
-        <label>
-          Confirm new password
-          <input
-            type="password"
-            value={confirm}
-            autoComplete="new-password"
-            onChange={e => setConfirm(e.target.value)}
-            required
-          />
-        </label>
-
-        {error && <p style={{ color: 'var(--pico-del-color)' }}>{error}</p>}
-
-        <button type="submit" aria-busy={busy} disabled={busy}>Change password</button>
-        {' '}
-        <a href="#" onClick={e => { e.preventDefault(); navigate('/projects'); }}>Cancel</a>
-      </form>
-    </div>
+    </main>
   );
 }
