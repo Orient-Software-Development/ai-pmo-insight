@@ -2,6 +2,7 @@ import { Home } from './components/Home';
 import { Upload } from './components/Upload';
 import { ExecutivePortfolio } from './components/ExecutivePortfolio';
 import { ProjectFindings } from './components/ProjectFindings';
+import { DataQuality } from './components/DataQuality';
 import { History } from './components/History';
 import { Login } from './components/Login';
 import { ChangePassword } from './components/ChangePassword';
@@ -40,6 +41,15 @@ const AppRoutes = [
     element: (
       <RequireAuth>
         <ProjectFindings />
+      </RequireAuth>
+    ),
+  },
+  {
+    // Protected: Level 3 stub — real backend / view tracked as issue #35.
+    path: '/data-quality',
+    element: (
+      <RequireAuth>
+        <DataQuality />
       </RequireAuth>
     ),
   },
