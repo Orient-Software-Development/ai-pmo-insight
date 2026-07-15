@@ -65,13 +65,117 @@ header.container {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  padding: 0.4rem 0.6rem;
-  border-radius: var(--pico-border-radius);
+  padding: 4px 9px;
+  background: transparent;
+  border: 1px solid var(--rule);
+  border-radius: 3px;
+  color: var(--ink-mute);
+  font-size: 11.5px;
+  font-family: inherit;
+  letter-spacing: 0.04em;
+  cursor: pointer;
+  &:hover { color: var(--ink); border-color: var(--rule-strong); background: transparent; }
 }
 
 main.container {
   padding-top: 1rem;
   padding-bottom: 2rem;
+}
+
+// ── Wireframe-style nav shell (add-nav-tabs-wireframe-style) ────────────────────────────────
+// Replaces the flat Pico <ul> nav with a three-cell flex row: brand · nav-tabs · nav-meta.
+// Active tab derived from useLocation() by pathname prefix.
+
+header.app-nav {
+  background: var(--paper);
+  border-bottom: 1px solid var(--rule);
+  padding: 0;
+  .nav-inner {
+    max-width: 1240px;
+    margin: 0 auto;
+    padding: 14px 32px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 24px;
+    @media (max-width: 640px) { flex-wrap: wrap; }
+  }
+}
+.nav-brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  text-decoration: none;
+  color: inherit;
+  &:hover { text-decoration: none; }
+  .nav-brand-mark {
+    width: 26px;
+    height: 26px;
+    display: grid;
+    place-items: center;
+    background: var(--ink);
+    color: var(--paper);
+    border-radius: 3px;
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 15px;
+    letter-spacing: -0.02em;
+  }
+  .nav-brand-name {
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 16.5px;
+    color: var(--ink);
+    letter-spacing: -0.005em;
+  }
+}
+.nav-tabs {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  @media (max-width: 640px) { flex-wrap: wrap; }
+}
+button.nav-tab,
+a.nav-tab {
+  padding: 8px 14px;
+  border-radius: 3px;
+  color: var(--ink-mute);
+  font-size: 13.5px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  background: transparent;
+  border: 0;
+  font-family: inherit;
+  text-decoration: none;
+  width: auto;
+  &:hover {
+    color: var(--ink);
+    background: var(--accent-tint);
+    text-decoration: none;
+  }
+  .num {
+    font-family: var(--font-mono);
+    font-size: 10.5px;
+    color: var(--ink-faint);
+    letter-spacing: 0.06em;
+  }
+  &.active {
+    background: var(--panel);
+    color: var(--ink);
+    box-shadow: inset 0 0 0 1px var(--rule);
+    .num { color: var(--accent); }
+  }
+  svg { flex-shrink: 0; }
+}
+.nav-meta {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  color: var(--ink-faint);
+  font-size: 12px;
+  font-family: var(--font-mono);
 }
 
 // ── Level-2 RAG health banner (add-project-status-dashboard) ────────────────────────────────
