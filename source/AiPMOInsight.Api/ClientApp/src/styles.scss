@@ -239,3 +239,77 @@ main.container {
   &.wide { grid-column: 1 / -1; }
 }
 .flagged-note { color: var(--pico-muted-color); font-size: 0.82rem; margin: 0.4rem 0 0; }
+
+// ── Analyze/upload flow + L2 retrofit (add-analyze-flow-and-l2-retrofit) ─────────────────────
+// Reuses the shared tokens above (--rag-*, .records, .sev, .flagged-*) so /upload, L1 and L2 read as
+// one system. Theme-aware; status is never colour-only.
+
+.block { margin: 1.5rem 0; }
+
+// Upload drop zone.
+.dropzone {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 2.25rem 1.5rem;
+  border: 2px dashed var(--pico-muted-border-color);
+  border-radius: var(--pico-border-radius);
+  background: var(--pico-card-sectioning-background-color);
+  cursor: pointer;
+  text-align: center;
+  transition: border-color 0.15s, background 0.15s;
+
+  &.over { border-color: var(--pico-primary); background: var(--pico-card-background-color); }
+  .dropzone-main { font-weight: 600; }
+  .dropzone-sub { font-size: 0.8rem; color: var(--pico-muted-color); }
+}
+
+// Analysis-pipeline stepper (labelled placeholder — no live per-agent telemetry).
+.pipeline {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  .pipeline-step {
+    font-family: var(--pico-font-family-monospace, monospace);
+    font-size: 0.78rem;
+    padding: 0.2rem 0.55rem;
+    border: 1px solid var(--pico-muted-border-color);
+    border-radius: var(--pico-border-radius);
+    color: var(--pico-muted-color);
+    background: var(--pico-card-sectioning-background-color);
+    &.done { color: var(--rag-green); border-color: var(--rag-green); }
+  }
+}
+
+.analyze-done { margin-top: 1.25rem; }
+
+// L2 project header: identity line + RAG headline chip + switcher.
+.l2-header {
+  border-bottom: 1px solid var(--pico-muted-border-color);
+  padding-bottom: 1rem;
+  margin-bottom: 1.25rem;
+
+  .l2-title-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.6rem 0.9rem;
+    h1 { margin: 0.2rem 0; }
+  }
+  .conf { color: var(--pico-muted-color); font-size: 0.9rem; font-variant-numeric: tabular-nums; }
+  .l2-overridden {
+    font-size: 0.72rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--rag-amber);
+    border: 1px solid var(--rag-amber);
+    border-radius: var(--pico-border-radius);
+    padding: 0.1rem 0.45rem;
+  }
+  .l2-switcher {
+    margin-top: 0.75rem;
+    max-width: 26rem;
+    margin-bottom: 0;
+  }
+}

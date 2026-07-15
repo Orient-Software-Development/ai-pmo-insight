@@ -19,6 +19,7 @@ export function NavMenu() {
         </ul>
         <ul>
           <li><Link to="/">Home</Link></li>
+          <li><Link to="/upload">Upload</Link></li>
           <li><Link to="/portfolio">Portfolio</Link></li>
           <li><Link to="/projects">Project findings</Link></li>
           <li><Link to="/history">History</Link></li>

@@ -162,5 +162,24 @@ with GitHub Actions CI and Claude skills.
 > (`FindingRepositoryDistinctKeysTests`, `ScorePortfolioTests`, `ExecutivePortfolioEndpointsTests`); **L3
 > Data Quality will reuse `DistinctProjectKeysAsync`** for enumeration.
 
+> **Analyze flow UI + L2 retrofit (Phase 5, `add-analyze-flow-and-l2-retrofit`, #38):** two UI-only
+> wireframe pages, **presentation-only — no backend/API/finding-shape change.** (1) A new **`/upload`
+> cold-start page** (`Upload.jsx`, `RequireAuth`) extracts the upload → analyze flow out of
+> `ProjectFindings.jsx` into its own surface — drop zone (accepts `.xlsx .xlsm .xml .docx`; CSV rejected
+> up front, unchanged), a "this upload" panel, and a **coarse request-lifecycle pipeline stepper**
+> (uploading → analyzing → done/failed over `POST /api/ingest/upload` then `POST /api/analyze/{id}`). It is
+> the **post-login landing route** (`Login.jsx` → `/upload`; coordinates with the auth-UI change #33). On
+> success it links to `/projects?key=<analyzed key>`. (2) The **L2 view** (`/projects`,
+> `ProjectFindings.jsx`) is **retrofitted onto the shared Phase 5 design system** L1 established (`--rag-*`,
+> `records`, `sev`, `eyebrow`, `block`, `flagged-*`): a project header (key + name, RAG chip from
+> `FinalBucket`, confidence, a **score-overridden** indicator when `FinalBucket≠RawBucket`, a project
+> switcher) above the `HealthBanner` (score audit) and the four cited sections. The **data path is
+> unchanged** — the `Promise.allSettled` findings+health read and the `healthState` mapping are preserved,
+> and `?key=` auto-loads on mount; the change is styling/layout only, so **`ProjectStatusDashboardDataTests`
+> stays green** (the repo has no JS harness — the render is `/verify`-checked in the running app).
+> **Presentation-only boundary holds** (dashed placeholders, never fabricated): per-file parse status,
+> **duplicate-identity merge (US-2)**, **live per-agent progress (US-9)** on `/upload`; **dated milestones**
+> and **per-decision owner/deadline** on L2 (the Narrative stays the closest recommendation surface).
+
 > **Client framework:** template param `--client-framework` (`-cf`) = `react` (default) or
 > `none` (API only). Driven by `ClientFramework` symbol → computed `UseReact` / `UseApiOnly`,
