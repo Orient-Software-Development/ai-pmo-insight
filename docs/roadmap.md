@@ -149,6 +149,11 @@ The suggested 9-agent pipeline (PRD marks the exact split as "Assumption but not
   from `/upload` auto-loads the analyzed project. Presentation-only (no backend/data-path change;
   `ProjectStatusDashboardDataTests` stays green). **Flagged as follow-on:** per-file parse status,
   duplicate-identity merge (US-2), live per-agent progress (US-9), dated milestones, per-decision detail.
+- ✅ **History rich detail** — `add-history-rich-detail` (#36). `/history` rebuilt as a master-detail audit
+  surface (US-9/US-10): master list + detail (run-provenance header, four cited sections, score audit reusing
+  `GET /api/projects/{key}/health` per project — labelled current, per-run historical audit a follow-on).
+  Presentation-only (no backend change). Flagged follow-ons: uploader, LLM model, project count, multi-file,
+  live status.
 - ⬜ **Level 3 — Data Quality** (missing/inconsistent items + remediation) — will reuse
   `DistinctProjectKeysAsync` for portfolio-wide enumeration
 - ⬜ Confidence level surfaced per project (PRD user story #6)
