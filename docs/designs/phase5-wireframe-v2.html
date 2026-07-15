@@ -1,0 +1,2982 @@
+<title>Phase 5 — AI PMO Insight (Wireframe · Draft)</title>
+<style>
+  :root {
+    --paper: #F7F6F3;
+    --panel: #FFFFFF;
+    --panel-alt: #FBFAF6;
+    --ink: #17181C;
+    --ink-mute: #55575E;
+    --ink-faint: #8A8B92;
+    --rule: #E3E1DA;
+    --rule-strong: #C8C5BB;
+    --accent: #3A5F8A;
+    --accent-ink: #23405F;
+    --accent-tint: rgba(58, 95, 138, 0.08);
+    --draft: #7A5A1A;
+    --draft-bg: #F1E7CD;
+    --sev-green: #2E7D5B;
+    --sev-amber: #C08A2E;
+    --sev-red: #B0342C;
+    --sev-green-bg: rgba(46, 125, 91, 0.09);
+    --sev-amber-bg: rgba(192, 138, 46, 0.11);
+    --sev-red-bg: rgba(176, 52, 44, 0.10);
+    --shadow-soft: 0 1px 0 rgba(23, 24, 28, 0.03);
+    --font-display: Georgia, "Iowan Old Style", "Palatino Linotype", "Book Antiqua", serif;
+    --font-ui: -apple-system, BlinkMacSystemFont, "Segoe UI Variable", "Segoe UI", "Inter", system-ui, sans-serif;
+    --font-mono: ui-monospace, "SF Mono", "Cascadia Mono", "JetBrains Mono", Menlo, Consolas, monospace;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --paper: #14161B;
+      --panel: #1B1E24;
+      --panel-alt: #20242C;
+      --ink: #EDEBE4;
+      --ink-mute: #B3B4B9;
+      --ink-faint: #7E8087;
+      --rule: #2B2E36;
+      --rule-strong: #3B3F49;
+      --accent: #8AAFD8;
+      --accent-ink: #B8CFE7;
+      --accent-tint: rgba(138, 175, 216, 0.12);
+      --draft: #E2C87E;
+      --draft-bg: rgba(226, 200, 126, 0.14);
+      --sev-green: #6BB58C;
+      --sev-amber: #E0B564;
+      --sev-red: #E27A6E;
+      --sev-green-bg: rgba(107, 181, 140, 0.14);
+      --sev-amber-bg: rgba(224, 181, 100, 0.16);
+      --sev-red-bg: rgba(226, 122, 110, 0.16);
+      --shadow-soft: 0 1px 0 rgba(0, 0, 0, 0.3);
+    }
+  }
+
+  :root[data-theme="dark"] {
+    --paper: #14161B;
+    --panel: #1B1E24;
+    --panel-alt: #20242C;
+    --ink: #EDEBE4;
+    --ink-mute: #B3B4B9;
+    --ink-faint: #7E8087;
+    --rule: #2B2E36;
+    --rule-strong: #3B3F49;
+    --accent: #8AAFD8;
+    --accent-ink: #B8CFE7;
+    --accent-tint: rgba(138, 175, 216, 0.12);
+    --draft: #E2C87E;
+    --draft-bg: rgba(226, 200, 126, 0.14);
+    --sev-green: #6BB58C;
+    --sev-amber: #E0B564;
+    --sev-red: #E27A6E;
+    --sev-green-bg: rgba(107, 181, 140, 0.14);
+    --sev-amber-bg: rgba(224, 181, 100, 0.16);
+    --sev-red-bg: rgba(226, 122, 110, 0.16);
+    --shadow-soft: 0 1px 0 rgba(0, 0, 0, 0.3);
+  }
+
+  :root[data-theme="light"] {
+    --paper: #F7F6F3;
+    --panel: #FFFFFF;
+    --panel-alt: #FBFAF6;
+    --ink: #17181C;
+    --ink-mute: #55575E;
+    --ink-faint: #8A8B92;
+    --rule: #E3E1DA;
+    --rule-strong: #C8C5BB;
+    --accent: #3A5F8A;
+    --accent-ink: #23405F;
+    --accent-tint: rgba(58, 95, 138, 0.08);
+    --draft: #7A5A1A;
+    --draft-bg: #F1E7CD;
+    --sev-green: #2E7D5B;
+    --sev-amber: #C08A2E;
+    --sev-red: #B0342C;
+    --sev-green-bg: rgba(46, 125, 91, 0.09);
+    --sev-amber-bg: rgba(192, 138, 46, 0.11);
+    --sev-red-bg: rgba(176, 52, 44, 0.10);
+    --shadow-soft: 0 1px 0 rgba(23, 24, 28, 0.03);
+  }
+
+  body {
+    background: var(--paper);
+    color: var(--ink);
+    font-family: var(--font-ui);
+    font-size: 14.5px;
+    line-height: 1.55;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+    font-variant-numeric: tabular-nums;
+  }
+
+  a { color: var(--accent); text-decoration: none; }
+  a:hover { color: var(--accent-ink); text-decoration: underline; text-underline-offset: 3px; }
+  a:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 2px; }
+
+  /* draft strip */
+  .draft-strip {
+    background: var(--draft-bg);
+    color: var(--draft);
+    border-bottom: 1px solid var(--rule);
+    font-size: 11.5px;
+    letter-spacing: 0.06em;
+  }
+  .draft-strip-inner {
+    max-width: 1240px;
+    margin: 0 auto;
+    padding: 7px 32px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    flex-wrap: wrap;
+  }
+  .draft-mark {
+    font-weight: 700;
+    letter-spacing: 0.14em;
+    padding: 2px 8px;
+    border: 1px solid currentColor;
+    border-radius: 2px;
+  }
+  .draft-note { color: var(--draft); opacity: 0.92; }
+  .draft-note em { font-family: var(--font-mono); font-style: normal; font-size: 11px; }
+
+  /* top nav */
+  .nav {
+    position: sticky;
+    top: 0;
+    z-index: 40;
+    background: var(--paper);
+    border-bottom: 1px solid var(--rule);
+  }
+  .nav-inner {
+    max-width: 1240px;
+    margin: 0 auto;
+    padding: 14px 32px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 24px;
+  }
+  .brand {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .brand-mark {
+    width: 26px;
+    height: 26px;
+    display: grid;
+    place-items: center;
+    background: var(--ink);
+    color: var(--paper);
+    border-radius: 3px;
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 15px;
+    letter-spacing: -0.02em;
+  }
+  .brand-name {
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 16.5px;
+    letter-spacing: -0.005em;
+  }
+  .brand-sub {
+    font-size: 11px;
+    color: var(--ink-faint);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+  .nav-tabs {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+  .nav-tab {
+    padding: 8px 14px;
+    border-radius: 3px;
+    color: var(--ink-mute);
+    font-size: 13.5px;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    background: transparent;
+    border: 0;
+    font-family: inherit;
+  }
+  .nav-tab:hover { color: var(--ink); background: var(--accent-tint); }
+  .nav-tab .num {
+    font-family: var(--font-mono);
+    font-size: 10.5px;
+    color: var(--ink-faint);
+    letter-spacing: 0.06em;
+  }
+  .nav-tab.active {
+    background: var(--panel);
+    color: var(--ink);
+    box-shadow: inset 0 0 0 1px var(--rule);
+  }
+  .nav-tab.active .num { color: var(--accent); }
+  .nav-meta {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    color: var(--ink-faint);
+    font-size: 12px;
+    font-family: var(--font-mono);
+  }
+  .theme-toggle {
+    background: transparent;
+    border: 1px solid var(--rule);
+    border-radius: 3px;
+    color: var(--ink-mute);
+    padding: 5px 9px;
+    font-size: 11.5px;
+    font-family: inherit;
+    cursor: pointer;
+    letter-spacing: 0.04em;
+  }
+  .theme-toggle:hover { color: var(--ink); border-color: var(--rule-strong); }
+
+  /* page container */
+  main.page {
+    max-width: 1240px;
+    margin: 0 auto;
+    padding: 40px 32px 96px;
+  }
+  main.page[hidden] { display: none; }
+
+  /* page header */
+  .eyebrow {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 11px;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+    font-weight: 600;
+  }
+  .eyebrow .num {
+    display: inline-block;
+    font-family: var(--font-mono);
+    color: var(--accent);
+    background: var(--accent-tint);
+    padding: 3px 7px;
+    border-radius: 2px;
+    letter-spacing: 0.04em;
+  }
+  h1.page-title {
+    font-family: var(--font-display);
+    font-size: 42px;
+    font-weight: 500;
+    letter-spacing: -0.015em;
+    line-height: 1.1;
+    margin-top: 10px;
+    text-wrap: balance;
+  }
+  h1.page-title .grad { color: var(--ink); }
+  .page-lede {
+    margin-top: 12px;
+    color: var(--ink-mute);
+    font-size: 15px;
+    max-width: 720px;
+  }
+
+  /* section */
+  section.block {
+    margin-top: 48px;
+  }
+  .sec-head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 16px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid var(--rule);
+  }
+  .sec-title {
+    font-family: var(--font-display);
+    font-size: 21px;
+    font-weight: 500;
+    letter-spacing: -0.005em;
+  }
+  .sec-kicker {
+    font-size: 11px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+  }
+  .sec-title-row {
+    display: flex;
+    align-items: baseline;
+    gap: 14px;
+  }
+  .us-chip {
+    font-family: var(--font-mono);
+    font-size: 10.5px;
+    color: var(--ink-faint);
+    border: 1px solid var(--rule);
+    padding: 2px 7px;
+    border-radius: 2px;
+    letter-spacing: 0.02em;
+    cursor: help;
+    white-space: nowrap;
+  }
+  .us-chip:hover { color: var(--accent); border-color: var(--accent); }
+
+  /* summary strip — L1 hero numbers */
+  .summary-strip {
+    display: grid;
+    grid-template-columns: 1.4fr 1fr 1fr 1fr;
+    gap: 0;
+    margin-top: 28px;
+    background: var(--panel);
+    border: 1px solid var(--rule);
+    border-radius: 3px;
+  }
+  .summary-cell {
+    padding: 22px 24px;
+    border-right: 1px solid var(--rule);
+  }
+  .summary-cell:last-child { border-right: 0; }
+  .summary-label {
+    font-size: 11px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+    margin-bottom: 8px;
+  }
+  .summary-value {
+    font-family: var(--font-display);
+    font-size: 34px;
+    line-height: 1;
+    font-weight: 500;
+    letter-spacing: -0.01em;
+  }
+  .summary-cell.total .summary-value { font-size: 44px; }
+  .summary-sub {
+    margin-top: 6px;
+    font-size: 12px;
+    color: var(--ink-mute);
+  }
+
+  /* rag bar */
+  .rag-bar {
+    display: flex;
+    height: 8px;
+    margin-top: 14px;
+    border-radius: 2px;
+    overflow: hidden;
+    background: var(--rule);
+  }
+  .rag-bar .seg { height: 100%; }
+  .rag-legend {
+    display: flex;
+    gap: 18px;
+    margin-top: 10px;
+    font-size: 12px;
+    color: var(--ink-mute);
+  }
+  .rag-legend .dot {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    margin-right: 6px;
+    vertical-align: middle;
+  }
+  .dot-g { background: var(--sev-green); }
+  .dot-a { background: var(--sev-amber); }
+  .dot-r { background: var(--sev-red); }
+
+  /* severity pill */
+  .sev {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    font-size: 11.5px;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    padding: 3px 9px;
+    border-radius: 2px;
+    line-height: 1.4;
+  }
+  .sev::before {
+    content: "";
+    display: inline-block;
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+  }
+  .sev.g { background: var(--sev-green-bg); color: var(--sev-green); }
+  .sev.g::before { background: var(--sev-green); }
+  .sev.a { background: var(--sev-amber-bg); color: var(--sev-amber); }
+  .sev.a::before { background: var(--sev-amber); }
+  .sev.r { background: var(--sev-red-bg); color: var(--sev-red); }
+  .sev.r::before { background: var(--sev-red); }
+  .sev.neutral { background: var(--rule); color: var(--ink-mute); }
+  .sev.neutral::before { background: var(--ink-faint); }
+
+  /* confidence chip */
+  .conf {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 11.5px;
+    color: var(--ink-mute);
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    padding: 3px 9px;
+    border: 1px solid var(--rule);
+    border-radius: 2px;
+  }
+  .conf b {
+    font-family: var(--font-mono);
+    color: var(--ink);
+    font-weight: 600;
+    letter-spacing: 0;
+    text-transform: none;
+  }
+
+  /* tables */
+  table.records {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 20px;
+    background: var(--panel);
+    border: 1px solid var(--rule);
+    border-radius: 3px;
+    overflow: hidden;
+  }
+  table.records th,
+  table.records td {
+    text-align: left;
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--rule);
+    vertical-align: top;
+  }
+  table.records th {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--ink-faint);
+    font-weight: 600;
+    background: var(--panel-alt);
+  }
+  table.records tr:last-child td { border-bottom: 0; }
+  table.records tr.severity-r td:first-child { box-shadow: inset 3px 0 0 var(--sev-red); }
+  table.records tr.severity-a td:first-child { box-shadow: inset 3px 0 0 var(--sev-amber); }
+  table.records tr.severity-g td:first-child { box-shadow: inset 3px 0 0 var(--sev-green); }
+  table.records tr:hover { background: var(--accent-tint); }
+  table.records td .subtle {
+    display: block;
+    color: var(--ink-mute);
+    font-size: 12.5px;
+    margin-top: 4px;
+    max-width: 42em;
+  }
+  table.records td .cite {
+    display: inline-block;
+    margin-top: 6px;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--ink-faint);
+    border-top: 1px dotted var(--rule);
+    padding-top: 4px;
+  }
+  table.records .num-col {
+    font-family: var(--font-mono);
+    color: var(--ink-mute);
+  }
+  table.records .proj-link {
+    font-weight: 500;
+    color: var(--ink);
+    cursor: pointer;
+    background: none;
+    border: none;
+    padding: 0;
+    font-family: inherit;
+    font-size: inherit;
+    text-align: left;
+  }
+  table.records .proj-link:hover { color: var(--accent); text-decoration: underline; text-underline-offset: 3px; }
+
+  /* three-panel grid */
+  .grid-3 {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 20px;
+    margin-top: 20px;
+  }
+  .panel {
+    background: var(--panel);
+    border: 1px solid var(--rule);
+    border-radius: 3px;
+    padding: 20px 22px;
+  }
+  .panel-title {
+    font-size: 12px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+    margin-bottom: 12px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .panel-metric {
+    font-family: var(--font-display);
+    font-size: 30px;
+    line-height: 1.05;
+    letter-spacing: -0.01em;
+    margin-bottom: 4px;
+  }
+  .panel-sub {
+    font-size: 12.5px;
+    color: var(--ink-mute);
+    margin-bottom: 14px;
+  }
+  .panel-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    border-top: 1px solid var(--rule);
+  }
+  .panel-list li {
+    padding: 10px 0;
+    border-bottom: 1px solid var(--rule);
+    font-size: 13px;
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+  }
+  .panel-list li:last-child { border-bottom: 0; }
+  .panel-list li .l { color: var(--ink); }
+  .panel-list li .r { color: var(--ink-mute); font-family: var(--font-mono); font-size: 12px; white-space: nowrap; }
+
+  /* project header (L2) */
+  .proj-header {
+    background: var(--panel);
+    border: 1px solid var(--rule);
+    border-left: 3px solid var(--sev-red);
+    border-radius: 3px;
+    padding: 24px 26px;
+    margin-top: 28px;
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 20px;
+    align-items: start;
+  }
+  .proj-header h2 {
+    font-family: var(--font-display);
+    font-size: 28px;
+    font-weight: 500;
+    letter-spacing: -0.01em;
+    margin: 0;
+  }
+  .proj-header .code {
+    font-family: var(--font-mono);
+    color: var(--ink-faint);
+    font-size: 12px;
+    letter-spacing: 0.06em;
+    margin-bottom: 6px;
+    display: block;
+  }
+  .proj-header .chips {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-top: 12px;
+  }
+  .proj-header .switcher {
+    text-align: right;
+  }
+  .proj-header .switcher select {
+    font-family: inherit;
+    font-size: 13px;
+    background: var(--paper);
+    color: var(--ink);
+    border: 1px solid var(--rule);
+    padding: 7px 10px;
+    border-radius: 3px;
+  }
+  .proj-header .switcher .as-of {
+    font-size: 11.5px;
+    color: var(--ink-faint);
+    font-family: var(--font-mono);
+    margin-top: 6px;
+    display: block;
+  }
+
+  /* sub-nav (L2 anchors) */
+  .subnav {
+    position: sticky;
+    top: 61px;
+    z-index: 20;
+    background: var(--paper);
+    border-bottom: 1px solid var(--rule);
+    margin-top: 20px;
+    padding: 10px 0;
+    display: flex;
+    gap: 4px;
+    flex-wrap: wrap;
+  }
+  .subnav a {
+    padding: 6px 12px;
+    font-size: 12.5px;
+    color: var(--ink-mute);
+    border-radius: 2px;
+  }
+  .subnav a:hover { color: var(--ink); background: var(--accent-tint); text-decoration: none; }
+
+  /* deviations grid (L2) */
+  .devs {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 12px;
+    margin-top: 20px;
+  }
+  .dev {
+    background: var(--panel);
+    border: 1px solid var(--rule);
+    border-left-width: 3px;
+    border-radius: 3px;
+    padding: 16px 16px 14px;
+  }
+  .dev.g { border-left-color: var(--sev-green); }
+  .dev.a { border-left-color: var(--sev-amber); }
+  .dev.r { border-left-color: var(--sev-red); }
+  .dev .k {
+    font-size: 11px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+    margin-bottom: 8px;
+  }
+  .dev .v {
+    font-family: var(--font-display);
+    font-size: 22px;
+    letter-spacing: -0.005em;
+  }
+  .dev .n {
+    font-size: 12px;
+    color: var(--ink-mute);
+    margin-top: 4px;
+  }
+
+  /* finding cards (RAID with challenge/review tabs) */
+  .finding {
+    background: var(--panel);
+    border: 1px solid var(--rule);
+    border-radius: 3px;
+    margin-top: 16px;
+  }
+  .finding-head {
+    padding: 16px 20px 14px;
+    border-bottom: 1px solid var(--rule);
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    gap: 14px;
+    align-items: baseline;
+  }
+  .finding-id {
+    font-family: var(--font-mono);
+    color: var(--ink-faint);
+    font-size: 12px;
+  }
+  .finding-title {
+    font-weight: 500;
+    color: var(--ink);
+    font-size: 15px;
+  }
+  .finding-body {
+    padding: 0;
+    display: grid;
+    grid-template-columns: 40px 1fr;
+  }
+  .finding-tabs {
+    background: var(--panel-alt);
+    border-right: 1px solid var(--rule);
+    display: flex;
+    flex-direction: column;
+  }
+  .finding-tab {
+    background: none;
+    border: 0;
+    padding: 12px 8px;
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--ink-faint);
+    cursor: pointer;
+    writing-mode: vertical-rl;
+    font-family: inherit;
+    border-bottom: 1px solid var(--rule);
+  }
+  .finding-tab:last-child { border-bottom: 0; }
+  .finding-tab.active { color: var(--accent); background: var(--accent-tint); }
+  .finding-panels { padding: 18px 20px; }
+  .finding-panel { display: none; }
+  .finding-panel.active { display: block; }
+  .finding-panel p { margin: 0; color: var(--ink); font-size: 14px; }
+  .finding-panel p + p { margin-top: 10px; }
+  .finding-panel .cite {
+    display: block;
+    margin-top: 12px;
+    padding-top: 10px;
+    border-top: 1px dotted var(--rule);
+    font-family: var(--font-mono);
+    font-size: 11.5px;
+    color: var(--ink-faint);
+  }
+  .finding-panel .cite b { color: var(--ink-mute); font-weight: 500; }
+
+  /* milestones timeline */
+  .timeline {
+    margin-top: 20px;
+    border: 1px solid var(--rule);
+    border-radius: 3px;
+    background: var(--panel);
+  }
+  .timeline-row {
+    display: grid;
+    grid-template-columns: 110px 24px 1fr auto;
+    gap: 14px;
+    padding: 14px 20px;
+    align-items: center;
+    border-bottom: 1px solid var(--rule);
+  }
+  .timeline-row:last-child { border-bottom: 0; }
+  .timeline-row .date {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--ink-mute);
+  }
+  .timeline-row .marker {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: var(--sev-green);
+    justify-self: center;
+    box-shadow: 0 0 0 3px var(--sev-green-bg);
+  }
+  .timeline-row.a .marker { background: var(--sev-amber); box-shadow: 0 0 0 3px var(--sev-amber-bg); }
+  .timeline-row.r .marker { background: var(--sev-red); box-shadow: 0 0 0 3px var(--sev-red-bg); }
+  .timeline-row .label { font-size: 14px; }
+  .timeline-row .id { font-family: var(--font-mono); font-size: 11px; color: var(--ink-faint); margin-right: 8px; }
+
+  /* recommendation box */
+  .rec {
+    margin-top: 20px;
+    background: var(--panel);
+    border: 1px solid var(--rule);
+    border-radius: 3px;
+    padding: 22px 24px;
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 20px;
+    align-items: start;
+  }
+  .rec-body p {
+    font-family: var(--font-display);
+    font-size: 18px;
+    line-height: 1.4;
+    letter-spacing: -0.005em;
+    color: var(--ink);
+    margin: 0;
+    max-width: 44em;
+  }
+  .rec-meta {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    align-items: flex-end;
+    text-align: right;
+  }
+  .rec-actions {
+    margin-top: 16px;
+    padding-top: 16px;
+    border-top: 1px solid var(--rule);
+    font-size: 13px;
+    color: var(--ink-mute);
+    grid-column: 1 / -1;
+  }
+  .rec-actions ol {
+    margin: 8px 0 0 0;
+    padding-left: 22px;
+  }
+  .rec-actions li { margin-bottom: 5px; }
+
+  /* score audit (L2) */
+  .audit {
+    margin-top: 20px;
+    background: var(--panel-alt);
+    border: 1px solid var(--rule);
+    border-radius: 3px;
+    padding: 22px 24px;
+    font-family: var(--font-mono);
+    font-size: 12.5px;
+    color: var(--ink-mute);
+  }
+  .audit .row {
+    display: grid;
+    grid-template-columns: 130px 1fr;
+    gap: 14px;
+    padding: 5px 0;
+  }
+  .audit .row .k { color: var(--ink-faint); letter-spacing: 0.06em; text-transform: uppercase; font-size: 10.5px; align-self: center; }
+  .audit .row .v { color: var(--ink); }
+  .audit .row .v .sev { font-family: var(--font-ui); }
+  .audit .fired {
+    margin-top: 12px;
+    padding-top: 12px;
+    border-top: 1px dotted var(--rule);
+  }
+  .audit .fired ul { margin: 4px 0 0; padding-left: 18px; }
+  .audit .fired li { margin: 3px 0; }
+  .audit .fired em { color: var(--accent); font-style: normal; }
+
+  /* L3 confidence gauge */
+  .conf-hero {
+    display: grid;
+    grid-template-columns: 220px 1fr;
+    gap: 32px;
+    margin-top: 28px;
+    padding: 24px 26px;
+    background: var(--panel);
+    border: 1px solid var(--rule);
+    border-radius: 3px;
+    align-items: center;
+  }
+  .conf-num {
+    font-family: var(--font-display);
+    font-size: 84px;
+    line-height: 0.9;
+    letter-spacing: -0.02em;
+    color: var(--ink);
+  }
+  .conf-num sup {
+    font-size: 22px;
+    color: var(--ink-mute);
+    letter-spacing: 0;
+    margin-left: 4px;
+  }
+  .conf-lede { color: var(--ink-mute); max-width: 40em; }
+  .conf-lede strong { color: var(--ink); font-weight: 500; }
+
+  /* areas grid (L3) */
+  .areas {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+    margin-top: 20px;
+  }
+  .area {
+    background: var(--panel);
+    border: 1px solid var(--rule);
+    border-radius: 3px;
+    padding: 16px 18px;
+  }
+  .area .k {
+    font-size: 11px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+    margin-bottom: 8px;
+    display: flex;
+    justify-content: space-between;
+  }
+  .area .bar {
+    height: 6px;
+    background: var(--rule);
+    border-radius: 2px;
+    overflow: hidden;
+    margin-top: 10px;
+  }
+  .area .bar .fill { height: 100%; background: var(--sev-green); }
+  .area .v {
+    font-family: var(--font-display);
+    font-size: 24px;
+    letter-spacing: -0.01em;
+  }
+  .area .v sup {
+    font-size: 12px;
+    color: var(--ink-mute);
+    margin-left: 2px;
+  }
+
+  /* traceability footer */
+  .trace {
+    margin-top: 72px;
+    padding-top: 24px;
+    border-top: 1px solid var(--rule);
+    color: var(--ink-mute);
+    font-size: 12.5px;
+  }
+  .trace .kicker {
+    font-size: 11px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+    margin-bottom: 12px;
+  }
+  .trace ol {
+    margin: 0;
+    padding-left: 22px;
+    max-width: 68em;
+  }
+  .trace ol li { margin-bottom: 6px; }
+  .trace ol li b { color: var(--ink); font-weight: 500; }
+  .trace .note {
+    margin-top: 16px;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--ink-faint);
+  }
+
+  /* dropzone (upload) */
+  .dropzone {
+    border: 2px dashed var(--rule-strong);
+    border-radius: 4px;
+    background: var(--panel-alt);
+    padding: 56px 32px;
+    text-align: center;
+    margin-top: 28px;
+    transition: border-color 120ms, background 120ms;
+  }
+  .dropzone:hover { border-color: var(--accent); background: var(--accent-tint); }
+  .dropzone-title {
+    font-family: var(--font-display);
+    font-size: 22px;
+    letter-spacing: -0.005em;
+  }
+  .dropzone-sub {
+    font-size: 13px;
+    color: var(--ink-mute);
+    margin: 10px auto 0;
+    max-width: 44em;
+  }
+  .dropzone-formats {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--ink-faint);
+    margin-top: 18px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+  .btn-primary {
+    padding: 9px 20px;
+    background: var(--ink);
+    color: var(--paper);
+    border: 0;
+    border-radius: 3px;
+    font-size: 13px;
+    font-family: inherit;
+    cursor: pointer;
+    letter-spacing: 0.02em;
+  }
+  .btn-primary:hover { opacity: 0.9; }
+  .btn-primary.accent { background: var(--accent); color: #fff; }
+
+  /* alert panel (duplicate identity) */
+  .alert-panel {
+    display: grid;
+    grid-template-columns: 28px 1fr;
+    gap: 14px;
+    padding: 16px 20px;
+    background: var(--sev-amber-bg);
+    border: 1px solid var(--sev-amber);
+    border-left-width: 3px;
+    border-radius: 3px;
+    align-items: start;
+    margin-top: 16px;
+  }
+  .alert-icon {
+    font-size: 20px;
+    color: var(--sev-amber);
+    font-family: var(--font-display);
+    line-height: 1;
+    padding-top: 2px;
+  }
+  .alert-title {
+    font-weight: 600;
+    color: var(--ink);
+    font-size: 14px;
+    margin-bottom: 4px;
+  }
+  .alert-panel p {
+    margin: 0;
+    color: var(--ink);
+    font-size: 13.5px;
+    line-height: 1.5;
+  }
+  .alert-panel .us-chip { margin-top: 10px; display: inline-flex; }
+
+  /* agent pipeline */
+  .pipeline-wrap { overflow-x: auto; margin-top: 20px; }
+  .pipeline {
+    background: var(--panel);
+    border: 1px solid var(--rule);
+    border-radius: 3px;
+    display: grid;
+    grid-template-columns: repeat(9, minmax(96px, 1fr));
+    min-width: 864px;
+  }
+  .agent-step {
+    padding: 16px 8px 14px;
+    text-align: center;
+    border-right: 1px solid var(--rule);
+    position: relative;
+  }
+  .agent-step:last-child { border-right: 0; }
+  .agent-step .icon {
+    font-size: 14px;
+    line-height: 1;
+    display: block;
+    margin-bottom: 4px;
+  }
+  .agent-num {
+    font-family: var(--font-mono);
+    font-size: 10.5px;
+    color: var(--ink-faint);
+    letter-spacing: 0.06em;
+  }
+  .agent-name {
+    font-size: 12px;
+    color: var(--ink);
+    margin-top: 5px;
+    line-height: 1.25;
+  }
+  .agent-state {
+    font-size: 10px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    margin-top: 6px;
+    font-family: var(--font-mono);
+  }
+  .agent-step.done .icon,
+  .agent-step.done .agent-state { color: var(--sev-green); }
+  .agent-step.running .icon,
+  .agent-step.running .agent-state { color: var(--accent); }
+  .agent-step.pending .icon,
+  .agent-step.pending .agent-state { color: var(--ink-faint); }
+
+  .pipeline-foot {
+    margin-top: 12px;
+    font-size: 12.5px;
+    color: var(--ink-mute);
+    font-family: var(--font-mono);
+  }
+  .link-inline {
+    background: none;
+    border: 0;
+    color: var(--accent);
+    cursor: pointer;
+    font: inherit;
+    padding: 0;
+    text-decoration: underline;
+    text-underline-offset: 3px;
+  }
+  .link-inline:hover { color: var(--accent-ink); }
+
+  /* action row */
+  .action-row {
+    margin-top: 20px;
+    display: flex;
+    gap: 14px;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+  .action-row .hint {
+    font-size: 12.5px;
+    color: var(--ink-mute);
+  }
+
+  /* history master-detail */
+  .history-layout {
+    margin-top: 28px;
+    display: grid;
+    grid-template-columns: 320px 1fr;
+    gap: 24px;
+    align-items: start;
+  }
+  .history-list {
+    background: var(--panel);
+    border: 1px solid var(--rule);
+    border-radius: 3px;
+    overflow: hidden;
+    position: sticky;
+    top: 130px;
+    max-height: calc(100vh - 160px);
+    overflow-y: auto;
+  }
+  .history-list-head {
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--rule);
+    background: var(--panel-alt);
+    font-size: 11px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+  }
+  .history-row {
+    padding: 14px 16px;
+    border-bottom: 1px solid var(--rule);
+    cursor: pointer;
+    display: block;
+    width: 100%;
+    text-align: left;
+    background: transparent;
+    border-left: 3px solid transparent;
+    font-family: inherit;
+    color: inherit;
+  }
+  .history-row:last-child { border-bottom: 0; }
+  .history-row:hover { background: var(--accent-tint); }
+  .history-row.active {
+    background: var(--accent-tint);
+    border-left-color: var(--accent);
+  }
+  .history-row .h-date {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--ink-mute);
+  }
+  .history-row .h-files {
+    font-size: 13px;
+    color: var(--ink);
+    margin-top: 3px;
+    line-height: 1.35;
+  }
+  .history-row .h-meta {
+    font-size: 11.5px;
+    color: var(--ink-faint);
+    margin-top: 6px;
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    align-items: center;
+  }
+  .history-row .h-meta .sev {
+    padding: 1px 7px;
+    font-size: 10px;
+  }
+
+  .history-detail-head {
+    background: var(--panel);
+    border: 1px solid var(--rule);
+    border-radius: 3px;
+    padding: 22px 24px;
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 20px;
+    align-items: start;
+  }
+  .history-detail-head h3 {
+    font-family: var(--font-display);
+    font-size: 24px;
+    font-weight: 500;
+    letter-spacing: -0.005em;
+    margin: 0;
+  }
+  .history-detail-head .code {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--ink-faint);
+    margin-bottom: 4px;
+    display: block;
+    letter-spacing: 0.06em;
+  }
+  .history-detail-head .chips {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-top: 12px;
+  }
+  .history-detail-head .actions {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    align-items: flex-end;
+    text-align: right;
+    font-family: var(--font-mono);
+    font-size: 11.5px;
+    color: var(--ink-faint);
+  }
+  .history-detail-head .actions b { color: var(--ink); font-weight: 500; }
+
+  .history-sub {
+    margin-top: 20px;
+    border: 1px solid var(--rule);
+    border-radius: 3px;
+    background: var(--panel);
+  }
+  .history-sub h4 {
+    margin: 0;
+    padding: 14px 20px;
+    border-bottom: 1px solid var(--rule);
+    background: var(--panel-alt);
+    font-family: var(--font-display);
+    font-size: 17px;
+    font-weight: 500;
+    letter-spacing: -0.005em;
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+  .history-sub h4 .sec-kicker { flex: 1 1 auto; text-align: right; }
+  .history-sub .body { padding: 18px 22px; }
+  .history-sub .body p {
+    margin: 0 0 12px 0;
+    font-size: 14px;
+    color: var(--ink);
+    max-width: 44em;
+  }
+  .history-sub .body p:last-child { margin-bottom: 0; }
+  .history-sub .body p.narrative {
+    font-family: var(--font-display);
+    font-size: 16px;
+    line-height: 1.6;
+    letter-spacing: -0.003em;
+  }
+  .history-sub .body ul,
+  .history-sub .body ol {
+    margin: 0;
+    padding-left: 22px;
+    color: var(--ink);
+    font-size: 14px;
+  }
+  .history-sub .body ul li,
+  .history-sub .body ol li {
+    margin-bottom: 8px;
+    line-height: 1.55;
+  }
+  .history-sub .body ul li:last-child,
+  .history-sub .body ol li:last-child { margin-bottom: 0; }
+  .history-sub .body .cite {
+    display: inline-block;
+    margin-left: 4px;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--ink-faint);
+    white-space: nowrap;
+  }
+  .override-list { list-style: none !important; padding: 0 !important; }
+  .override-list li {
+    padding: 8px 0;
+    border-bottom: 1px dotted var(--rule);
+  }
+  .override-list li:last-child { border-bottom: 0; }
+  .override-list em {
+    color: var(--accent);
+    font-style: normal;
+    font-family: var(--font-mono);
+    font-size: 12px;
+  }
+
+  @media (max-width: 900px) {
+    .history-layout { grid-template-columns: 1fr; }
+    .history-list { position: static; max-height: none; }
+  }
+
+  /* auth pages (login) */
+  main.page.auth-page {
+    min-height: calc(100vh - 90px);
+    display: grid;
+    place-items: center;
+    padding: 40px 20px 60px;
+  }
+  .auth-card {
+    max-width: 400px;
+    width: 100%;
+    background: var(--panel);
+    border: 1px solid var(--rule);
+    border-radius: 4px;
+    padding: 32px 32px 28px;
+    box-shadow: var(--shadow-soft);
+  }
+  .auth-header {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding-bottom: 20px;
+    border-bottom: 1px solid var(--rule);
+    margin-bottom: 22px;
+  }
+  .auth-tabs {
+    display: flex;
+    gap: 3px;
+    border: 1px solid var(--rule);
+    border-radius: 3px;
+    padding: 3px;
+    margin-bottom: 24px;
+    background: var(--panel-alt);
+  }
+  .auth-tab {
+    flex: 1;
+    padding: 8px 14px;
+    border: 0;
+    background: transparent;
+    border-radius: 2px;
+    color: var(--ink-mute);
+    font-family: inherit;
+    font-size: 13px;
+    cursor: pointer;
+  }
+  .auth-tab:hover { color: var(--ink); }
+  .auth-tab.active {
+    background: var(--panel);
+    color: var(--ink);
+    box-shadow: 0 0 0 1px var(--rule);
+  }
+  .field { display: block; margin-bottom: 16px; }
+  .field-label {
+    display: block;
+    font-size: 11px;
+    color: var(--ink-mute);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    margin-bottom: 6px;
+    font-weight: 600;
+  }
+  .field input {
+    display: block;
+    width: 100%;
+    padding: 9px 12px;
+    border: 1px solid var(--rule);
+    border-radius: 3px;
+    background: var(--paper);
+    color: var(--ink);
+    font-family: inherit;
+    font-size: 14px;
+  }
+  .field input:focus {
+    outline: 2px solid var(--accent);
+    outline-offset: 1px;
+    border-color: var(--accent);
+  }
+  .field-hint {
+    margin-top: 6px;
+    font-size: 11.5px;
+    color: var(--ink-faint);
+    font-family: var(--font-mono);
+    line-height: 1.45;
+  }
+  .auth-error {
+    padding: 10px 14px;
+    background: var(--sev-red-bg);
+    border: 1px solid var(--sev-red);
+    border-left-width: 3px;
+    border-radius: 3px;
+    color: var(--sev-red);
+    font-size: 13px;
+    margin-bottom: 16px;
+  }
+  .auth-error b { color: var(--sev-red); font-weight: 600; }
+  .auth-submit {
+    width: 100%;
+    padding: 11px;
+    font-size: 14px;
+    margin-top: 4px;
+  }
+  .auth-note {
+    margin-top: 22px;
+    font-size: 11.5px;
+    color: var(--ink-faint);
+    font-family: var(--font-mono);
+    text-align: center;
+    max-width: 400px;
+    letter-spacing: 0.02em;
+  }
+  .auth-note code {
+    background: var(--panel-alt);
+    padding: 1px 5px;
+    border-radius: 2px;
+    color: var(--ink-mute);
+    font-size: 11px;
+  }
+
+  /* settings card (change password) */
+  .settings-card {
+    max-width: 480px;
+    margin-top: 28px;
+    background: var(--panel);
+    border: 1px solid var(--rule);
+    border-radius: 3px;
+    padding: 24px 28px;
+  }
+  .settings-actions {
+    display: flex;
+    gap: 16px;
+    align-items: center;
+    margin-top: 8px;
+    padding-top: 20px;
+    border-top: 1px solid var(--rule);
+  }
+
+  /* success panel */
+  .success-panel {
+    display: grid;
+    grid-template-columns: 28px 1fr;
+    gap: 14px;
+    padding: 16px 20px;
+    background: var(--sev-green-bg);
+    border: 1px solid var(--sev-green);
+    border-left-width: 3px;
+    border-radius: 3px;
+    align-items: start;
+    max-width: 480px;
+    margin-top: 20px;
+  }
+  .success-icon {
+    color: var(--sev-green);
+    font-size: 18px;
+    line-height: 1;
+    padding-top: 2px;
+    font-weight: 700;
+  }
+  .success-title {
+    font-weight: 600;
+    color: var(--ink);
+    font-size: 14px;
+    margin-bottom: 4px;
+  }
+  .success-panel p {
+    margin: 0;
+    font-size: 13.5px;
+    color: var(--ink);
+    line-height: 1.5;
+  }
+  .success-panel .cite {
+    display: block;
+    margin-top: 8px;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--ink-faint);
+  }
+
+  /* user menu in nav */
+  .user-menu { position: relative; }
+  .user-menu-btn {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 4px 10px 4px 4px;
+    background: transparent;
+    border: 1px solid var(--rule);
+    border-radius: 3px;
+    color: var(--ink-mute);
+    font-family: inherit;
+    font-size: 12.5px;
+    cursor: pointer;
+  }
+  .user-menu-btn:hover { color: var(--ink); border-color: var(--rule-strong); }
+  .user-menu-btn[aria-expanded="true"] { border-color: var(--accent); color: var(--ink); }
+  .user-avatar {
+    display: grid;
+    place-items: center;
+    width: 22px;
+    height: 22px;
+    background: var(--accent);
+    color: #fff;
+    border-radius: 50%;
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    font-family: var(--font-ui);
+  }
+  .user-menu-panel {
+    position: absolute;
+    top: calc(100% + 6px);
+    right: 0;
+    min-width: 240px;
+    background: var(--panel);
+    border: 1px solid var(--rule);
+    border-radius: 3px;
+    box-shadow: 0 6px 16px rgba(0,0,0,0.08);
+    z-index: 50;
+    overflow: hidden;
+  }
+  .user-menu-header {
+    padding: 12px 14px;
+    border-bottom: 1px solid var(--rule);
+    background: var(--panel-alt);
+  }
+  .user-menu-header .u-name { font-size: 13px; color: var(--ink); font-weight: 500; }
+  .user-menu-header .u-email { font-size: 12px; color: var(--ink-mute); margin-top: 1px; }
+  .user-menu-header .u-role {
+    font-family: var(--font-mono);
+    font-size: 10.5px;
+    color: var(--ink-faint);
+    margin-top: 6px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+  .user-menu-panel button.menu-item {
+    display: block;
+    width: 100%;
+    text-align: left;
+    background: transparent;
+    border: 0;
+    padding: 10px 14px;
+    font-family: inherit;
+    font-size: 13px;
+    color: var(--ink);
+    cursor: pointer;
+    border-bottom: 1px solid var(--rule);
+  }
+  .user-menu-panel button.menu-item:last-child { border-bottom: 0; }
+  .user-menu-panel button.menu-item:hover { background: var(--accent-tint); color: var(--accent-ink); }
+  .user-menu-panel button.menu-item.danger { color: var(--sev-red); }
+  .user-menu-panel button.menu-item.danger:hover { background: var(--sev-red-bg); }
+
+  /* hide nav tabs on login page */
+  body.no-tabs .nav-tabs,
+  body.no-tabs .user-menu,
+  body.no-tabs .nav-meta > span:first-child { display: none; }
+
+  @media (max-width: 640px) {
+    .user-menu-btn .user-email { display: none; }
+  }
+
+  /* focus */
+  button:focus-visible, [role="button"]:focus-visible, select:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+  }
+
+  @media (max-width: 980px) {
+    .summary-strip { grid-template-columns: 1fr 1fr; }
+    .summary-cell { border-right: 0; border-bottom: 1px solid var(--rule); }
+    .grid-3, .areas { grid-template-columns: 1fr 1fr; }
+    .devs { grid-template-columns: 1fr 1fr; }
+    .proj-header { grid-template-columns: 1fr; }
+    .conf-hero { grid-template-columns: 1fr; }
+  }
+  @media (max-width: 640px) {
+    .nav-inner { flex-wrap: wrap; }
+    main.page { padding: 28px 20px 60px; }
+    h1.page-title { font-size: 32px; }
+    .conf-num { font-size: 60px; }
+    .grid-3, .areas, .devs { grid-template-columns: 1fr; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    * { transition: none !important; animation: none !important; }
+  }
+</style>
+
+<div class="draft-strip">
+  <div class="draft-strip-inner">
+    <span class="draft-mark">DRAFT</span>
+    <span class="draft-note">
+      Wireframe · not source of truth · v0.1 · 15 Jul 2026 ·
+      seeded by <em>docs/prds/poc-ai-pmo-insight.md</em>
+    </span>
+  </div>
+</div>
+
+<header class="nav">
+  <div class="nav-inner">
+    <div class="brand">
+      <div class="brand-mark">A</div>
+      <div>
+        <div class="brand-name">AI PMO Insight</div>
+        <div class="brand-sub">Phase 5 · Dashboards</div>
+      </div>
+    </div>
+    <nav class="nav-tabs" role="tablist" aria-label="Dashboard sections">
+      <button class="nav-tab" data-page-target="upload" role="tab" aria-selected="false">
+        <svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true" style="vertical-align:-1px;">
+          <path d="M6 1.5v6.5M6 1.5L3.5 4M6 1.5L8.5 4M2.5 10h7" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        Upload
+      </button>
+      <button class="nav-tab active" data-page-target="l1" role="tab" aria-selected="true">
+        <span class="num">01</span> Portfolio
+      </button>
+      <button class="nav-tab" data-page-target="l2" role="tab" aria-selected="false">
+        <span class="num">02</span> Project
+      </button>
+      <button class="nav-tab" data-page-target="l3" role="tab" aria-selected="false">
+        <span class="num">03</span> Data Quality
+      </button>
+      <button class="nav-tab" data-page-target="history" role="tab" aria-selected="false">
+        History
+      </button>
+    </nav>
+    <div class="nav-meta">
+      <span>as of 15 Jul 2026</span>
+      <div class="user-menu">
+        <button class="user-menu-btn" id="userMenuBtn" aria-haspopup="menu" aria-expanded="false">
+          <span class="user-avatar" aria-hidden="true">KB</span>
+          <span class="user-email">k.bergman@nextwave.dk</span>
+          <svg width="10" height="10" viewBox="0 0 10 10" aria-hidden="true">
+            <path d="M2 4l3 3 3-3" stroke="currentColor" stroke-width="1.4" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </button>
+        <div class="user-menu-panel" id="userMenuPanel" role="menu" hidden>
+          <div class="user-menu-header">
+            <div class="u-name">Kaja Bergman</div>
+            <div class="u-email">k.bergman@nextwave.dk</div>
+            <div class="u-role">pmoAdmin · executive</div>
+          </div>
+          <button class="menu-item" role="menuitem" data-goto-changepwd>Change password</button>
+          <button class="menu-item danger" role="menuitem" data-goto-login>Log out</button>
+        </div>
+      </div>
+      <button class="theme-toggle" id="themeToggle" aria-label="Toggle theme">Theme</button>
+    </div>
+  </div>
+</header>
+
+<!-- ================= UPLOAD ================= -->
+<main class="page" id="page-upload" data-page="upload" hidden>
+  <div class="eyebrow">Ingest · project data</div>
+  <h1 class="page-title">Upload the client's project files.</h1>
+  <p class="page-lede">
+    Drop the Orbit export and any supporting minutes or risk registers. The pipeline parses them,
+    reports what came through cleanly, and flags anything that needs a mapping decision
+    before analysis starts.
+  </p>
+
+  <!-- Dropzone -->
+  <section class="block" aria-label="Upload files">
+    <div class="dropzone" role="button" tabindex="0">
+      <div class="dropzone-title">Drop files here, or click to browse</div>
+      <div class="dropzone-sub">One Orbit workbook plus any supporting minutes / risk registers. Up to 20 files per upload.</div>
+      <div class="dropzone-formats">.xlsx · .xml · .docx</div>
+      <button class="btn-primary" style="margin-top:18px;">Select files…</button>
+    </div>
+  </section>
+
+  <!-- This upload's parse results -->
+  <section class="block">
+    <div class="sec-head">
+      <div class="sec-title-row">
+        <h2 class="sec-title">This upload · parse results</h2>
+        <span class="us-chip" title="US-1: PMO admin uploads project files and sees which parsed cleanly and which need mapping.">US 1</span>
+      </div>
+      <span class="sec-kicker">4 files · 5.8 MB · run 04:12 UTC</span>
+    </div>
+    <table class="records" aria-label="Parse results per file">
+      <thead>
+        <tr>
+          <th>File</th>
+          <th style="width: 14%">Type</th>
+          <th style="width: 12%">Status</th>
+          <th style="width: 20%">Extracted</th>
+          <th>Notes</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr class="severity-g">
+          <td>orbit-export-2026-07.xlsx <span class="num-col" style="display:block;font-size:11px;">3.2 MB</span></td>
+          <td>Orbit workbook</td>
+          <td><span class="sev g">Parsed</span></td>
+          <td>47 projects · 12 tabs</td>
+          <td>All expected sheets present. Ready for analysis.</td>
+        </tr>
+        <tr class="severity-a">
+          <td>risk-register.xlsx <span class="num-col" style="display:block;font-size:11px;">1.1 MB</span></td>
+          <td>Supplementary</td>
+          <td><span class="sev a">Needs mapping</span></td>
+          <td>218 rows · 3 unmapped columns</td>
+          <td>Columns <span class="num-col">Owner_v2</span>, <span class="num-col">Mitigation_status_new</span>, <span class="num-col">Escalation_lvl</span> don't match schema. <button class="link-inline">Map columns →</button></td>
+        </tr>
+        <tr class="severity-g">
+          <td>meeting-minutes-2026-07-08.docx <span class="num-col" style="display:block;font-size:11px;">96 KB</span></td>
+          <td>Minutes</td>
+          <td><span class="sev g">Parsed</span></td>
+          <td>12 candidate risks · 4 decisions · 2 issues</td>
+          <td>Free-text extraction · LLM pass runs when analysis starts.</td>
+        </tr>
+        <tr class="severity-r">
+          <td>finance-export.csv <span class="num-col" style="display:block;font-size:11px;">1.4 MB</span></td>
+          <td>CSV</td>
+          <td><span class="sev r">Rejected</span></td>
+          <td>—</td>
+          <td>CSV is not supported. Re-export as <span class="num-col">.xlsx</span> from Maconomy and re-upload.</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <!-- Duplicate identity confirmation -->
+    <div class="alert-panel" role="alert">
+      <div class="alert-icon" aria-hidden="true">!</div>
+      <div>
+        <div class="alert-title">Duplicate project identity — confirmation needed</div>
+        <p><b>Titan Rollout</b> (<span class="num-col">PROJ-6412</span>) and <b>Titan Rollout Phase 1</b> (<span class="num-col">PROJ-6412a</span>) share sponsor, WBS overlap, and time entries logged against both IDs. Merge before analysis, or keep separate?</p>
+        <div style="margin-top: 12px; display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+          <button class="btn-primary" style="padding: 6px 14px; font-size: 12px;">Merge into PROJ-6412</button>
+          <button class="link-inline">Keep separate</button>
+          <span class="us-chip" title="US-2: When the same project appears under two identifiers, PMO admin confirms the merge — never silently merged.">US 2</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="action-row">
+      <button class="btn-primary accent">Run analysis →</button>
+      <span class="hint">estimated 3 min for 47 projects · 9 agents</span>
+    </div>
+  </section>
+
+  <!-- Agent pipeline live status -->
+  <section class="block">
+    <div class="sec-head">
+      <div class="sec-title-row">
+        <h2 class="sec-title">Analysis pipeline</h2>
+        <span class="us-chip" title="US-9: Challenge and Review agents run alongside the analysis so the conclusion is stress-tested before publication.">US 9</span>
+      </div>
+      <span class="sec-kicker">9 agents · running · 01:42 elapsed</span>
+    </div>
+    <div class="pipeline-wrap">
+      <div class="pipeline" role="list">
+        <div class="agent-step done" role="listitem">
+          <span class="icon" aria-hidden="true">✓</span>
+          <div class="agent-num">01</div><div class="agent-name">Data Collector</div><div class="agent-state">Done · 18 s</div>
+        </div>
+        <div class="agent-step done" role="listitem">
+          <span class="icon" aria-hidden="true">✓</span>
+          <div class="agent-num">02</div><div class="agent-name">Data Quality</div><div class="agent-state">Done · 24 s</div>
+        </div>
+        <div class="agent-step done" role="listitem">
+          <span class="icon" aria-hidden="true">✓</span>
+          <div class="agent-num">03</div><div class="agent-name">Status</div><div class="agent-state">Done · 31 s</div>
+        </div>
+        <div class="agent-step running" role="listitem" aria-current="step">
+          <span class="icon" aria-hidden="true">●</span>
+          <div class="agent-num">04</div><div class="agent-name">Risk &amp; Issue</div><div class="agent-state">Running</div>
+        </div>
+        <div class="agent-step pending" role="listitem">
+          <span class="icon" aria-hidden="true">○</span>
+          <div class="agent-num">05</div><div class="agent-name">Financial</div><div class="agent-state">Pending</div>
+        </div>
+        <div class="agent-step pending" role="listitem">
+          <span class="icon" aria-hidden="true">○</span>
+          <div class="agent-num">06</div><div class="agent-name">Resource</div><div class="agent-state">Pending</div>
+        </div>
+        <div class="agent-step pending" role="listitem">
+          <span class="icon" aria-hidden="true">○</span>
+          <div class="agent-num">07</div><div class="agent-name">Narrative</div><div class="agent-state">Pending</div>
+        </div>
+        <div class="agent-step pending" role="listitem">
+          <span class="icon" aria-hidden="true">○</span>
+          <div class="agent-num">08</div><div class="agent-name">Challenge</div><div class="agent-state">Pending</div>
+        </div>
+        <div class="agent-step pending" role="listitem">
+          <span class="icon" aria-hidden="true">○</span>
+          <div class="agent-num">09</div><div class="agent-name">Review</div><div class="agent-state">Pending</div>
+        </div>
+      </div>
+    </div>
+    <div class="pipeline-foot">
+      → When complete, findings publish to <button class="link-inline" data-goto-l1>Portfolio (L1)</button>. Individual projects are linked from there.
+    </div>
+  </section>
+
+  <!-- Recent uploads -->
+  <section class="block">
+    <div class="sec-head">
+      <div class="sec-title-row">
+        <h2 class="sec-title">Recent uploads</h2>
+      </div>
+      <span class="sec-kicker">Newest first · <button class="link-inline" data-goto-history>see full history →</button></span>
+    </div>
+    <table class="records" aria-label="Recent uploads">
+      <thead>
+        <tr>
+          <th style="width: 20%">Uploaded</th>
+          <th>Files</th>
+          <th style="width: 10%">Projects</th>
+          <th style="width: 12%">Status</th>
+          <th style="width: 12%">View</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr class="severity-a">
+          <td>15 Jul · 04:12 UTC <span class="num-col" style="display:block;font-size:11px;">by K. Bergman</span></td>
+          <td>orbit-export-2026-07.xlsx · risk-register.xlsx · meeting-minutes-2026-07-08.docx</td>
+          <td class="num-col">47</td>
+          <td><span class="sev a">Running…</span></td>
+          <td>—</td>
+        </tr>
+        <tr class="severity-g">
+          <td>08 Jul · 09:04 UTC <span class="num-col" style="display:block;font-size:11px;">by K. Bergman</span></td>
+          <td>orbit-export-2026-07-08.xlsx · minutes/*.docx (5)</td>
+          <td class="num-col">47</td>
+          <td><span class="sev g">Complete</span></td>
+          <td><button class="proj-link" data-goto-l1>Portfolio</button></td>
+        </tr>
+        <tr class="severity-g">
+          <td>01 Jul · 08:41 UTC <span class="num-col" style="display:block;font-size:11px;">by J. Patel</span></td>
+          <td>orbit-export-2026-07-01.xlsx</td>
+          <td class="num-col">46</td>
+          <td><span class="sev g">Complete</span></td>
+          <td><button class="proj-link" data-goto-l1>Portfolio</button></td>
+        </tr>
+      </tbody>
+    </table>
+  </section>
+
+  <!-- Traceability -->
+  <footer class="trace">
+    <div class="kicker">This page addresses</div>
+    <ol>
+      <li><b>US-1</b> — PMO admin uploads a set of project files and sees which parsed cleanly and which need mapping — the analysis is running on complete inputs.</li>
+      <li><b>US-2</b> — When the same project appears under two identifiers, PMO admin confirms the merge — hours and costs are never split across duplicate entities.</li>
+      <li><b>US-9</b> — Challenge and Review agents visible in the pipeline so the trust story starts at ingest, not just at publication.</li>
+    </ol>
+    <div class="note">CSV rejection is a project decision — samples are converted to <span class="num-col">.xlsx</span> / <span class="num-col">.docx</span>. Column-mapping UI (the "Map columns →" link) is out of Phase 5; POC assumes canonical Orbit shape.</div>
+  </footer>
+</main>
+
+<!-- ================= LEVEL 1 ================= -->
+<main class="page" id="page-l1" data-page="l1">
+  <div class="eyebrow"><span class="num">L 01</span> Executive Portfolio Summary</div>
+  <h1 class="page-title">The portfolio, at one glance.</h1>
+  <p class="page-lede">
+    Where leadership should spend its next hour. Health across 47 active projects, the eight
+    that need intervention now, and the actions the AI recommends — every one owned and dated.
+  </p>
+
+  <!-- Summary strip -->
+  <section class="block" aria-label="Portfolio summary">
+    <div class="summary-strip">
+      <div class="summary-cell total">
+        <div class="summary-label">Portfolio health</div>
+        <div class="summary-value">47<span style="font-size:22px;color:var(--ink-faint);"> projects</span></div>
+        <div class="rag-bar" role="img" aria-label="8 red, 14 amber, 25 green">
+          <span class="seg" style="width:17%;background:var(--sev-red);"></span>
+          <span class="seg" style="width:30%;background:var(--sev-amber);"></span>
+          <span class="seg" style="width:53%;background:var(--sev-green);"></span>
+        </div>
+        <div class="rag-legend">
+          <span><span class="dot dot-r"></span>8 red</span>
+          <span><span class="dot dot-a"></span>14 amber</span>
+          <span><span class="dot dot-g"></span>25 green</span>
+        </div>
+      </div>
+      <div class="summary-cell">
+        <div class="summary-label">Financial exposure</div>
+        <div class="summary-value">4.2 <span style="font-size:20px;color:var(--ink-faint);">M€</span></div>
+        <div class="summary-sub">forecast overrun · 6 projects &gt;15%</div>
+      </div>
+      <div class="summary-cell">
+        <div class="summary-label">Decisions blocking</div>
+        <div class="summary-value">11</div>
+        <div class="summary-sub">&gt;7 days old · 4 in exec queue</div>
+      </div>
+      <div class="summary-cell">
+        <div class="summary-label">Confidence (avg)</div>
+        <div class="summary-value">72<span style="font-size:20px;color:var(--ink-faint);">%</span></div>
+        <div class="summary-sub">3 projects flagged "Needs PM Review"</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Needs intervention -->
+  <section class="block" id="l1-needs">
+    <div class="sec-head">
+      <div class="sec-title-row">
+        <h2 class="sec-title">Projects needing intervention</h2>
+        <span class="us-chip" title="US-3: Executive Level-1 view showing G/A/R, financial exposure, decision backlog, resource bottlenecks, and top intervention candidates.">US 3</span>
+        <span class="us-chip" title="US-6: Confidence level per project so PMs know when the AI is reasoning from stale or missing data.">US 6</span>
+      </div>
+      <span class="sec-kicker">Top 5 · click to drill in</span>
+    </div>
+    <table class="records" aria-label="Projects needing intervention">
+      <thead>
+        <tr>
+          <th style="width: 26%">Project</th>
+          <th>Reason</th>
+          <th style="width: 12%">Confidence</th>
+          <th style="width: 10%">Status</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr class="severity-r">
+          <td><button class="proj-link" data-goto-l2>Aurora Migration <span class="num-col" style="display:block;font-size:11px;">PROJ-6358</span></button></td>
+          <td>40 % complete / 70 % budget used — critical milestone <span class="num-col">MS-07</span> missed 12 Jul.
+            <span class="cite">↳ finding.f-014 · orbit-export-2026-07.xlsx <span class="num-col">sheet:Milestones row 42</span></span>
+          </td>
+          <td><span class="conf">MEDIUM <b>68 %</b></span></td>
+          <td><span class="sev r">Red</span></td>
+        </tr>
+        <tr class="severity-r">
+          <td><button class="proj-link" data-goto-l2>Titan Rollout <span class="num-col" style="display:block;font-size:11px;">PROJ-6412</span></button></td>
+          <td>Forecast +19 % over baseline · no risk update in 24 days.
+            <span class="cite">↳ finding.f-021 · risk-register.xlsx <span class="num-col">RAID row 7</span></span>
+          </td>
+          <td><span class="conf">LOW <b>52 %</b></span></td>
+          <td><span class="sev r">Red</span></td>
+        </tr>
+        <tr class="severity-r">
+          <td><button class="proj-link" data-goto-l2>Meridian ERP <span class="num-col" style="display:block;font-size:11px;">PROJ-6390</span></button></td>
+          <td>Raw score amber → <em style="color:var(--sev-red);font-style:normal;">override: critical unmitigated risk</em> — key architect unavailable 3 weeks.
+            <span class="cite">↳ finding.f-033 · meeting-minutes-2026-07-08.docx <span class="num-col">para 4</span></span>
+          </td>
+          <td><span class="conf">MEDIUM <b>71 %</b></span></td>
+          <td><span class="sev r">Red</span></td>
+        </tr>
+        <tr class="severity-a">
+          <td><button class="proj-link" data-goto-l2>Northstar CRM <span class="num-col" style="display:block;font-size:11px;">PROJ-6401</span></button></td>
+          <td>Decision D-11 (vendor selection) overdue 9 days · 2 workstreams blocked.
+            <span class="cite">↳ finding.f-042 · decision-log.xlsx <span class="num-col">row 11</span></span>
+          </td>
+          <td><span class="conf">HIGH <b>84 %</b></span></td>
+          <td><span class="sev a">Amber</span></td>
+        </tr>
+        <tr class="severity-a">
+          <td><button class="proj-link" data-goto-l2>Osprey Portal <span class="num-col" style="display:block;font-size:11px;">PROJ-6377</span></button></td>
+          <td>Resource plan does not match time entries · variance 30 % across 4 roles.
+            <span class="cite">↳ finding.f-058 · time-entries.xlsx + resource-plan.xlsx <span class="num-col">cross-ref</span></span>
+          </td>
+          <td><span class="conf">MEDIUM <b>66 %</b></span></td>
+          <td><span class="sev a">Amber</span></td>
+        </tr>
+      </tbody>
+    </table>
+  </section>
+
+  <!-- Three-panel secondary -->
+  <section class="block">
+    <div class="sec-head">
+      <div class="sec-title-row">
+        <h2 class="sec-title">Where the pressure is</h2>
+        <span class="us-chip" title="US-3: Executive view of financial exposure, decision backlog, and resource bottlenecks.">US 3</span>
+        <span class="us-chip" title="US-7: Key-person risk combining allocation concentration with absence.">US 7</span>
+      </div>
+      <span class="sec-kicker">Money · Decisions · People</span>
+    </div>
+
+    <div class="grid-3">
+      <div class="panel">
+        <div class="panel-title">Financial exposure <span class="sec-kicker">M€</span></div>
+        <div class="panel-metric">4.2</div>
+        <div class="panel-sub">forecast overrun across 6 projects</div>
+        <ul class="panel-list">
+          <li><span class="l">Aurora Migration</span><span class="r">+ 1.4 · <span class="sev r">R</span></span></li>
+          <li><span class="l">Titan Rollout</span><span class="r">+ 1.1 · <span class="sev r">R</span></span></li>
+          <li><span class="l">Meridian ERP</span><span class="r">+ 0.9 · <span class="sev a">A</span></span></li>
+          <li><span class="l">Kestrel Analytics</span><span class="r">+ 0.5 · <span class="sev a">A</span></span></li>
+          <li><span class="l">Vanguard Pilot</span><span class="r">+ 0.3 · <span class="sev a">A</span></span></li>
+        </ul>
+      </div>
+
+      <div class="panel">
+        <div class="panel-title">Decision backlog <span class="sec-kicker">days open</span></div>
+        <div class="panel-metric">11</div>
+        <div class="panel-sub">blocking work · 4 need executive sign-off</div>
+        <ul class="panel-list">
+          <li><span class="l">D-11 Vendor selection (Northstar)</span><span class="r">9 d</span></li>
+          <li><span class="l">D-08 UAT extension (Aurora)</span><span class="r">4 d</span></li>
+          <li><span class="l">D-14 Contingency draw (Titan)</span><span class="r">14 d</span></li>
+          <li><span class="l">D-17 Scope carve-out (Meridian)</span><span class="r">6 d</span></li>
+          <li><span class="l">D-19 Cutover date (Osprey)</span><span class="r">2 d</span></li>
+        </ul>
+      </div>
+
+      <div class="panel">
+        <div class="panel-title">Key-person risk <span class="sec-kicker">alloc × absence</span></div>
+        <div class="panel-metric">3 <span style="font-size:14px;color:var(--ink-faint);">people</span></div>
+        <div class="panel-sub">on 5+ projects with upcoming absence</div>
+        <ul class="panel-list">
+          <li><span class="l">Sara Larsen — Data Eng</span><span class="r">6 proj · 8 d off · <span class="sev r">R</span></span></li>
+          <li><span class="l">Miguel Ito — Solution Arch</span><span class="r">5 proj · 3 d off · <span class="sev r">R</span></span></li>
+          <li><span class="l">Elin Kaur — UX Lead</span><span class="r">5 proj · 0 d off · <span class="sev a">A</span></span></li>
+          <li><span class="l">Jonas Patel — PM</span><span class="r">4 proj · 5 d off · <span class="sev a">A</span></span></li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- Recommended actions -->
+  <section class="block">
+    <div class="sec-head">
+      <div class="sec-title-row">
+        <h2 class="sec-title">Recommended actions</h2>
+        <span class="us-chip" title="US-4: Each recommended action names an owner, deadline, and confidence — actionable rather than advisory. (Plan doc success criterion #6.)">US 4</span>
+      </div>
+      <span class="sec-kicker">Owner · Deadline · Confidence</span>
+    </div>
+    <table class="records" aria-label="Recommended actions">
+      <thead>
+        <tr>
+          <th style="width: 34%">Action</th>
+          <th>Owner</th>
+          <th>Due</th>
+          <th>Confidence</th>
+          <th>Project</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr class="severity-r">
+          <td>Reforecast budget; renegotiate scope with sponsor
+            <span class="subtle">Aurora: 40 % done / 70 % burned suggests either scope creep or under-estimation. Escalate before UAT extension is debated.</span>
+          </td>
+          <td>K. Bergman</td>
+          <td class="num-col">22 Jul</td>
+          <td><span class="conf">HIGH <b>86 %</b></span></td>
+          <td><button class="proj-link" data-goto-l2>Aurora Migration</button></td>
+        </tr>
+        <tr class="severity-r">
+          <td>Escalate architect availability to Board
+            <span class="subtle">Meridian: R-07 has no owner and blocks 3 dependent risks. Override "critical unmitigated risk" fired 09 Jul.</span>
+          </td>
+          <td>M. Ito</td>
+          <td class="num-col">18 Jul</td>
+          <td><span class="conf">HIGH <b>91 %</b></span></td>
+          <td><button class="proj-link" data-goto-l2>Meridian ERP</button></td>
+        </tr>
+        <tr class="severity-a">
+          <td>Force vendor decision at Steering Committee
+            <span class="subtle">Northstar: D-11 open 9 days is now the critical path; 2 workstreams idle.</span>
+          </td>
+          <td>Exec Sponsor</td>
+          <td class="num-col">20 Jul</td>
+          <td><span class="conf">MEDIUM <b>72 %</b></span></td>
+          <td><button class="proj-link" data-goto-l2>Northstar CRM</button></td>
+        </tr>
+        <tr class="severity-a">
+          <td>Rebaseline milestones; freeze scope for 2 sprints
+            <span class="subtle">Titan: risk register stale 24 days — signal is weak; a fresh RAID review may resolve the amber before rebaseline.</span>
+          </td>
+          <td>J. Patel</td>
+          <td class="num-col">25 Jul</td>
+          <td><span class="conf">MEDIUM <b>64 %</b></span></td>
+          <td><button class="proj-link" data-goto-l2>Titan Rollout</button></td>
+        </tr>
+      </tbody>
+    </table>
+  </section>
+
+  <!-- Traceability -->
+  <footer class="trace">
+    <div class="kicker">This page addresses</div>
+    <ol>
+      <li><b>US-3</b> — As an <em>executive</em>, a Level-1 portfolio view showing green/amber/red counts, financial exposure, decision backlog, resource bottlenecks, and top intervention candidates.</li>
+      <li><b>US-4</b> — Each recommended action names an owner, deadline, and confidence level (plan doc success criterion #6).</li>
+      <li><b>US-6</b> — Confidence level surfaced per project so PMs know when the AI is reasoning from stale or missing data.</li>
+      <li><b>US-7</b> — Key-person risk combines allocation concentration with absence.</li>
+    </ol>
+    <div class="note">Not on this page yet · client/commercial risk (PRD §Solution — L1). To design before kick-off.</div>
+  </footer>
+</main>
+
+<!-- ================= LEVEL 2 ================= -->
+<main class="page" id="page-l2" data-page="l2" hidden>
+  <div class="eyebrow"><span class="num">L 02</span> Project Detail</div>
+
+  <!-- Project header -->
+  <div class="proj-header">
+    <div>
+      <span class="code">PROJ-6358 · Implementation</span>
+      <h2>Aurora Migration</h2>
+      <div class="chips">
+        <span class="sev r">Red</span>
+        <span class="conf">CONFIDENCE <b>MEDIUM · 68 %</b></span>
+        <span class="conf" style="color:var(--sev-red);border-color:var(--sev-red);">SCORE OVERRIDDEN</span>
+        <span class="conf">SPONSOR <b>K. Bergman</b></span>
+        <span class="conf">PM <b>J. Patel</b></span>
+      </div>
+    </div>
+    <div class="switcher">
+      <label style="font-size:11px;letter-spacing:0.08em;color:var(--ink-faint);text-transform:uppercase;display:block;margin-bottom:4px;">Switch project</label>
+      <select aria-label="Switch project">
+        <option>Aurora Migration (PROJ-6358) — Red</option>
+        <option>Titan Rollout (PROJ-6412) — Red</option>
+        <option>Meridian ERP (PROJ-6390) — Red</option>
+        <option>Northstar CRM (PROJ-6401) — Amber</option>
+        <option>Osprey Portal (PROJ-6377) — Amber</option>
+      </select>
+      <span class="as-of">as of 15 Jul 2026 · run 04:12 UTC</span>
+    </div>
+  </div>
+
+  <!-- Sub-nav -->
+  <nav class="subnav" aria-label="Project sections">
+    <a href="#p-progress">Progress</a>
+    <a href="#p-devs">Deviations</a>
+    <a href="#p-raid">Risks &amp; Issues</a>
+    <a href="#p-ms">Milestones</a>
+    <a href="#p-dec">Decisions</a>
+    <a href="#p-rec">AI Recommendation</a>
+    <a href="#p-audit">Score audit</a>
+  </nav>
+
+  <!-- This period -->
+  <section class="block" id="p-progress">
+    <div class="sec-head">
+      <div class="sec-title-row">
+        <h2 class="sec-title">This period, what moved forward</h2>
+        <span class="us-chip" title="US-5: PM sees this-period progress, key deviations, top risks & issues, upcoming milestones, decisions needed, and the AI's recommendation — each cited to a source.">US 5</span>
+      </div>
+      <span class="sec-kicker">Week 28 · 07–13 Jul</span>
+    </div>
+    <div class="panel" style="margin-top:20px;">
+      <ul style="margin:0;padding-left:22px;color:var(--ink);">
+        <li>WBS <span class="num-col" style="font-family:var(--font-mono);">2.3</span> — data mapping <b>complete</b>, signed off 10 Jul.</li>
+        <li>DB migration script — dry-run passed on staging. <span style="color:var(--ink-mute);">(source: minutes 10 Jul)</span></li>
+        <li>WBS <span class="num-col" style="font-family:var(--font-mono);">2.4</span> — parser integration slipped <b>5 days</b>; dependency on AS400 access unresolved.</li>
+        <li>Two new risks logged; one issue closed (I-04 network latency).</li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- Deviations -->
+  <section class="block" id="p-devs">
+    <div class="sec-head">
+      <div class="sec-title-row">
+        <h2 class="sec-title">Key deviations</h2>
+        <span class="us-chip" title="US-5: budget/time/scope/risks/resources deviations cited to source.">US 5</span>
+      </div>
+      <span class="sec-kicker">Budget · Time · Scope · Risks · Resources</span>
+    </div>
+    <div class="devs">
+      <div class="dev a">
+        <div class="k">Budget</div>
+        <div class="v">+ 14 %</div>
+        <div class="n">forecast vs. baseline — amber band (5–15 %)</div>
+      </div>
+      <div class="dev a">
+        <div class="k">Time</div>
+        <div class="v">− 8 d</div>
+        <div class="n">MS-07 slip · MS-08 UAT at risk</div>
+      </div>
+      <div class="dev g">
+        <div class="k">Scope</div>
+        <div class="v">stable</div>
+        <div class="n">no unapproved changes this period</div>
+      </div>
+      <div class="dev a">
+        <div class="k">Risks</div>
+        <div class="v">+ 2 open</div>
+        <div class="n">trend: increasing — plan doc rule → amber</div>
+      </div>
+      <div class="dev r">
+        <div class="k">Resources</div>
+        <div class="v">− 1 role</div>
+        <div class="n">solution architect unavailable (see R-07)</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- RAID with challenge/review -->
+  <section class="block" id="p-raid">
+    <div class="sec-head">
+      <div class="sec-title-row">
+        <h2 class="sec-title">Top risks and issues</h2>
+        <span class="us-chip" title="US-5: each finding cited to a source.">US 5</span>
+        <span class="us-chip" title="US-9: Challenge and Review agent outputs shown alongside the finding so PMs trust the conclusion has been argued against and stress-tested.">US 9</span>
+      </div>
+      <span class="sec-kicker">Finding · Challenge · Review</span>
+    </div>
+
+    <article class="finding" data-finding>
+      <div class="finding-head">
+        <span class="finding-id">R-07</span>
+        <span class="finding-title">Legacy AS400 access — no owner assigned, blocks 3 dependent risks</span>
+        <span class="sev r">Red</span>
+      </div>
+      <div class="finding-body">
+        <div class="finding-tabs" role="tablist">
+          <button class="finding-tab active" data-tab="finding">Finding</button>
+          <button class="finding-tab" data-tab="challenge">Challenge</button>
+          <button class="finding-tab" data-tab="review">Review</button>
+        </div>
+        <div class="finding-panels">
+          <div class="finding-panel active" data-panel="finding">
+            <p>AS400 access request unresolved for 12 days. R-07 depends on it, and R-11, R-13, R-14 depend on R-07. No mitigation plan on record. Per plan-doc rule, an unmitigated risk of critical severity forces at minimum Red.</p>
+            <span class="cite"><b>Source:</b> meeting-minutes-2026-07-08.docx · para 4 · "we are still waiting on IT for access"</span>
+          </div>
+          <div class="finding-panel" data-panel="challenge">
+            <p>Reasonable, but doesn't address that <b>3 of 5 open risks</b> on this project also lack owners. Naming R-07 as the sole trigger for red understates the pattern — the whole RAID hygiene is degraded, not just this row.</p>
+            <p>Also: the mitigation-plan field on R-04 exists but is stale (12 days). If we count "stale" as "missing", <b>4 of 5</b> risks trigger.</p>
+            <span class="cite"><b>Challenge agent:</b> counters-narrative-only · flagged for PM review</span>
+          </div>
+          <div class="finding-panel" data-panel="review">
+            <p>Before publishing to leadership, confirm with the sponsor:</p>
+            <p>① Is the AS400 access blocked at IT, or at a vendor contract? The finding assumes the former.<br>
+            ② Was the "still waiting" statement in minutes an aside, or a formal escalation? Escalation status changes urgency.<br>
+            ③ Are the dependent risks (R-11, R-13, R-14) still in scope for this release, or deferred?</p>
+            <span class="cite"><b>Review agent:</b> 3 questions for K. Bergman before status is published</span>
+          </div>
+        </div>
+      </div>
+    </article>
+
+    <article class="finding" data-finding>
+      <div class="finding-head">
+        <span class="finding-id">R-04</span>
+        <span class="finding-title">Data mapping incomplete — mitigation plan stale 12 days</span>
+        <span class="sev a">Amber</span>
+      </div>
+      <div class="finding-body">
+        <div class="finding-tabs" role="tablist">
+          <button class="finding-tab active" data-tab="finding">Finding</button>
+          <button class="finding-tab" data-tab="challenge">Challenge</button>
+          <button class="finding-tab" data-tab="review">Review</button>
+        </div>
+        <div class="finding-panels">
+          <div class="finding-panel active" data-panel="finding">
+            <p>Mapping for 3 of 42 entity types unresolved. Last mitigation update 03 Jul. Amber because there is a plan on record; slips to red at 21 days per data-quality rule (no risk update).</p>
+            <span class="cite"><b>Source:</b> risk-register.xlsx · row 4 · last_modified 2026-07-03</span>
+          </div>
+          <div class="finding-panel" data-panel="challenge">
+            <p>Argument for holding at amber is weak: the plan exists but the assignee has been on leave since 05 Jul. A plan without an active owner is functionally no plan. Consider promoting to red.</p>
+            <span class="cite"><b>Challenge agent:</b> disputes severity</span>
+          </div>
+          <div class="finding-panel" data-panel="review">
+            <p>Confirm assignee status; if still absent through 22 Jul, reassign before status is published.</p>
+            <span class="cite"><b>Review agent:</b> 1 question for J. Patel</span>
+          </div>
+        </div>
+      </div>
+    </article>
+  </section>
+
+  <!-- Milestones -->
+  <section class="block" id="p-ms">
+    <div class="sec-head">
+      <div class="sec-title-row">
+        <h2 class="sec-title">Upcoming milestones</h2>
+        <span class="us-chip" title="US-5: upcoming milestones (next 2–4 weeks) cited.">US 5</span>
+      </div>
+      <span class="sec-kicker">Next 4 weeks</span>
+    </div>
+    <div class="timeline">
+      <div class="timeline-row a">
+        <span class="date">22 Jul 2026</span>
+        <span class="marker" aria-hidden="true"></span>
+        <span class="label"><span class="id">MS-08</span>UAT sign-off — <b>at risk</b> (dependent on R-07)</span>
+        <span class="sev a">Amber</span>
+      </div>
+      <div class="timeline-row g">
+        <span class="date">05 Aug 2026</span>
+        <span class="marker" aria-hidden="true"></span>
+        <span class="label"><span class="id">MS-09</span>Cutover rehearsal — on track</span>
+        <span class="sev g">Green</span>
+      </div>
+      <div class="timeline-row r">
+        <span class="date">12 Aug 2026</span>
+        <span class="marker" aria-hidden="true"></span>
+        <span class="label"><span class="id">MS-10</span>Go-live decision gate — <b>blocked on D-08</b> (UAT extension)</span>
+        <span class="sev r">Red</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- Decisions -->
+  <section class="block" id="p-dec">
+    <div class="sec-head">
+      <div class="sec-title-row">
+        <h2 class="sec-title">Decisions needed</h2>
+        <span class="us-chip" title="US-5: decisions needed with owner/deadline/consequence.">US 5</span>
+      </div>
+      <span class="sec-kicker">Owner · Deadline · Consequence</span>
+    </div>
+    <table class="records" aria-label="Decisions needed">
+      <thead>
+        <tr>
+          <th style="width: 8%">ID</th>
+          <th style="width: 36%">Decision</th>
+          <th>Owner</th>
+          <th>Deadline</th>
+          <th>If not decided</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr class="severity-a">
+          <td class="num-col">D-08</td>
+          <td>Extend UAT window from 2 → 3 weeks?</td>
+          <td>K. Bergman (Sponsor)</td>
+          <td class="num-col">18 Jul</td>
+          <td>2-week slip to MS-10; contingency draw likely.</td>
+        </tr>
+        <tr class="severity-a">
+          <td class="num-col">D-14</td>
+          <td>Approve contingency draw · 0.4 M€</td>
+          <td>Steering Committee</td>
+          <td class="num-col">30 Jul</td>
+          <td>Cannot commit to cutover; MS-10 red.</td>
+        </tr>
+      </tbody>
+    </table>
+  </section>
+
+  <!-- AI recommendation -->
+  <section class="block" id="p-rec">
+    <div class="sec-head">
+      <div class="sec-title-row">
+        <h2 class="sec-title">AI recommendation</h2>
+        <span class="us-chip" title="US-5: AI recommendation for the project, cited.">US 5</span>
+        <span class="us-chip" title="US-9: Recommendation shown alongside Challenge and Review outputs.">US 9</span>
+      </div>
+      <span class="sec-kicker">Practical next action</span>
+    </div>
+    <div class="rec">
+      <div class="rec-body">
+        <p>
+          Assign a formal owner to <b>R-07</b> by 22 Jul and reforecast the budget with the sponsor
+          by 30 Jul. Hold the UAT extension decision (<b>D-08</b>) until R-07 is owned, because a
+          longer UAT without unblocked AS400 access adds cost without buying certainty.
+        </p>
+      </div>
+      <div class="rec-meta">
+        <span class="conf">CONFIDENCE <b>MEDIUM · 68 %</b></span>
+        <span class="sev r">Red</span>
+        <span class="conf" style="color:var(--ink-faint);">SIGNAL AGE <b>2 h</b></span>
+      </div>
+      <div class="rec-actions">
+        <div class="sec-kicker">Concrete steps</div>
+        <ol>
+          <li>Assign R-07 owner (candidate: M. Ito) — by <b>22 Jul</b>.</li>
+          <li>Reforecast budget with K. Bergman — by <b>30 Jul</b>.</li>
+          <li>Defer D-08 until step 1 lands; escalate only if R-07 unresolved by 24 Jul.</li>
+        </ol>
+      </div>
+    </div>
+  </section>
+
+  <!-- Score audit -->
+  <section class="block" id="p-audit">
+    <div class="sec-head">
+      <div class="sec-title-row">
+        <h2 class="sec-title">Health-score audit</h2>
+        <span class="us-chip" title="US-10: PMO admin can see when health-scoring rules produced a rating that was later modified by an override rule — scoring is transparent and auditable.">US 10</span>
+      </div>
+      <span class="sec-kicker">Traceable · re-runnable</span>
+    </div>
+    <div class="audit">
+      <div class="row"><span class="k">Raw score</span><span class="v">62 · <span class="sev a">Amber band</span> <span style="color:var(--ink-faint);">(0–59 R · 60–79 A · 80–100 G)</span></span></div>
+      <div class="row"><span class="k">Weighted from</span><span class="v">Schedule 20 %, Budget 20 %, Scope 15 %, Resources 15 %, Risks 15 %, Decisions 10 %, Data quality 5 %  <span style="color:var(--ink-faint);">— placeholder weights</span></span></div>
+      <div class="row"><span class="k">Final status</span><span class="v"><span class="sev r">Red</span> · override applied</span></div>
+      <div class="fired">
+        <div style="color:var(--ink-faint);text-transform:uppercase;letter-spacing:0.06em;font-size:10.5px;">Overrides fired</div>
+        <ul>
+          <li><em>critical_unmitigated_risk</em> · triggered by finding R-07 · minimum <span class="sev r">Red</span></li>
+          <li><em>data_confidence_very_low</em> · <span style="color:var(--ink-faint);">not fired</span> (conf 68 % &gt; threshold 60 %)</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- Traceability -->
+  <footer class="trace">
+    <div class="kicker">This page addresses</div>
+    <ol>
+      <li><b>US-5</b> — PM opens a single project and sees this-period progress, key deviations, top risks & issues, upcoming milestones, decisions needed, and the AI's recommendation — <em>each cited to a source</em>.</li>
+      <li><b>US-6</b> — Confidence level on each project status.</li>
+      <li><b>US-9</b> — Challenge and Review agent outputs shown alongside every finding so the conclusion has been argued against and stress-tested before publication.</li>
+      <li><b>US-10</b> — When an override rule modifies the raw rating, the audit trail is visible: raw score, weights, override rule that fired, final rating.</li>
+    </ol>
+  </footer>
+</main>
+
+<!-- ================= LEVEL 3 ================= -->
+<main class="page" id="page-l3" data-page="l3" hidden>
+  <div class="eyebrow"><span class="num">L 03</span> Data Quality</div>
+  <h1 class="page-title">What the AI is missing.</h1>
+  <p class="page-lede">
+    Confidence per area, the specific inputs that would raise it, and the duplicates the Data
+    Quality agent wants confirmation on before it merges anything.
+  </p>
+
+  <div class="conf-hero">
+    <div>
+      <div class="summary-label" style="color:var(--ink-faint);letter-spacing:0.12em;text-transform:uppercase;font-size:11px;">Portfolio data confidence</div>
+      <div class="conf-num">72<sup>%</sup></div>
+      <div style="margin-top:8px;font-size:12px;color:var(--ink-mute);">threshold to publish · <b style="color:var(--ink);font-family:var(--font-mono);">75 %</b> · <span class="sev a">below target</span></div>
+    </div>
+    <p class="conf-lede">
+      Confidence is highest in <strong>Schedule</strong> (95 %) and lowest in <strong>Budget</strong>
+      (60 %). The largest single lift comes from syncing budget actuals for
+      <strong>Titan Rollout</strong> — closing that alone would raise portfolio confidence to 78 %.
+    </p>
+  </div>
+
+  <!-- Areas -->
+  <section class="block">
+    <div class="sec-head">
+      <div class="sec-title-row">
+        <h2 class="sec-title">By area</h2>
+        <span class="us-chip" title="US-8: Level-3 Data Quality view listing missing/inconsistent items and remediation actions.">US 8</span>
+      </div>
+      <span class="sec-kicker">Completeness · not decided at kick-off</span>
+    </div>
+    <div class="areas">
+      <div class="area">
+        <div class="k"><span>Schedule</span><span>95 %</span></div>
+        <div class="v">95<sup>%</sup></div>
+        <div class="bar"><div class="fill" style="width:95%;background:var(--sev-green);"></div></div>
+      </div>
+      <div class="area">
+        <div class="k"><span>Budget</span><span>60 %</span></div>
+        <div class="v">60<sup>%</sup></div>
+        <div class="bar"><div class="fill" style="width:60%;background:var(--sev-amber);"></div></div>
+      </div>
+      <div class="area">
+        <div class="k"><span>Scope</span><span>88 %</span></div>
+        <div class="v">88<sup>%</sup></div>
+        <div class="bar"><div class="fill" style="width:88%;background:var(--sev-green);"></div></div>
+      </div>
+      <div class="area">
+        <div class="k"><span>Resources</span><span>70 %</span></div>
+        <div class="v">70<sup>%</sup></div>
+        <div class="bar"><div class="fill" style="width:70%;background:var(--sev-amber);"></div></div>
+      </div>
+      <div class="area">
+        <div class="k"><span>Risks</span><span>65 %</span></div>
+        <div class="v">65<sup>%</sup></div>
+        <div class="bar"><div class="fill" style="width:65%;background:var(--sev-amber);"></div></div>
+      </div>
+      <div class="area">
+        <div class="k"><span>Decisions</span><span>78 %</span></div>
+        <div class="v">78<sup>%</sup></div>
+        <div class="bar"><div class="fill" style="width:78%;background:var(--sev-green);"></div></div>
+      </div>
+      <div class="area">
+        <div class="k"><span>Meeting minutes</span><span>82 %</span></div>
+        <div class="v">82<sup>%</sup></div>
+        <div class="bar"><div class="fill" style="width:82%;background:var(--sev-green);"></div></div>
+      </div>
+      <div class="area">
+        <div class="k"><span>Time entries</span><span>68 %</span></div>
+        <div class="v">68<sup>%</sup></div>
+        <div class="bar"><div class="fill" style="width:68%;background:var(--sev-amber);"></div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Missing / inconsistent items -->
+  <section class="block">
+    <div class="sec-head">
+      <div class="sec-title-row">
+        <h2 class="sec-title">Missing and inconsistent items</h2>
+        <span class="us-chip" title="US-8: A data lead sees exactly what to fix to lift confidence.">US 8</span>
+      </div>
+      <span class="sec-kicker">Ordered by confidence lift</span>
+    </div>
+    <table class="records" aria-label="Data quality items">
+      <thead>
+        <tr>
+          <th style="width: 22%">Project</th>
+          <th>Issue</th>
+          <th style="width: 8%">Age</th>
+          <th style="width: 32%">Suggested remediation</th>
+          <th style="width: 8%">Lift</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr class="severity-r">
+          <td>Titan Rollout <span class="num-col" style="display:block;font-size:11px;">PROJ-6412</span></td>
+          <td>Budget actuals missing 2 weeks
+            <span class="cite">↳ finance-export.xlsx <span class="num-col">last row 2026-06-27</span></span>
+          </td>
+          <td class="num-col">14 d</td>
+          <td>Sync with Maconomy · nightly job appears paused.</td>
+          <td class="num-col">+ 6 pp</td>
+        </tr>
+        <tr class="severity-r">
+          <td>Aurora Migration <span class="num-col" style="display:block;font-size:11px;">PROJ-6358</span></td>
+          <td>No risk update in 21 days
+            <span class="cite">↳ risk-register.xlsx <span class="num-col">rows 4, 7</span></span>
+          </td>
+          <td class="num-col">21 d</td>
+          <td>Prompt PM at next stand-up; auto-flag hit red threshold today.</td>
+          <td class="num-col">+ 3 pp</td>
+        </tr>
+        <tr class="severity-a">
+          <td>Meridian ERP <span class="num-col" style="display:block;font-size:11px;">PROJ-6390</span></td>
+          <td>Milestone dates not updated since May
+            <span class="cite">↳ schedule.mpp <span class="num-col">last modified 2026-05-14</span></span>
+          </td>
+          <td class="num-col">62 d</td>
+          <td>Refresh from Orbit; PM to confirm current forecast dates.</td>
+          <td class="num-col">+ 4 pp</td>
+        </tr>
+        <tr class="severity-a">
+          <td>Osprey Portal <span class="num-col" style="display:block;font-size:11px;">PROJ-6377</span></td>
+          <td>Resource plan does not match time entries (30 % variance)
+            <span class="cite">↳ resource-plan.xlsx × time-entries.xlsx <span class="num-col">cross-ref</span></span>
+          </td>
+          <td class="num-col">—</td>
+          <td>Rebaseline allocation against actual hours for the last 4 sprints.</td>
+          <td class="num-col">+ 3 pp</td>
+        </tr>
+        <tr class="severity-a">
+          <td>Kestrel Analytics <span class="num-col" style="display:block;font-size:11px;">PROJ-6421</span></td>
+          <td>Meeting minutes since 24 Jun uploaded but not parsed
+            <span class="cite">↳ minutes/*.docx <span class="num-col">3 files</span></span>
+          </td>
+          <td class="num-col">21 d</td>
+          <td>Re-run Data Collector; likely encoding issue.</td>
+          <td class="num-col">+ 2 pp</td>
+        </tr>
+      </tbody>
+    </table>
+  </section>
+
+  <!-- Duplicate candidates -->
+  <section class="block">
+    <div class="sec-head">
+      <div class="sec-title-row">
+        <h2 class="sec-title">Duplicate identity candidates</h2>
+        <span class="us-chip" title="US-2: When the same project appears under two identifiers, PMO admin is asked to confirm the merge — never silently merge.">US 2</span>
+      </div>
+      <span class="sec-kicker">Confirmation required — no silent merges</span>
+    </div>
+    <table class="records" aria-label="Duplicate candidates">
+      <thead>
+        <tr>
+          <th style="width: 32%">Candidate A</th>
+          <th style="width: 32%">Candidate B</th>
+          <th>Signal</th>
+          <th style="width: 14%">Confidence</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr class="severity-a">
+          <td>Titan Rollout <span class="num-col" style="display:block;font-size:11px;">PROJ-6412</span></td>
+          <td>Titan Rollout Phase 1 <span class="num-col" style="display:block;font-size:11px;">PROJ-6412a</span></td>
+          <td>Same sponsor · overlapping WBS · time entries against both IDs · minutes reference "Titan" without qualifier.</td>
+          <td><span class="conf">HIGH <b>89 %</b></span></td>
+        </tr>
+        <tr class="severity-a">
+          <td>Vanguard Pilot <span class="num-col" style="display:block;font-size:11px;">PROJ-6455</span></td>
+          <td>Vanguard-P <span class="num-col" style="display:block;font-size:11px;">VNG-P-01</span></td>
+          <td>Non-matching identifier format · same PM · budget lines cross-reference.</td>
+          <td><span class="conf">MEDIUM <b>72 %</b></span></td>
+        </tr>
+      </tbody>
+    </table>
+  </section>
+
+  <!-- Traceability -->
+  <footer class="trace">
+    <div class="kicker">This page addresses</div>
+    <ol>
+      <li><b>US-2</b> — When the same project appears under two different identifiers, PMO admin confirms the merge — hours and costs are never silently split across duplicate entities.</li>
+      <li><b>US-8</b> — Data lead sees missing / inconsistent items and remediation actions — exactly what to fix to lift confidence back above the target threshold.</li>
+    </ol>
+    <div class="note">Confidence threshold shown (75 %) is placeholder — final value agreed with PMO at kick-off.</div>
+  </footer>
+</main>
+
+<!-- ================= HISTORY ================= -->
+<main class="page" id="page-history" data-page="history" hidden>
+  <div class="eyebrow">Audit · past runs</div>
+  <h1 class="page-title">Every analysis, since the beginning.</h1>
+  <p class="page-lede">
+    Every upload lives here — what the AI said each time, the challenge that questioned it,
+    the review that stress-tested it, and the citations behind every finding. Read-only:
+    the audit trail is not editable.
+  </p>
+
+  <div class="history-layout">
+    <!-- Master list -->
+    <div class="history-list" role="listbox" aria-label="Past uploads">
+      <div class="history-list-head">Past uploads · newest first</div>
+      <button class="history-row active" role="option" aria-selected="true" data-run="15jul">
+        <div class="h-date">15 Jul 2026 · 04:12 UTC</div>
+        <div class="h-files">orbit-export-2026-07.xlsx + 2 more</div>
+        <div class="h-meta"><span>47 proj</span><span>K. Bergman</span><span class="sev a">Running</span></div>
+      </button>
+      <button class="history-row" role="option" aria-selected="false" data-run="08jul">
+        <div class="h-date">08 Jul 2026 · 09:04 UTC</div>
+        <div class="h-files">orbit-export-2026-07-08.xlsx + minutes (5)</div>
+        <div class="h-meta"><span>47 proj</span><span>K. Bergman</span><span class="sev g">Complete</span></div>
+      </button>
+      <button class="history-row" role="option" aria-selected="false" data-run="01jul">
+        <div class="h-date">01 Jul 2026 · 08:41 UTC</div>
+        <div class="h-files">orbit-export-2026-07-01.xlsx</div>
+        <div class="h-meta"><span>46 proj</span><span>J. Patel</span><span class="sev g">Complete</span></div>
+      </button>
+      <button class="history-row" role="option" aria-selected="false" data-run="24jun">
+        <div class="h-date">24 Jun 2026 · 10:22 UTC</div>
+        <div class="h-files">orbit-export-2026-06-24.xlsx + minutes (2)</div>
+        <div class="h-meta"><span>46 proj</span><span>K. Bergman</span><span class="sev g">Complete</span></div>
+      </button>
+      <button class="history-row" role="option" aria-selected="false" data-run="17jun">
+        <div class="h-date">17 Jun 2026 · 09:15 UTC</div>
+        <div class="h-files">orbit-export-2026-06-17.xlsx</div>
+        <div class="h-meta"><span>44 proj</span><span>J. Patel</span><span class="sev g">Complete</span></div>
+      </button>
+      <button class="history-row" role="option" aria-selected="false" data-run="10jun">
+        <div class="h-date">10 Jun 2026 · 08:55 UTC</div>
+        <div class="h-files">orbit-export-2026-06-10.xlsx + risk-register.xlsx</div>
+        <div class="h-meta"><span>44 proj</span><span>K. Bergman</span><span class="sev r">Failed</span></div>
+      </button>
+      <button class="history-row" role="option" aria-selected="false" data-run="03jun">
+        <div class="h-date">03 Jun 2026 · 09:01 UTC</div>
+        <div class="h-files">orbit-export-2026-06-03.xlsx</div>
+        <div class="h-meta"><span>43 proj</span><span>J. Patel</span><span class="sev g">Complete</span></div>
+      </button>
+      <button class="history-row" role="option" aria-selected="false" data-run="27may">
+        <div class="h-date">27 May 2026 · 08:47 UTC</div>
+        <div class="h-files">orbit-export-2026-05-27.xlsx + minutes (3)</div>
+        <div class="h-meta"><span>42 proj</span><span>K. Bergman</span><span class="sev g">Complete</span></div>
+      </button>
+    </div>
+
+    <!-- Detail -->
+    <div class="history-detail">
+      <div class="history-detail-head">
+        <div>
+          <span class="code">RUN-2026-07-15-041207</span>
+          <h3>15 Jul 2026 · 04:12 UTC</h3>
+          <div style="margin-top:6px;color:var(--ink-mute);font-size:13px;">3 files · 47 projects · uploaded by K. Bergman</div>
+          <div class="chips">
+            <span class="sev a">Analysis running</span>
+            <span class="conf">04 / 09 AGENTS DONE</span>
+            <span class="conf">ELAPSED <b>01:42</b></span>
+          </div>
+        </div>
+        <div class="actions">
+          <span>run id · <b>7fa9c1</b></span>
+          <span>prompt hash · <b>a8f0…d3</b></span>
+          <span>llm · <b>claude-opus-4-8</b></span>
+          <button class="link-inline" data-goto-l1 style="margin-top:8px;">Open portfolio →</button>
+        </div>
+      </div>
+
+      <!-- ANALYSIS -->
+      <div class="history-sub">
+        <h4>
+          <span>Analysis</span>
+          <span class="sec-kicker">8 findings across 5 projects · agents #2–#6</span>
+        </h4>
+        <div class="body">
+          <ul>
+            <li><b>Aurora Migration</b> — 40 % complete / 70 % budget used; MS-07 missed 12 Jul.<span class="cite">↳ f-014 · orbit-export.xlsx sheet:Milestones row 42</span></li>
+            <li><b>Titan Rollout</b> — no risk update in 24 days; forecast +19 %.<span class="cite">↳ f-021 · risk-register.xlsx row 7</span></li>
+            <li><b>Meridian ERP</b> — key architect unavailable 3 wk; override <em style="color:var(--accent);font-style:normal;">critical_unmitigated_risk</em> fired.<span class="cite">↳ f-033 · minutes-2026-07-08.docx para 4</span></li>
+            <li><b>Northstar CRM</b> — decision D-11 overdue 9 d; 2 workstreams blocked.<span class="cite">↳ f-042 · decision-log.xlsx row 11</span></li>
+            <li><b>Osprey Portal</b> — resource plan variance 30 % vs. time entries.<span class="cite">↳ f-058 · resource-plan × time-entries cross-ref</span></li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- NARRATIVE -->
+      <div class="history-sub">
+        <h4>
+          <span>Narrative</span>
+          <span class="sec-kicker">Portfolio story · agent #7</span>
+        </h4>
+        <div class="body">
+          <p class="narrative">
+            The portfolio has drifted since the previous run. Eight projects are red — three of
+            them Red because an override rule fired rather than because their weighted score
+            crossed the threshold, which means their raw scores read Amber to a casual observer.
+            Read them anyway: Meridian and Aurora both hide a single unmitigated risk that is
+            pulling their entire delivery.
+          </p>
+          <p class="narrative">
+            Financial exposure of 4.2 M€ is concentrated in the top three reds; contingency
+            already drawn or approved would cover 3.0 M€ of that. The decision backlog is the
+            emergent risk — eleven decisions past their due date, four requiring executive
+            sign-off, and two of the largest projects (Aurora and Northstar) are gated on
+            decisions the sponsor has not yet made.
+          </p>
+        </div>
+      </div>
+
+      <!-- CHALLENGE -->
+      <div class="history-sub">
+        <h4>
+          <span>Challenge</span>
+          <span class="sec-kicker">Adversarial critique · agent #8</span>
+          <span class="us-chip" title="US-9: Challenge and Review agent outputs shown alongside the finding so PMs trust the conclusion has been argued against.">US 9</span>
+        </h4>
+        <div class="body">
+          <ul>
+            <li>The Narrative names the decision backlog as the emergent risk, but the data shows resource concentration (3 people on 5+ projects) is the higher-leverage constraint — a single week of absence for Sara Larsen would cascade further than any of the 11 open decisions.</li>
+            <li>Aurora's confidence (68 %) is being reported as Medium, but two of the five citations are from stale minutes (&gt; 7 days). By the plan-doc's own <em style="font-style:normal;color:var(--accent);">last_update_age</em> rule, this pushes closer to Low.</li>
+            <li>Meridian's override to Red rests on a single unowned risk (R-07). If IT resolves AS400 access this week the whole rating flips back to Amber — the finding is fragile, not stable.</li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- REVIEW -->
+      <div class="history-sub">
+        <h4>
+          <span>Review</span>
+          <span class="sec-kicker">Questions for the responsible · agent #9</span>
+          <span class="us-chip" title="US-9: Review agent prepares questions for the responsible before publishing so the conclusion has been stress-tested.">US 9</span>
+        </h4>
+        <div class="body">
+          <ol>
+            <li>Sponsors of Aurora and Northstar — are the outstanding decisions (D-08, D-11) genuinely blocking, or are the teams working around them informally?</li>
+            <li>PMO admin — should Titan Rollout Phase 1 be merged into PROJ-6412 before this run's findings are published, or kept split? The duplicate-identity alert is still pending confirmation.</li>
+            <li>Data lead — is the Maconomy sync paused deliberately (finance freeze) or is this an incident? Two weeks of missing budget actuals is currently affecting six confidence scores.</li>
+          </ol>
+        </div>
+      </div>
+
+      <!-- SCORE AUDIT -->
+      <div class="history-sub">
+        <h4>
+          <span>Score audit</span>
+          <span class="sec-kicker">3 overrides fired this run</span>
+          <span class="us-chip" title="US-10: Every override that modified a raw rating is preserved for audit — transparent and traceable.">US 10</span>
+        </h4>
+        <div class="body">
+          <ul class="override-list">
+            <li><b>Meridian ERP</b> · raw Amber (62) → <span class="sev r">Red</span> · <em>critical_unmitigated_risk</em> · triggered by <span class="cite">R-07</span></li>
+            <li><b>Aurora Migration</b> · raw Amber (63) → <span class="sev r">Red</span> · <em>critical_milestone_missed</em> · triggered by <span class="cite">MS-07</span></li>
+            <li><b>Kestrel Analytics</b> · raw Green (81) → <span class="sev a">Amber</span> · <em>forecast_overrun_&gt;15%</em> · triggered by <span class="cite">f-047</span></li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Traceability -->
+  <footer class="trace">
+    <div class="kicker">This page addresses</div>
+    <ol>
+      <li><b>Audit trail</b> — every past analysis preserved read-only so a status can be traced back to the exact run, prompt hash, and inputs that produced it. Supports the plan-doc trust criterion even where no single user story is named.</li>
+      <li><b>US-9</b> — Challenge and Review agent outputs preserved for every past run, not just the current one.</li>
+      <li><b>US-10</b> — Every override that modified a raw rating is shown with the triggering finding.</li>
+    </ol>
+    <div class="note">Read-only per current spec (no re-analyze, delete, or edit). Filtering / date-range search deferred beyond POC.</div>
+  </footer>
+</main>
+
+<!-- ================= LOGIN ================= -->
+<main class="page auth-page" id="page-login" data-page="login" hidden>
+  <div>
+    <div class="auth-card">
+      <div class="auth-header">
+        <div class="brand-mark" style="width:40px;height:40px;font-size:18px;">A</div>
+        <div>
+          <div class="brand-name" style="font-size:18px;">AI PMO Insight</div>
+          <div class="brand-sub">Sign in to continue</div>
+        </div>
+      </div>
+
+      <div class="auth-tabs" role="tablist" aria-label="Auth mode">
+        <button class="auth-tab active" data-mode="login" role="tab" aria-selected="true">Log in</button>
+        <button class="auth-tab" data-mode="register" role="tab" aria-selected="false">Create account</button>
+      </div>
+
+      <form onsubmit="return false;">
+        <label class="field">
+          <span class="field-label">Email</span>
+          <input type="email" placeholder="you@company.com" autocomplete="username" value="k.bergman@nextwave.dk" />
+        </label>
+        <label class="field">
+          <span class="field-label">Password</span>
+          <input type="password" autocomplete="current-password" value="••••••••••" />
+          <div class="field-hint" data-mode-hint="register" hidden>
+            At least 8 characters · upper + lower + digit + symbol (ASP.NET Identity default).
+          </div>
+        </label>
+
+        <div class="auth-error" id="loginErrorDemo" hidden>
+          <b>Sign-in failed.</b> Check your email and password. (error state · hover the "Show error" chip below to preview)
+        </div>
+
+        <button type="submit" class="btn-primary auth-submit" data-goto-upload>
+          <span data-mode-label="login">Log in</span>
+          <span data-mode-label="register" hidden>Register & log in</span>
+        </button>
+      </form>
+    </div>
+
+    <div class="auth-note">
+      Cookie-transported JWT · <code>httpOnly</code> · <code>SameSite=Strict</code> · session lasts 7 days<br>
+      <button class="link-inline" type="button" onclick="document.getElementById('loginErrorDemo').hidden = !document.getElementById('loginErrorDemo').hidden; return false;" style="margin-top:8px;">Preview error state</button>
+    </div>
+
+    <footer class="trace" style="max-width:400px;margin-top:36px;padding-top:20px;">
+      <div class="kicker">This page addresses</div>
+      <ol>
+        <li><b>Auth model</b> — cookie-transported JWT (per <em>docs/authentication.md</em>). Access token 15 min · refresh 7 days · both httpOnly, SameSite=Strict, no separate CSRF token.</li>
+        <li><b>Register</b> — <span class="num-col">POST /api/auth/register</span>, then auto-login. Rejection: ASP.NET Identity password rules.</li>
+        <li><b>Forgot password</b> — <em>not in POC</em>. Admin resets happen out of band.</li>
+      </ol>
+    </footer>
+  </div>
+</main>
+
+<!-- ================= CHANGE PASSWORD ================= -->
+<main class="page" id="page-change-password" data-page="change-password" hidden>
+  <div class="eyebrow">Account · security</div>
+  <h1 class="page-title">Change password</h1>
+  <p class="page-lede">
+    Changing your password signs you out on every other device — this one stays signed in with a
+    fresh session. Every open refresh-token chain for your account is revoked.
+  </p>
+
+  <div class="settings-card">
+    <form onsubmit="return false;">
+      <label class="field">
+        <span class="field-label">Current password</span>
+        <input type="password" autocomplete="current-password" placeholder="••••••••" />
+      </label>
+      <label class="field">
+        <span class="field-label">New password</span>
+        <input type="password" autocomplete="new-password" placeholder="••••••••" />
+        <div class="field-hint">
+          Minimum 8 characters, mixing upper + lower + digit + symbol (ASP.NET Identity default).
+        </div>
+      </label>
+      <label class="field">
+        <span class="field-label">Confirm new password</span>
+        <input type="password" autocomplete="new-password" placeholder="••••••••" />
+      </label>
+
+      <div class="settings-actions">
+        <button class="btn-primary" type="submit" onclick="document.getElementById('pwdSuccess').hidden = false; return false;">Change password</button>
+        <button class="link-inline" data-goto-l1 type="button">Cancel</button>
+      </div>
+    </form>
+  </div>
+
+  <div class="success-panel" id="pwdSuccess" role="status" hidden>
+    <div class="success-icon" aria-hidden="true">✓</div>
+    <div>
+      <div class="success-title">Password changed</div>
+      <p>
+        Other devices have been signed out. This device stays signed in with a fresh session.
+      </p>
+      <span class="cite">↳ every refresh-token in this chain is revoked · a new pair is issued for this device only</span>
+    </div>
+  </div>
+
+  <footer class="trace">
+    <div class="kicker">This page addresses</div>
+    <ol>
+      <li><b>Session hygiene</b> — <span class="num-col">POST /api/auth/change-password</span> revokes every refresh-token chain for the user and issues a fresh pair for the calling device.</li>
+      <li><b>Password rules</b> — ASP.NET Identity defaults for the POC; production rules to be agreed with the client's IT.</li>
+    </ol>
+    <div class="note">Two-factor / passkey / SSO — out of Phase 5 scope. Placeholder for future security settings if PMO IT requires them.</div>
+  </footer>
+</main>
+
+<script>
+  (function () {
+    // page routing
+    const pages = {
+      upload: document.getElementById('page-upload'),
+      l1: document.getElementById('page-l1'),
+      l2: document.getElementById('page-l2'),
+      l3: document.getElementById('page-l3'),
+      history: document.getElementById('page-history'),
+      login: document.getElementById('page-login'),
+      'change-password': document.getElementById('page-change-password')
+    };
+    const tabs = document.querySelectorAll('.nav-tab');
+
+    function showPage(key) {
+      Object.entries(pages).forEach(([k, el]) => {
+        if (!el) return;
+        if (k === key) { el.hidden = false; } else { el.hidden = true; }
+      });
+      tabs.forEach(t => {
+        const on = t.dataset.pageTarget === key;
+        t.classList.toggle('active', on);
+        t.setAttribute('aria-selected', on ? 'true' : 'false');
+      });
+      document.body.classList.toggle('no-tabs', key === 'login');
+      if (location.hash !== '#' + key) {
+        try { history.replaceState(null, '', '#' + key); } catch (e) {}
+      }
+      // reset password-change success state when navigating away
+      const pwdSuccess = document.getElementById('pwdSuccess');
+      if (pwdSuccess && key !== 'change-password') pwdSuccess.hidden = true;
+      window.scrollTo({ top: 0, behavior: 'instant' in window ? 'instant' : 'auto' });
+    }
+
+    tabs.forEach(t => t.addEventListener('click', () => showPage(t.dataset.pageTarget)));
+    document.querySelectorAll('[data-goto-l2]').forEach(b => b.addEventListener('click', () => showPage('l2')));
+    document.querySelectorAll('[data-goto-l1]').forEach(b => b.addEventListener('click', () => showPage('l1')));
+    document.querySelectorAll('[data-goto-upload]').forEach(b => b.addEventListener('click', () => showPage('upload')));
+    document.querySelectorAll('[data-goto-history]').forEach(b => b.addEventListener('click', () => showPage('history')));
+    document.querySelectorAll('[data-goto-login]').forEach(b => b.addEventListener('click', () => { closeUserMenu(); showPage('login'); }));
+    document.querySelectorAll('[data-goto-changepwd]').forEach(b => b.addEventListener('click', () => { closeUserMenu(); showPage('change-password'); }));
+
+    // user menu open/close
+    const userBtn = document.getElementById('userMenuBtn');
+    const userPanel = document.getElementById('userMenuPanel');
+    function closeUserMenu() {
+      if (!userPanel || !userBtn) return;
+      userPanel.hidden = true;
+      userBtn.setAttribute('aria-expanded', 'false');
+    }
+    if (userBtn && userPanel) {
+      userBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const open = userPanel.hidden;
+        userPanel.hidden = !open;
+        userBtn.setAttribute('aria-expanded', open ? 'true' : 'false');
+      });
+      document.addEventListener('click', (e) => {
+        if (!userPanel.hidden && !userPanel.contains(e.target) && e.target !== userBtn) closeUserMenu();
+      });
+      document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeUserMenu(); });
+    }
+
+    // login page — auth-mode toggle (login / register)
+    document.querySelectorAll('.auth-tab').forEach(t => {
+      t.addEventListener('click', () => {
+        const mode = t.dataset.mode;
+        document.querySelectorAll('.auth-tab').forEach(x => {
+          const on = x === t;
+          x.classList.toggle('active', on);
+          x.setAttribute('aria-selected', on ? 'true' : 'false');
+        });
+        document.querySelectorAll('[data-mode-label]').forEach(el => {
+          el.hidden = el.dataset.modeLabel !== mode;
+        });
+        document.querySelectorAll('[data-mode-hint]').forEach(el => {
+          el.hidden = el.dataset.modeHint !== mode;
+        });
+      });
+    });
+
+    const initial = (location.hash || '').replace('#', '');
+    if (pages[initial]) showPage(initial);
+
+    // finding tabs
+    document.querySelectorAll('[data-finding]').forEach(f => {
+      const tabs = f.querySelectorAll('.finding-tab');
+      const panels = f.querySelectorAll('.finding-panel');
+      tabs.forEach(t => t.addEventListener('click', () => {
+        tabs.forEach(x => x.classList.remove('active'));
+        panels.forEach(x => x.classList.remove('active'));
+        t.classList.add('active');
+        const target = f.querySelector('[data-panel="' + t.dataset.tab + '"]');
+        if (target) target.classList.add('active');
+      }));
+    });
+
+    // history master-list selection (visual only — same detail body in the wireframe)
+    document.querySelectorAll('.history-row').forEach(row => {
+      row.addEventListener('click', () => {
+        document.querySelectorAll('.history-row').forEach(r => {
+          r.classList.remove('active');
+          r.setAttribute('aria-selected', 'false');
+        });
+        row.classList.add('active');
+        row.setAttribute('aria-selected', 'true');
+      });
+    });
+
+    // theme toggle
+    const themeBtn = document.getElementById('themeToggle');
+    if (themeBtn) {
+      themeBtn.addEventListener('click', () => {
+        const cur = document.documentElement.getAttribute('data-theme');
+        const next = cur === 'dark' ? 'light' : (cur === 'light' ? 'dark' : (matchMedia('(prefers-color-scheme: dark)').matches ? 'light' : 'dark'));
+        document.documentElement.setAttribute('data-theme', next);
+      });
+    }
+  })();
+</script>

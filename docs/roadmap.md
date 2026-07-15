@@ -128,8 +128,12 @@ The suggested 9-agent pipeline (PRD marks the exact split as "Assumption but not
 
 ## Phase 5 — Dashboards ⬜ / 🟡
 
-- 🟡 **Level 2 — Individual Project Status** — read endpoint + minimal view exist; the rich
-  view (progress, deviations, milestones, decisions, AI recommendation, confidence) is not built
+- ✅ **Level 2 — Individual Project Status (rich view)** — `add-project-status-dashboard`. The project
+  view now consumes `GET /api/projects/{key}/health` alongside the findings surface and renders the RAG
+  status banner (FinalBucket + score), per-area breakdown, aggregate confidence, applied-override audit
+  trail, and the "Needs PM Review" flag above the four cited sections. Presentation-only (no backend
+  change). Dated milestones / per-decision owner-deadline / explicit AI recommendation exceed the current
+  finding shape and are flagged in-view as a follow-on, not built.
 - ⬜ **Level 1 — Executive Portfolio Summary** (G/A/R counts, financial exposure, intervention list)
 - ⬜ **Level 3 — Data Quality** (missing/inconsistent items + remediation)
 - ⬜ Confidence level surfaced per project (PRD user story #6)

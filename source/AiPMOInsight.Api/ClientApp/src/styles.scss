@@ -18,3 +18,92 @@ main.container {
   padding-top: 1rem;
   padding-bottom: 2rem;
 }
+
+// ── Level-2 RAG health banner (add-project-status-dashboard) ────────────────────────────────
+// RAG colours are defined once here as CSS custom properties so the banner, badge, and severity
+// chips stay consistent. Status is never conveyed by colour alone — the FinalBucket label and the
+// numeric score always accompany the colour (colour-blind safe).
+:root {
+  --rag-red: #b3261e;
+  --rag-red-bg: #fbe9e7;
+  --rag-amber: #8a5a00;
+  --rag-amber-bg: #fff4e0;
+  --rag-green: #1b5e20;
+  --rag-green-bg: #e7f5e9;
+  --rag-none: var(--pico-muted-border-color);
+  --rag-none-bg: var(--pico-card-sectioning-background-color);
+}
+
+// Dark theme — explicit toggle and system-auto both covered.
+@mixin rag-dark {
+  --rag-red: #ff8a80;
+  --rag-red-bg: #3a1512;
+  --rag-amber: #ffca7a;
+  --rag-amber-bg: #3a2a0a;
+  --rag-green: #a5d6a7;
+  --rag-green-bg: #12291a;
+}
+:root[data-theme='dark'] { @include rag-dark; }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) { @include rag-dark; }
+}
+
+.rag-banner {
+  border: 1px solid var(--pico-muted-border-color);
+  border-left-width: 6px;
+  border-radius: var(--pico-border-radius);
+  padding: 0.75rem 1rem;
+  margin-bottom: 1.25rem;
+
+  &.rag-red { border-left-color: var(--rag-red); background: var(--rag-red-bg); }
+  &.rag-amber { border-left-color: var(--rag-amber); background: var(--rag-amber-bg); }
+  &.rag-green { border-left-color: var(--rag-green); background: var(--rag-green-bg); }
+  &.rag-none { border-left-color: var(--rag-none); background: var(--rag-none-bg); }
+
+  .rag-head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem 1rem;
+  }
+  .rag-score { font-weight: 600; }
+  .rag-confidence { color: var(--pico-muted-color); font-size: 0.9em; }
+  details { margin-top: 0.75rem; margin-bottom: 0; }
+  table { margin-bottom: 0; }
+}
+
+.rag-badge {
+  display: inline-block;
+  padding: 0.15rem 0.6rem;
+  border-radius: 1rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  font-size: 0.8em;
+  letter-spacing: 0.03em;
+  color: #fff;
+
+  &[data-bucket='Red'] { background: var(--rag-red); }
+  &[data-bucket='Amber'] { background: var(--rag-amber); }
+  &[data-bucket='Green'] { background: var(--rag-green); }
+}
+
+// Severity pill inside the area breakdown / override trail.
+.rag-chip {
+  display: inline-block;
+  padding: 0.05rem 0.45rem;
+  border-radius: 0.75rem;
+  font-size: 0.8em;
+  font-weight: 600;
+
+  &.rag-red { color: var(--rag-red); background: var(--rag-red-bg); }
+  &.rag-amber { color: var(--rag-amber); background: var(--rag-amber-bg); }
+  &.rag-green { color: var(--rag-green); background: var(--rag-green-bg); }
+  &.rag-none { color: var(--pico-muted-color); background: var(--rag-none-bg); }
+}
+
+.rag-review {
+  font-weight: 600;
+  color: var(--rag-amber);
+}
+
+.l2-gap-note { color: var(--pico-muted-color); }
