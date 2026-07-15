@@ -33,7 +33,8 @@ public class ChallengeAgentTests
     {
         var run = AnalysisRun.Start(Guid.NewGuid(), AnalysisFixtures.RunTime);
         return Finding.Create("ALPHA", summary, new SourceRef("x").ToCitation(run.UploadId),
-            run.StartedAt, run.RunId, agent, kind, confidence);
+            run.StartedAt, run.RunId, agent, kind, confidence,
+            area: HealthArea.Schedule, severity: Severity.Amber);
     }
 
     private static Task<Finding> Run(StubLlm llm, DataQualitySignal quality, IReadOnlyList<Finding> findings)

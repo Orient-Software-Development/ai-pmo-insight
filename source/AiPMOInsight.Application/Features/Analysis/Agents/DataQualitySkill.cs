@@ -30,19 +30,19 @@ public sealed class DataQualitySkill : IAgentSkill<ProjectSlice, DataQualityResu
             if (string.IsNullOrWhiteSpace(project.Name))
             {
                 missing++;
-                findings.Add(Flag(slice, "Project name is missing.", project.Source));
+                findings.Add(Flag(slice, "Project name is missing.", project.Source, Severity.Amber));
             }
 
             if (project.PercentComplete is null)
             {
                 missing++;
-                findings.Add(Flag(slice, "Project percent-complete is missing.", project.Source));
+                findings.Add(Flag(slice, "Project percent-complete is missing.", project.Source, Severity.Amber));
             }
 
             if (project.LastUpdated is null)
             {
                 missing++;
-                findings.Add(Flag(slice, "Project has no last-updated date.", project.Source));
+                findings.Add(Flag(slice, "Project has no last-updated date.", project.Source, Severity.Amber));
             }
         }
 
@@ -50,7 +50,7 @@ public sealed class DataQualitySkill : IAgentSkill<ProjectSlice, DataQualityResu
         foreach (var milestone in slice.Data.Milestones.Where(m => m.ProjectKey == slice.ProjectKey && m.DueDate is null))
         {
             missing++;
-            findings.Add(Flag(slice, $"Milestone '{milestone.Name}' has no due date.", milestone.Source));
+            findings.Add(Flag(slice, $"Milestone '{milestone.Name}' has no due date.", milestone.Source, Severity.Amber));
         }
 
         // Staleness.
@@ -60,7 +60,7 @@ public sealed class DataQualitySkill : IAgentSkill<ProjectSlice, DataQualityResu
             ageDays = (slice.Run.StartedAt - lastUpdated).TotalDays;
             if (ageDays > StaleThresholdDays)
             {
-                findings.Add(Flag(slice, $"Project data is stale (last updated {ageDays:F0} days ago).", project.Source));
+                findings.Add(Flag(slice, $"Project data is stale (last updated {ageDays:F0} days ago).", project.Source, Severity.Amber));
             }
         }
 
@@ -70,7 +70,8 @@ public sealed class DataQualitySkill : IAgentSkill<ProjectSlice, DataQualityResu
         var consistent = orphans.Count == 0;
         foreach (var orphan in orphans)
         {
-            findings.Add(Flag(slice, "Record references an unknown project id (inconsistent source).", orphan));
+            // An orphan reference means the data set is internally inconsistent — critical for DQ.
+            findings.Add(Flag(slice, "Record references an unknown project id (inconsistent source).", orphan, Severity.Red));
         }
 
         var signal = new DataQualitySignal
@@ -83,8 +84,8 @@ public sealed class DataQualitySkill : IAgentSkill<ProjectSlice, DataQualityResu
         return Task.FromResult(new DataQualityResult(findings, signal));
     }
 
-    private static Finding Flag(ProjectSlice slice, string summary, SourceRef source) =>
-        FindingFactory.Analysis(slice, "DataQuality", summary, source, Confidence.High);
+    private static Finding Flag(ProjectSlice slice, string summary, SourceRef source, Severity severity) =>
+        FindingFactory.Analysis(slice, "DataQuality", summary, source, Confidence.High, HealthArea.DataQuality, severity);
 
     private static IEnumerable<SourceRef> OrphanSources(CollectedData data, HashSet<string> knownKeys)
     {

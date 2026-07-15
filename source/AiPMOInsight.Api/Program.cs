@@ -12,6 +12,7 @@ using AiPMOInsight.Api.Endpoints;
 using AiPMOInsight.Api.Security;
 using AiPMOInsight.Application;
 using AiPMOInsight.Application.Abstractions;
+using AiPMOInsight.Application.Features.HealthScoring;
 using AiPMOInsight.Infrastructure;
 using AiPMOInsight.Infrastructure.Persistence;
 using AiPMOInsight.Infrastructure.Security;
@@ -156,6 +157,22 @@ if (app.Environment.IsDevelopment())
     await app.Services.MigrateAndSeedAsync();
 }
 
+// Health scoring (Phase 4): announce whether the swappable config is still the PRD EXAMPLE
+// placeholder set. Loud so no one mistakes the illustrative weights/thresholds/overrides for
+// client-agreed numbers (risk R1); replace the 'HealthScoring' section at PMO kickoff.
+var healthScoring = app.Services.GetRequiredService<HealthScoringOptions>();
+if (healthScoring.IsPlaceholder)
+{
+    app.Logger.LogWarning(
+        "Health scoring is using the EXAMPLE placeholder configuration (weights/thresholds/overrides " +
+        "from the PRD). These are illustrative only — replace the 'HealthScoring' section with " +
+        "PMO-agreed values before scoring goes live.");
+}
+else
+{
+    app.Logger.LogInformation("Health scoring is using a non-placeholder (overridden) configuration.");
+}
+
 // Liveness: process is up (no dependency checks). Readiness: dependencies (DB) reachable.
 // /health is kept as a liveness alias for back-compat with existing probes.
 app.MapHealthChecks("/health/live", new HealthCheckOptions { Predicate = _ => false });
@@ -183,6 +200,7 @@ app.MapProfileEndpoints();
 app.MapIngestEndpoints();
 app.MapFindingsEndpoints();
 app.MapUploadHistoryEndpoints();
+app.MapHealthScoringEndpoints();
 
 
 // SPA client-side routing: serve index.html for unmatched non-API routes.

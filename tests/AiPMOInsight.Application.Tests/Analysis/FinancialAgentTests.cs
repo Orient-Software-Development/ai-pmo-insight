@@ -55,4 +55,33 @@ public class FinancialAgentTests
 
         findings.Should().BeEmpty();
     }
+
+    [Fact]
+    public async Task Every_finding_carries_the_budget_area()
+    {
+        var findings = await Run(45, Budget(budget: 100000, forecast: 118000, actual: 60000));
+
+        findings.Should().NotBeEmpty();
+        findings.Should().OnlyContain(f => f.Area == HealthArea.Budget && f.Severity != null);
+    }
+
+    [Fact]
+    public async Task Overrun_above_fifteen_percent_is_red()
+    {
+        // 18% over budget → beyond the critical band → Red.
+        var findings = await Run(45, Budget(budget: 100000, forecast: 118000, actual: 60000));
+
+        findings.Should().Contain(f => f.Summary.Contains("forecast", StringComparison.OrdinalIgnoreCase)
+                                       && f.Severity == Severity.Red);
+    }
+
+    [Fact]
+    public async Task Overrun_within_fifteen_percent_is_amber()
+    {
+        // 10% over budget → within the critical band → Amber.
+        var findings = await Run(45, Budget(budget: 100000, forecast: 110000, actual: 60000));
+
+        findings.Should().Contain(f => f.Summary.Contains("forecast", StringComparison.OrdinalIgnoreCase)
+                                       && f.Severity == Severity.Amber);
+    }
 }

@@ -3,6 +3,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using AiPMOInsight.Application.Abstractions;
+using AiPMOInsight.Application.Features.HealthScoring;
 using AiPMOInsight.Infrastructure.Analysis.Llm;
 using AiPMOInsight.Infrastructure.Analysis.Parsing;
 using AiPMOInsight.Infrastructure.Findings;
@@ -29,6 +30,15 @@ public static class DependencyInjection
         services.AddScoped<IUploadRepository, EfUploadRepository>();
         services.AddScoped<IFindingRepository, EfFindingRepository>();
         services.AddScoped<IRefreshTokenService, RefreshTokenService>();
+
+        // Health scoring configuration (Phase 4). Bind the swappable weights/thresholds/overrides and
+        // validate at startup — fail fast (naming the offending key) rather than serve a bad score.
+        // The registered instance is the sole source the scoring service reads; the shipped default
+        // carries the PRD EXAMPLE placeholders until the PMO agrees real numbers (see appsettings).
+        var healthScoringOptions = new HealthScoringOptions();
+        configuration.GetSection(HealthScoringOptions.SectionName).Bind(healthScoringOptions);
+        healthScoringOptions.Validate();
+        services.AddSingleton(healthScoringOptions);
 
         // Data Collector (#1) file parsing adapter (ClosedXML / OpenXml / System.Xml).
         services.AddScoped<IUploadParser, UploadParser>();

@@ -34,7 +34,8 @@ public class NarrativeAgentTests
     {
         var run = AnalysisRun.Start(Guid.NewGuid(), AnalysisFixtures.RunTime);
         return Finding.Create("ALPHA", $"{agent} finding", new SourceRef("x").ToCitation(run.UploadId),
-            run.StartedAt, run.RunId, agent, FindingKind.Analysis, Confidence.Medium, promptVersion);
+            run.StartedAt, run.RunId, agent, FindingKind.Analysis, Confidence.Medium, promptVersion,
+            area: HealthArea.Schedule, severity: Severity.Amber);
     }
 
     private static Task<Finding> Run(StubLlm llm, params Finding[] findings)

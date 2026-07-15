@@ -21,7 +21,8 @@ public class GetProjectFindingsTests
     private static Finding Make(Guid runId, FindingKind kind, DateTimeOffset createdAt, string agent = "X")
     {
         var citation = Citation.Create(Guid.NewGuid(), "loc");
-        return Finding.Create("ALPHA", $"{kind} summary", citation, createdAt, runId, agent, kind, Confidence.Medium);
+        return Finding.Create("ALPHA", $"{kind} summary", citation, createdAt, runId, agent, kind, Confidence.Medium,
+            area: HealthArea.Schedule, severity: Severity.Amber);
     }
 
     private static Task<GetProjectFindings.Result> Run(IReadOnlyList<Finding> seed) =>

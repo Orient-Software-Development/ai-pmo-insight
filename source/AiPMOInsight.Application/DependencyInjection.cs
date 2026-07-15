@@ -49,6 +49,11 @@ public static class DependencyInjection
         services.AddScoped<ReviewSkill>();
         services.AddScoped<AnalysisOrchestrator>();
 
+        // Health scoring (Phase 4): a stateless, pure computation over persisted findings. Singleton —
+        // it reads the validated HealthScoringOptions (registered by AddInfrastructure) and holds no
+        // per-request state. Resolution happens at request time, after both DI modules have run.
+        services.AddSingleton<Features.HealthScoring.HealthScoringService>();
+
         return services;
     }
 }

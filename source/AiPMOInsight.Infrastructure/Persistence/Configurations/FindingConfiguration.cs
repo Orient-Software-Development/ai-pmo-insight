@@ -56,6 +56,19 @@ internal sealed class FindingConfiguration : IEntityTypeConfiguration<Finding>
             .HasColumnName("prompt_version")
             .HasMaxLength(200);
 
+        // Structured health signal (health-scoring change). Nullable — only Analysis findings carry
+        // them. Enums persist as strings so the DB stays readable and stable if ordinals shift,
+        // matching Kind/Confidence above.
+        builder.Property(f => f.Area)
+            .HasColumnName("area")
+            .HasConversion<string>()
+            .HasMaxLength(30);
+
+        builder.Property(f => f.Severity)
+            .HasColumnName("severity")
+            .HasConversion<string>()
+            .HasMaxLength(10);
+
         builder.Property(f => f.CreatedAt)
             .HasColumnName("created_at")
             .IsRequired();

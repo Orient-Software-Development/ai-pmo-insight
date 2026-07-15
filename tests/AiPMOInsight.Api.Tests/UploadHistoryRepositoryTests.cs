@@ -68,5 +68,7 @@ public class UploadHistoryRepositoryTests
             runId: Guid.NewGuid(),
             producingAgent: "X",
             kind: FindingKind.Analysis,
-            confidence: Confidence.Medium);
+            confidence: Confidence.Medium,
+            area: HealthArea.Schedule,
+            severity: Severity.Amber);
 }

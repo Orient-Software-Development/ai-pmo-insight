@@ -40,7 +40,7 @@ public sealed class StatusSkill : IAgentSkill<AnalysisInput, IReadOnlyList<Findi
                     var days = (int)(completed - due).TotalDays;
                     findings.Add(Finding(slice, confidence,
                         $"Milestone '{milestone.Name}' completed {days} days late ({Severity(days)} schedule variance).",
-                        milestone.Source));
+                        milestone.Source, Band(days)));
                 }
 
                 continue;
@@ -51,21 +51,21 @@ public sealed class StatusSkill : IAgentSkill<AnalysisInput, IReadOnlyList<Findi
                 var days = (int)(asOf - due).TotalDays;
                 findings.Add(Finding(slice, confidence,
                     $"Milestone '{milestone.Name}' is overdue by {days} days ({Severity(days)} delay).",
-                    milestone.Source));
+                    milestone.Source, Band(days)));
             }
             else if (due <= asOf.AddDays(UpcomingWindowDays))
             {
                 var days = (int)(due - asOf).TotalDays;
                 findings.Add(Finding(slice, confidence,
                     $"Milestone '{milestone.Name}' is due soon (in {days} days).",
-                    milestone.Source));
+                    milestone.Source, Domain.Findings.Severity.Green)); // informational heads-up, not yet a variance
             }
 
             if (milestone.DependsOn is { } dependsOn && IsAtRisk(dependsOn, milestones))
             {
                 findings.Add(Finding(slice, confidence,
                     $"Milestone '{milestone.Name}' is at dependency risk: it depends on '{dependsOn}', which is not yet complete.",
-                    milestone.Source));
+                    milestone.Source, Domain.Findings.Severity.Amber));
             }
         }
 
@@ -92,6 +92,19 @@ public sealed class StatusSkill : IAgentSkill<AnalysisInput, IReadOnlyList<Findi
         _ => "minor",
     };
 
-    private static Finding Finding(ProjectSlice slice, Confidence confidence, string summary, SourceRef source) =>
-        FindingFactory.Analysis(slice, "Status", summary, source, confidence);
+    /// <summary>
+    /// The RAG severity for a days-late/overdue band, reusing the same thresholds as the free-text
+    /// <see cref="Severity(int)"/> word (major → Red, moderate → Amber, minor → Green). This is the
+    /// signal the health scorer reads for the Schedule area.
+    /// </summary>
+    private static Severity Band(int days) => days switch
+    {
+        >= 30 => Domain.Findings.Severity.Red,
+        >= 7 => Domain.Findings.Severity.Amber,
+        _ => Domain.Findings.Severity.Green,
+    };
+
+    private static Finding Finding(
+        ProjectSlice slice, Confidence confidence, string summary, SourceRef source, Severity severity) =>
+        FindingFactory.Analysis(slice, "Status", summary, source, confidence, HealthArea.Schedule, severity);
 }

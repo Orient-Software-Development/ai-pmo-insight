@@ -104,14 +104,25 @@ The suggested 9-agent pipeline (PRD marks the exact split as "Assumption but not
 
 ---
 
-## Phase 4 — Health scoring ⬜
+## Phase 4 — Health scoring ✅ (engine; EXAMPLE numbers client-pending)
 
-- ⬜ YAML-driven weighted score + RAG bucketing (path TBD)
-- ⬜ Override-rule engine (e.g. critical milestone missed → minimum Amber)
-- ⬜ Exposed as a query over the findings store
-- ⬜ Table-driven tests (weights, each override, precedence)
-- ⚠️ All weights/thresholds/overrides in the PRD are marked **"EXAMPLE!"** — final numbers are
-  agreed with the client's PMO at kick-off before scoring goes live.
+> **Delivered (2026-07-14, `add-health-scoring`):** the scoring **engine** ships and is tested;
+> only the **numbers** remain client-pending (see the ⚠️ below).
+
+- ✅ Config-driven weighted score + RAG bucketing — **appsettings JSON**, not YAML (`HealthScoringOptions`,
+  bound + validated at startup, failing fast on bad weights/thresholds)
+- ✅ Override-rule engine — worst-case floor precedence (e.g. critical milestone missed → minimum Amber;
+  min Red beats min Amber; a floor never lowers; absent signals don't fire)
+- ✅ Exposed as a query over the findings store — re-runnable without re-analysis
+  (`ScoreProject` slice, `GET /api/projects/{projectKey}/health`)
+- ✅ Findings enriched with structured `HealthArea` + `Severity` (agents #2/#3/#5/#6 + RAID); persisted
+  (`AddFindingAreaSeverity` migration)
+- ✅ Auditable result (`rawScore`/`rawBucket`/`appliedOverrides`/`finalBucket`/`confidence`/area breakdown)
+  + "Needs PM Review" on low confidence
+- ✅ Table-driven tests (weights, bucketing boundary, each override, precedence, confidence, audit shape)
+- ⚠️ All shipped weights/thresholds/overrides are the PRD's **"EXAMPLE!"** placeholders
+  (`IsPlaceholder:true`, startup warning) — final numbers are agreed with the client's PMO at kick-off
+  before scoring goes live.
 
 ---
 

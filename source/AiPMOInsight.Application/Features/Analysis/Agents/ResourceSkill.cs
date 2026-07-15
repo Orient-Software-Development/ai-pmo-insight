@@ -28,16 +28,18 @@ public sealed class ResourceSkill : IAgentSkill<AnalysisInput, IReadOnlyList<Fin
         {
             if (assignment.AllocationPercent > assignment.CapacityPercent)
             {
+                var overBy = assignment.AllocationPercent - assignment.CapacityPercent;
                 findings.Add(Finding(slice, confidence,
                     $"{assignment.Person} is over-allocated at {assignment.AllocationPercent:F0}% against {assignment.CapacityPercent:F0}% capacity.",
-                    assignment.Source));
+                    assignment.Source, OverAllocationBand(overBy)));
             }
 
             if (assignment.OnLeave && assignment.AllocationPercent >= HeavyAllocation)
             {
+                // A heavily-allocated person being absent is a concentration risk — critical.
                 findings.Add(Finding(slice, confidence,
                     $"{assignment.Person} is on leave while carrying a heavy allocation ({assignment.AllocationPercent:F0}%) — concentration risk.",
-                    assignment.Source));
+                    assignment.Source, Severity.Red));
             }
         }
 
@@ -50,7 +52,7 @@ public sealed class ResourceSkill : IAgentSkill<AnalysisInput, IReadOnlyList<Fin
             {
                 findings.Add(Finding(slice, confidence,
                     $"{person.Key} is spread across {person.Count()} assignments totalling {total:F0}% — capacity pressure.",
-                    person.First().Source));
+                    person.First().Source, Severity.Amber));
             }
         }
 
@@ -60,12 +62,20 @@ public sealed class ResourceSkill : IAgentSkill<AnalysisInput, IReadOnlyList<Fin
         {
             findings.Add(Finding(slice, confidence,
                 "No Project Manager is assigned to the project (missing key role).",
-                assignments[0].Source));
+                assignments[0].Source, Severity.Amber));
         }
 
         return Task.FromResult<IReadOnlyList<Finding>>(findings);
     }
 
-    private static Finding Finding(ProjectSlice slice, Confidence confidence, string summary, SourceRef source) =>
-        FindingFactory.Analysis(slice, "Resource", summary, source, confidence);
+    // Over-allocation beyond this many percentage points over capacity is treated as critical (Red).
+    private const double CriticalOverAllocationPoints = 20;
+
+    /// <summary>RAG severity for an over-allocation margin — the Resource-area signal for scoring.</summary>
+    private static Severity OverAllocationBand(double overByPoints) =>
+        overByPoints > CriticalOverAllocationPoints ? Severity.Red : Severity.Amber;
+
+    private static Finding Finding(
+        ProjectSlice slice, Confidence confidence, string summary, SourceRef source, Severity severity) =>
+        FindingFactory.Analysis(slice, "Resource", summary, source, confidence, HealthArea.Resource, severity);
 }
