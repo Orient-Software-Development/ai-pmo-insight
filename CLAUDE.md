@@ -122,5 +122,45 @@ with GitHub Actions CI and Claude skills.
 > `ScoreProject` slice; authorized, view-only; unknown project → 404, findings-but-nothing-scoreable →
 > 200 with a null `Score`). Dashboard consumption of the score is Phase 5.
 
+> **Dashboards (Phase 5, Level 2 — `add-project-status-dashboard`):** the **individual-project status
+> rich view** (React, route `/projects`, `ProjectFindings.jsx`). **Presentation-only — no backend/API
+> change:** the view reads the two existing surfaces for a project key **concurrently** (`Promise.allSettled`)
+> — the findings surface (`GET /api/projects/{key}`) and the health surface (`GET /api/projects/{key}/health`)
+> — and renders `HealthBanner` above the four cited sections (narrative/findings/challenge/review). The
+> banner shows the RAG colour (`FinalBucket`) + `RawScore`, the per-area breakdown, aggregate `Confidence`,
+> the applied-override audit trail (rule/floor/reason + cited finding locator), and the **"Needs PM Review"**
+> flag (orthogonal to colour). The health response maps to one of four render states via the pure helper
+> `healthState` (`ClientApp/src/health.js`): **SCORED** (200 + score), **SCORING_PENDING** (200 + null
+> score — findings exist, nothing scoreable yet), **NOT_SCORED** (404 — no findings on record), **ERROR**
+> (network/5xx/401, surfaced via the page error line, never a banner); the two surfaces are independent so
+> one failing never blanks the other. RAG colours are theme-aware CSS custom properties in `styles.scss`
+> and always paired with a text label + score (colour-blind safe). Status never conveyed by colour alone.
+> Where the PRD's L2 wishlist exceeds the finding shape (dated milestones, per-decision owner/deadline,
+> explicit AI recommendation) the view renders what exists and flags the gap as a follow-on. **L1
+> (Executive Portfolio) and L3 (Data Quality) remain unbuilt** — they need a portfolio-enumeration query
+> (`DistinctProjectKeys` + a `ScorePortfolio` fan-out over the pure `HealthScoringService`), deferred to
+> later Phase 5 changes. The repo has **no JS test harness**; the L2 data path is locked by the backend
+> integration test `ProjectStatusDashboardDataTests` and the render logic verified via the running app.
+
+> **Dashboards (Phase 5, Level 1 — `add-executive-portfolio-dashboard`):** the **executive portfolio
+> roll-up** (React, route `/portfolio`, `ExecutivePortfolio.jsx`). Unlike L2 (presentation-only), this
+> adds a **real backend slice**: portfolio-wide **discovery** via `IFindingRepository.DistinctProjectKeysAsync`
+> (`SELECT DISTINCT project_key` — no first-class `Project` entity; opaque-key model preserved; no schema
+> change/migration) and a `ScorePortfolio` slice (`Application/Features/ExecutivePortfolio`) that fans out
+> over the **existing pure `HealthScoringService`** (latest run per project — no re-analysis, no LLM cost)
+> and rolls up. Exposed at `GET /api/portfolio` (`ExecutivePortfolioEndpoints`; authorized, shared-workspace,
+> view-only): **G/A/R counts** (count of each `FinalBucket`), **aggregate (mean) confidence** + count of
+> projects flagged `NeedsPmReview`, and a worst-first **intervention list** (Red-before-Amber, then
+> `RawScore` ascending) — each entry carries the project key, status, confidence, and a **cited reason**
+> (the worst-floor applied override if any, else the worst-severity area cited to its worst finding).
+> Unscoreable projects (null `Score`) are excluded from counts; empty store → **zeroed 200, never 404**.
+> The L1 view is built to the v2 wireframe (`docs/designs/phase5-wireframe-v2.html`) with a **shared SCSS
+> design system** (summary strip, RAG bar, `records` table, `sev` chips) reusing L2's `--rag-*` properties,
+> ready for the L2 retrofit. **Presentation-only boundary holds:** panels the roll-up can't back (€
+> financial exposure, per-decision detail, key-person risk, owned/dated recommendations) render a dashed
+> "not yet captured — follow-on" placeholder, never fabricated data. Backend is TDD-covered
+> (`FindingRepositoryDistinctKeysTests`, `ScorePortfolioTests`, `ExecutivePortfolioEndpointsTests`); **L3
+> Data Quality will reuse `DistinctProjectKeysAsync`** for enumeration.
+
 > **Client framework:** template param `--client-framework` (`-cf`) = `react` (default) or
 > `none` (API only). Driven by `ClientFramework` symbol → computed `UseReact` / `UseApiOnly`,

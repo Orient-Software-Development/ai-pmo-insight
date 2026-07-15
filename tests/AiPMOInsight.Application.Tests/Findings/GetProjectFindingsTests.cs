@@ -16,6 +16,8 @@ public class GetProjectFindingsTests
             Task.FromResult<IReadOnlyList<Finding>>(findings.Where(f => f.ProjectKey == projectKey).ToList());
         public Task<IReadOnlyList<Finding>> GetByUploadIdAsync(Guid uploadId, CancellationToken cancellationToken) =>
             Task.FromResult<IReadOnlyList<Finding>>(findings.Where(f => f.Citation.UploadId == uploadId).ToList());
+        public Task<IReadOnlyList<string>> DistinctProjectKeysAsync(CancellationToken cancellationToken) =>
+            Task.FromResult<IReadOnlyList<string>>(findings.Select(f => f.ProjectKey).Distinct().ToList());
     }
 
     private static Finding Make(Guid runId, FindingKind kind, DateTimeOffset createdAt, string agent = "X")

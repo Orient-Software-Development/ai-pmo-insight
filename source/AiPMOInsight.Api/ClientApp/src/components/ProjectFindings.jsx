@@ -1,7 +1,10 @@
 import { useState } from 'react';
 import { authFetch } from '../AuthContext';
+import { HealthBanner } from './HealthBanner';
+import { HEALTH_STATE, healthState } from '../health';
 
 const EMPTY_VIEW = { projectKey: '', findings: [], narrative: [], challenge: [], review: [] };
+const EMPTY_HEALTH = { state: HEALTH_STATE.ERROR, score: null };
 
 // The Data Collector (UploadParser) only parses these formats. CSV is intentionally NOT supported —
 // a .csv upload parses to nothing and yields zero findings, so we reject it up front rather than let
@@ -17,23 +20,45 @@ const isAcceptedFile = name => ACCEPTED_EXTENSIONS.some(ext => name.toLowerCase(
 export function ProjectFindings() {
   const [projectKey, setProjectKey] = useState('ALPHA');
   const [view, setView] = useState(EMPTY_VIEW);
+  const [health, setHealth] = useState(EMPTY_HEALTH);
   const [file, setFile] = useState(null);
   const [status, setStatus] = useState(null);
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(false);
 
+  // Reads both Level-2 surfaces for a key concurrently: the findings sections and the health score.
+  // The two are independent — a health 404/null-score never blanks the findings, and a findings error
+  // never blanks a resolved banner (each state is set from its own response).
   async function loadFindings(key) {
     setLoading(true);
     setError(null);
+    setHealth(EMPTY_HEALTH);
+    const [findingsResult, healthResult] = await Promise.allSettled([
+      authFetch(`/api/projects/${encodeURIComponent(key)}`),
+      authFetch(`/api/projects/${encodeURIComponent(key)}/health`),
+    ]);
+
     try {
-      const res = await authFetch(`/api/projects/${encodeURIComponent(key)}`);
+      if (findingsResult.status !== 'fulfilled') throw findingsResult.reason;
+      const res = findingsResult.value;
       if (!res.ok) throw new Error(`GET /api/projects/${key} failed (${res.status})`);
       setView({ ...EMPTY_VIEW, ...(await res.json()) });
     } catch (e) {
       setError(e.message);
-    } finally {
-      setLoading(false);
     }
+
+    // Health is best-effort and orthogonal to findings: map its response to a render state; on any
+    // fetch failure fall back to ERROR (the banner renders nothing, the findings still show).
+    if (healthResult.status === 'fulfilled') {
+      const hres = healthResult.value;
+      let body = null;
+      try { body = hres.status === 200 ? await hres.json() : null; } catch { body = null; }
+      setHealth({ state: healthState(hres.status, body), score: body?.score ?? null });
+    } else {
+      setHealth(EMPTY_HEALTH);
+    }
+
+    setLoading(false);
   }
 
   function onFileChange(e) {
@@ -110,14 +135,26 @@ export function ProjectFindings() {
 
       {loading ? (
         <p aria-busy="true">Loading…</p>
-      ) : !hasAnything ? (
-        <p><em>No analysis recorded for this project key yet.</em></p>
       ) : (
         <>
-          <SynthesisSection title="Narrative" items={view.narrative} />
-          <FindingsSection findings={view.findings} />
-          <SynthesisSection title="Challenge" items={view.challenge} />
-          <SynthesisSection title="Review" items={view.review} />
+          <HealthBanner state={health.state} score={health.score} />
+          {!hasAnything ? (
+            <p><em>No analysis recorded for this project key yet.</em></p>
+          ) : (
+            <>
+              <SynthesisSection title="Narrative" items={view.narrative} />
+              <FindingsSection findings={view.findings} />
+              <SynthesisSection title="Challenge" items={view.challenge} />
+              <SynthesisSection title="Review" items={view.review} />
+              <p className="l2-gap-note">
+                <small>
+                  Dated upcoming milestones, per-decision owner/deadline, and an explicit AI recommendation
+                  are not yet captured in the finding shape — the Narrative above is the closest recommendation
+                  surface. These are a Phase 5 follow-on, not rendered here.
+                </small>
+              </p>
+            </>
+          )}
         </>
       )}
     </div>

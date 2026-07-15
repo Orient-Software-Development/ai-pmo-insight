@@ -18,3 +18,224 @@ main.container {
   padding-top: 1rem;
   padding-bottom: 2rem;
 }
+
+// ── Level-2 RAG health banner (add-project-status-dashboard) ────────────────────────────────
+// RAG colours are defined once here as CSS custom properties so the banner, badge, and severity
+// chips stay consistent. Status is never conveyed by colour alone — the FinalBucket label and the
+// numeric score always accompany the colour (colour-blind safe).
+:root {
+  --rag-red: #b3261e;
+  --rag-red-bg: #fbe9e7;
+  --rag-amber: #8a5a00;
+  --rag-amber-bg: #fff4e0;
+  --rag-green: #1b5e20;
+  --rag-green-bg: #e7f5e9;
+  --rag-none: var(--pico-muted-border-color);
+  --rag-none-bg: var(--pico-card-sectioning-background-color);
+}
+
+// Dark theme — explicit toggle and system-auto both covered.
+@mixin rag-dark {
+  --rag-red: #ff8a80;
+  --rag-red-bg: #3a1512;
+  --rag-amber: #ffca7a;
+  --rag-amber-bg: #3a2a0a;
+  --rag-green: #a5d6a7;
+  --rag-green-bg: #12291a;
+}
+:root[data-theme='dark'] { @include rag-dark; }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) { @include rag-dark; }
+}
+
+.rag-banner {
+  border: 1px solid var(--pico-muted-border-color);
+  border-left-width: 6px;
+  border-radius: var(--pico-border-radius);
+  padding: 0.75rem 1rem;
+  margin-bottom: 1.25rem;
+
+  &.rag-red { border-left-color: var(--rag-red); background: var(--rag-red-bg); }
+  &.rag-amber { border-left-color: var(--rag-amber); background: var(--rag-amber-bg); }
+  &.rag-green { border-left-color: var(--rag-green); background: var(--rag-green-bg); }
+  &.rag-none { border-left-color: var(--rag-none); background: var(--rag-none-bg); }
+
+  .rag-head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem 1rem;
+  }
+  .rag-score { font-weight: 600; }
+  .rag-confidence { color: var(--pico-muted-color); font-size: 0.9em; }
+  details { margin-top: 0.75rem; margin-bottom: 0; }
+  table { margin-bottom: 0; }
+}
+
+.rag-badge {
+  display: inline-block;
+  padding: 0.15rem 0.6rem;
+  border-radius: 1rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  font-size: 0.8em;
+  letter-spacing: 0.03em;
+  color: #fff;
+
+  &[data-bucket='Red'] { background: var(--rag-red); }
+  &[data-bucket='Amber'] { background: var(--rag-amber); }
+  &[data-bucket='Green'] { background: var(--rag-green); }
+}
+
+// Severity pill inside the area breakdown / override trail.
+.rag-chip {
+  display: inline-block;
+  padding: 0.05rem 0.45rem;
+  border-radius: 0.75rem;
+  font-size: 0.8em;
+  font-weight: 600;
+
+  &.rag-red { color: var(--rag-red); background: var(--rag-red-bg); }
+  &.rag-amber { color: var(--rag-amber); background: var(--rag-amber-bg); }
+  &.rag-green { color: var(--rag-green); background: var(--rag-green-bg); }
+  &.rag-none { color: var(--pico-muted-color); background: var(--rag-none-bg); }
+}
+
+.rag-review {
+  font-weight: 600;
+  color: var(--rag-amber);
+}
+
+.l2-gap-note { color: var(--pico-muted-color); }
+
+// ── Shared dashboard design system (add-executive-portfolio-dashboard) ──────────────────────
+// Extracted from the v2 wireframe (data-page="l1") as reusable pieces so the L2 view can adopt the
+// same system in a follow-on. Reuses the RAG custom properties defined above (--rag-red/amber/green).
+
+.eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+  font-size: 0.7rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--pico-muted-color);
+  .num {
+    font-family: var(--pico-font-family-monospace, monospace);
+    background: var(--pico-card-sectioning-background-color);
+    border: 1px solid var(--pico-muted-border-color);
+    border-radius: var(--pico-border-radius);
+    padding: 0.05rem 0.4rem;
+  }
+}
+
+// L1 hero numbers — a strip of stat cells.
+.summary-strip {
+  display: grid;
+  grid-template-columns: 1.4fr 1fr 1fr 1fr;
+  border: 1px solid var(--pico-muted-border-color);
+  border-radius: var(--pico-border-radius);
+  margin: 1.5rem 0 2rem;
+
+  @media (max-width: 800px) { grid-template-columns: 1fr 1fr; }
+  @media (max-width: 480px) { grid-template-columns: 1fr; }
+}
+.summary-cell {
+  padding: 1.25rem 1.4rem;
+  border-right: 1px solid var(--pico-muted-border-color);
+  &:last-child { border-right: 0; }
+}
+.summary-label {
+  font-size: 0.7rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--pico-muted-color);
+}
+.summary-value {
+  font-size: 2rem;
+  font-weight: 700;
+  margin-top: 0.3rem;
+  span { font-size: 0.9rem; font-weight: 400; color: var(--pico-muted-color); }
+  &.total { font-size: 2.6rem; }
+  &.flagged { color: var(--pico-muted-border-color); }
+}
+.summary-sub { margin-top: 0.35rem; font-size: 0.8rem; color: var(--pico-muted-color); }
+
+// Segmented RAG bar + legend.
+.rag-bar {
+  display: flex;
+  height: 8px;
+  margin-top: 0.9rem;
+  border-radius: 3px;
+  overflow: hidden;
+  background: var(--pico-muted-border-color);
+  .seg { height: 100%; }
+  .seg.rag-red { background: var(--rag-red); }
+  .seg.rag-amber { background: var(--rag-amber); }
+  .seg.rag-green { background: var(--rag-green); }
+}
+.rag-legend {
+  display: flex;
+  gap: 1.1rem;
+  margin-top: 0.6rem;
+  font-size: 0.78rem;
+  color: var(--pico-muted-color);
+  .dot {
+    display: inline-block;
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    margin-right: 0.3rem;
+    &.rag-red { background: var(--rag-red); }
+    &.rag-amber { background: var(--rag-amber); }
+    &.rag-green { background: var(--rag-green); }
+  }
+}
+
+// Section head (title + kicker).
+.sec-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1rem;
+  margin: 1.75rem 0 0.6rem;
+  .sec-title { margin: 0; }
+  .sec-kicker { font-size: 0.78rem; color: var(--pico-muted-color); }
+}
+
+// Records table (intervention list) with severity row accent + sev chip.
+.records {
+  tr.severity { border-left: 4px solid transparent; }
+  tr.severity.rag-red > td:first-child { box-shadow: inset 4px 0 0 var(--rag-red); }
+  tr.severity.rag-amber > td:first-child { box-shadow: inset 4px 0 0 var(--rag-amber); }
+  .cite { font-size: 0.78rem; color: var(--pico-muted-color); }
+  .conf { font-variant-numeric: tabular-nums; }
+}
+.sev {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.1rem 0.5rem;
+  border-radius: 0.75rem;
+  font-size: 0.78rem;
+  font-weight: 600;
+  &::before { content: ""; width: 7px; height: 7px; border-radius: 50%; }
+  &.rag-red { color: var(--rag-red); background: var(--rag-red-bg); &::before { background: var(--rag-red); } }
+  &.rag-amber { color: var(--rag-amber); background: var(--rag-amber-bg); &::before { background: var(--rag-amber); } }
+  &.rag-green { color: var(--rag-green); background: var(--rag-green-bg); &::before { background: var(--rag-green); } }
+}
+
+// Flagged (not-yet-backed) panels — reserve the v2 layout without fabricating data.
+.flagged-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1rem;
+  @media (max-width: 800px) { grid-template-columns: 1fr; }
+}
+.flagged-panel {
+  border: 1px dashed var(--pico-muted-border-color);
+  border-radius: var(--pico-border-radius);
+  padding: 1rem 1.2rem;
+  background: var(--pico-card-sectioning-background-color);
+  &.wide { grid-column: 1 / -1; }
+}
+.flagged-note { color: var(--pico-muted-color); font-size: 0.82rem; margin: 0.4rem 0 0; }

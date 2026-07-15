@@ -17,6 +17,8 @@ public class ScoreProjectTests
             Task.FromResult<IReadOnlyList<Finding>>(findings.Where(f => f.ProjectKey == projectKey).ToList());
         public Task<IReadOnlyList<Finding>> GetByUploadIdAsync(Guid uploadId, CancellationToken ct) =>
             Task.FromResult<IReadOnlyList<Finding>>(findings.Where(f => f.Citation.UploadId == uploadId).ToList());
+        public Task<IReadOnlyList<string>> DistinctProjectKeysAsync(CancellationToken ct) =>
+            Task.FromResult<IReadOnlyList<string>>(findings.Select(f => f.ProjectKey).Distinct().ToList());
     }
 
     private static Task<ScoreProject.Result?> Run(IReadOnlyList<Finding> seed, string projectKey = "ALPHA") =>

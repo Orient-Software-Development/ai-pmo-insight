@@ -45,6 +45,9 @@ public class AnalysisOrchestratorTests
 
         public Task<IReadOnlyList<Finding>> GetByUploadIdAsync(Guid uploadId, CancellationToken cancellationToken) =>
             Task.FromResult<IReadOnlyList<Finding>>(Saved.Where(f => f.Citation.UploadId == uploadId).ToList());
+
+        public Task<IReadOnlyList<string>> DistinctProjectKeysAsync(CancellationToken cancellationToken) =>
+            Task.FromResult<IReadOnlyList<string>>(Saved.Select(f => f.ProjectKey).Distinct().ToList());
     }
 
     /// <summary>Wraps the fake client to record the order agents invoke the LLM, so control flow is observable.</summary>
