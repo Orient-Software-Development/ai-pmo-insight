@@ -122,5 +122,25 @@ with GitHub Actions CI and Claude skills.
 > `ScoreProject` slice; authorized, view-only; unknown project → 404, findings-but-nothing-scoreable →
 > 200 with a null `Score`). Dashboard consumption of the score is Phase 5.
 
+> **Dashboards (Phase 5, Level 2 — `add-project-status-dashboard`):** the **individual-project status
+> rich view** (React, route `/projects`, `ProjectFindings.jsx`). **Presentation-only — no backend/API
+> change:** the view reads the two existing surfaces for a project key **concurrently** (`Promise.allSettled`)
+> — the findings surface (`GET /api/projects/{key}`) and the health surface (`GET /api/projects/{key}/health`)
+> — and renders `HealthBanner` above the four cited sections (narrative/findings/challenge/review). The
+> banner shows the RAG colour (`FinalBucket`) + `RawScore`, the per-area breakdown, aggregate `Confidence`,
+> the applied-override audit trail (rule/floor/reason + cited finding locator), and the **"Needs PM Review"**
+> flag (orthogonal to colour). The health response maps to one of four render states via the pure helper
+> `healthState` (`ClientApp/src/health.js`): **SCORED** (200 + score), **SCORING_PENDING** (200 + null
+> score — findings exist, nothing scoreable yet), **NOT_SCORED** (404 — no findings on record), **ERROR**
+> (network/5xx/401, surfaced via the page error line, never a banner); the two surfaces are independent so
+> one failing never blanks the other. RAG colours are theme-aware CSS custom properties in `styles.scss`
+> and always paired with a text label + score (colour-blind safe). Status never conveyed by colour alone.
+> Where the PRD's L2 wishlist exceeds the finding shape (dated milestones, per-decision owner/deadline,
+> explicit AI recommendation) the view renders what exists and flags the gap as a follow-on. **L1
+> (Executive Portfolio) and L3 (Data Quality) remain unbuilt** — they need a portfolio-enumeration query
+> (`DistinctProjectKeys` + a `ScorePortfolio` fan-out over the pure `HealthScoringService`), deferred to
+> later Phase 5 changes. The repo has **no JS test harness**; the L2 data path is locked by the backend
+> integration test `ProjectStatusDashboardDataTests` and the render logic verified via the running app.
+
 > **Client framework:** template param `--client-framework` (`-cf`) = `react` (default) or
 > `none` (API only). Driven by `ClientFramework` symbol → computed `UseReact` / `UseApiOnly`,

@@ -1,0 +1,974 @@
+<title>Phase 5 · User Flow (Draft)</title>
+<style>
+  :root {
+    --paper: #F7F6F3;
+    --panel: #FFFFFF;
+    --panel-alt: #FBFAF6;
+    --ink: #17181C;
+    --ink-mute: #55575E;
+    --ink-faint: #8A8B92;
+    --rule: #E3E1DA;
+    --rule-strong: #C8C5BB;
+    --accent: #3A5F8A;
+    --accent-ink: #23405F;
+    --accent-tint: rgba(58, 95, 138, 0.08);
+    --draft: #7A5A1A;
+    --draft-bg: #F1E7CD;
+    --sev-green: #2E7D5B;
+    --sev-amber: #C08A2E;
+    --sev-red: #B0342C;
+    --sev-green-bg: rgba(46, 125, 91, 0.10);
+    --sev-amber-bg: rgba(192, 138, 46, 0.12);
+    --sev-red-bg: rgba(176, 52, 44, 0.10);
+    --shadow-soft: 0 1px 0 rgba(23, 24, 28, 0.03);
+    --font-display: Georgia, "Iowan Old Style", "Palatino Linotype", "Book Antiqua", serif;
+    --font-ui: -apple-system, BlinkMacSystemFont, "Segoe UI Variable", "Segoe UI", "Inter", system-ui, sans-serif;
+    --font-mono: ui-monospace, "SF Mono", "Cascadia Mono", "JetBrains Mono", Menlo, Consolas, monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --paper: #14161B;
+      --panel: #1B1E24;
+      --panel-alt: #20242C;
+      --ink: #EDEBE4;
+      --ink-mute: #B3B4B9;
+      --ink-faint: #7E8087;
+      --rule: #2B2E36;
+      --rule-strong: #3B3F49;
+      --accent: #8AAFD8;
+      --accent-ink: #B8CFE7;
+      --accent-tint: rgba(138, 175, 216, 0.12);
+      --draft: #E2C87E;
+      --draft-bg: rgba(226, 200, 126, 0.14);
+      --sev-green: #6BB58C;
+      --sev-amber: #E0B564;
+      --sev-red: #E27A6E;
+      --sev-green-bg: rgba(107, 181, 140, 0.14);
+      --sev-amber-bg: rgba(224, 181, 100, 0.16);
+      --sev-red-bg: rgba(226, 122, 110, 0.16);
+    }
+  }
+  :root[data-theme="dark"] {
+    --paper: #14161B;
+    --panel: #1B1E24;
+    --panel-alt: #20242C;
+    --ink: #EDEBE4;
+    --ink-mute: #B3B4B9;
+    --ink-faint: #7E8087;
+    --rule: #2B2E36;
+    --rule-strong: #3B3F49;
+    --accent: #8AAFD8;
+    --accent-ink: #B8CFE7;
+    --accent-tint: rgba(138, 175, 216, 0.12);
+    --draft: #E2C87E;
+    --draft-bg: rgba(226, 200, 126, 0.14);
+    --sev-green: #6BB58C;
+    --sev-amber: #E0B564;
+    --sev-red: #E27A6E;
+    --sev-green-bg: rgba(107, 181, 140, 0.14);
+    --sev-amber-bg: rgba(224, 181, 100, 0.16);
+    --sev-red-bg: rgba(226, 122, 110, 0.16);
+  }
+  :root[data-theme="light"] {
+    --paper: #F7F6F3;
+    --panel: #FFFFFF;
+    --panel-alt: #FBFAF6;
+    --ink: #17181C;
+    --ink-mute: #55575E;
+    --ink-faint: #8A8B92;
+    --rule: #E3E1DA;
+    --rule-strong: #C8C5BB;
+    --accent: #3A5F8A;
+    --accent-ink: #23405F;
+    --accent-tint: rgba(58, 95, 138, 0.08);
+    --draft: #7A5A1A;
+    --draft-bg: #F1E7CD;
+    --sev-green: #2E7D5B;
+    --sev-amber: #C08A2E;
+    --sev-red: #B0342C;
+    --sev-green-bg: rgba(46, 125, 91, 0.10);
+    --sev-amber-bg: rgba(192, 138, 46, 0.12);
+    --sev-red-bg: rgba(176, 52, 44, 0.10);
+  }
+
+  body {
+    background: var(--paper);
+    color: var(--ink);
+    font-family: var(--font-ui);
+    font-size: 14.5px;
+    line-height: 1.55;
+    -webkit-font-smoothing: antialiased;
+    font-variant-numeric: tabular-nums;
+  }
+  a { color: var(--accent); text-decoration: none; }
+  a:hover { color: var(--accent-ink); text-decoration: underline; text-underline-offset: 3px; }
+
+  /* draft strip */
+  .draft-strip {
+    background: var(--draft-bg);
+    color: var(--draft);
+    border-bottom: 1px solid var(--rule);
+    font-size: 11.5px;
+    letter-spacing: 0.06em;
+  }
+  .draft-strip-inner {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 7px 32px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    flex-wrap: wrap;
+  }
+  .draft-mark {
+    font-weight: 700;
+    letter-spacing: 0.14em;
+    padding: 2px 8px;
+    border: 1px solid currentColor;
+    border-radius: 2px;
+  }
+  .draft-note em { font-family: var(--font-mono); font-style: normal; font-size: 11px; }
+
+  /* header */
+  .top {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 24px 32px 8px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .brand { display: flex; align-items: center; gap: 12px; }
+  .brand-mark {
+    width: 26px; height: 26px;
+    display: grid; place-items: center;
+    background: var(--ink); color: var(--paper);
+    border-radius: 3px;
+    font-family: var(--font-display);
+    font-weight: 700; font-size: 15px;
+    letter-spacing: -0.02em;
+  }
+  .brand-name { font-family: var(--font-display); font-weight: 700; font-size: 16.5px; }
+  .brand-sub { font-size: 11px; color: var(--ink-faint); letter-spacing: 0.08em; text-transform: uppercase; }
+  .top-meta {
+    font-size: 12px;
+    font-family: var(--font-mono);
+    color: var(--ink-faint);
+  }
+
+  /* canvas */
+  .canvas {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 28px 32px 96px;
+  }
+
+  .eyebrow {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 11px;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+    font-weight: 600;
+  }
+  h1.title {
+    font-family: var(--font-display);
+    font-size: 40px;
+    font-weight: 500;
+    letter-spacing: -0.015em;
+    line-height: 1.08;
+    margin-top: 10px;
+    text-wrap: balance;
+  }
+  .lede {
+    margin-top: 12px;
+    color: var(--ink-mute);
+    font-size: 15px;
+    max-width: 640px;
+  }
+
+  /* the flow */
+  .flow { margin-top: 40px; }
+  .flow-spine {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  /* node */
+  .node {
+    background: var(--panel);
+    border: 1px solid var(--rule);
+    border-radius: 3px;
+    padding: 18px 20px 16px;
+    width: 340px;
+    box-shadow: var(--shadow-soft);
+    position: relative;
+  }
+  .node.wide { width: 400px; }
+  .node.narrow { width: 260px; }
+  .node-eyebrow {
+    font-size: 10.5px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 10px;
+  }
+  .node-eyebrow .num {
+    font-family: var(--font-mono);
+    color: var(--accent);
+    background: var(--accent-tint);
+    padding: 2px 6px;
+    border-radius: 2px;
+    letter-spacing: 0.04em;
+  }
+  .node-title {
+    font-family: var(--font-display);
+    font-size: 21px;
+    font-weight: 500;
+    letter-spacing: -0.005em;
+    margin-top: 8px;
+    line-height: 1.15;
+  }
+  .node-sub {
+    font-size: 12.5px;
+    color: var(--ink-mute);
+    margin-top: 6px;
+    line-height: 1.4;
+  }
+  .node-preview {
+    margin-top: 14px;
+    padding: 12px;
+    background: var(--panel-alt);
+    border: 1px solid var(--rule);
+    border-radius: 2px;
+  }
+  .node-us {
+    margin-top: 14px;
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+  }
+  .us-chip {
+    font-family: var(--font-mono);
+    font-size: 10.5px;
+    color: var(--ink-faint);
+    border: 1px solid var(--rule);
+    padding: 2px 7px;
+    border-radius: 2px;
+    letter-spacing: 0.02em;
+  }
+
+  /* arrows */
+  .arrow {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 10px 0;
+    color: var(--ink-mute);
+  }
+  .arrow svg { color: var(--accent); }
+  .arrow .label {
+    margin-top: 4px;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    letter-spacing: 0.02em;
+    color: var(--ink-mute);
+  }
+  .arrow.dashed svg { color: var(--ink-faint); }
+  .arrow.dashed svg path { stroke-dasharray: 4 3; }
+
+  /* fan-out from portfolio */
+  .fanout {
+    margin-top: 10px;
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 20px;
+    align-items: start;
+  }
+  .fanout .branch {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+  .fanout .arrow { padding: 4px 0 8px; }
+  .fanout .branch .node { width: 100%; }
+
+  /* portfolio-to-fanout Y connector (SVG) */
+  .yconnector {
+    width: 100%;
+    max-width: 720px;
+    height: 60px;
+    margin: 0 auto;
+    display: block;
+    color: var(--accent);
+  }
+
+  /* side section (auth menu) */
+  .side {
+    margin-top: 80px;
+    padding-top: 40px;
+    border-top: 1px dashed var(--rule-strong);
+  }
+  .side-kicker {
+    font-size: 11px;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+    text-align: center;
+    margin-bottom: 6px;
+  }
+  .side-title {
+    font-family: var(--font-display);
+    font-size: 24px;
+    font-weight: 500;
+    letter-spacing: -0.005em;
+    text-align: center;
+    margin-bottom: 4px;
+  }
+  .side-lede {
+    color: var(--ink-mute);
+    font-size: 13.5px;
+    text-align: center;
+    max-width: 540px;
+    margin: 0 auto 32px;
+  }
+  .side-flow {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 48px;
+    max-width: 900px;
+    margin: 0 auto;
+  }
+  .side-branch {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0;
+  }
+  .side-branch .from {
+    font-family: var(--font-mono);
+    font-size: 11.5px;
+    color: var(--ink-faint);
+    text-align: center;
+    padding: 8px 12px;
+    border: 1px dashed var(--rule-strong);
+    border-radius: 2px;
+    margin-bottom: 8px;
+    letter-spacing: 0.02em;
+  }
+  .side-branch .return-note {
+    margin-top: 12px;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--ink-faint);
+    text-align: center;
+    letter-spacing: 0.04em;
+  }
+  .side-branch .return-note b {
+    color: var(--accent);
+    font-weight: 500;
+  }
+
+  /* previews (small visual cues inside nodes) */
+  .prev-input {
+    height: 8px;
+    background: var(--rule);
+    border-radius: 2px;
+    margin-bottom: 6px;
+  }
+  .prev-input:last-child { margin-bottom: 0; }
+  .prev-btn {
+    height: 10px;
+    background: var(--ink);
+    border-radius: 2px;
+    width: 40%;
+    margin-top: 8px;
+  }
+
+  .prev-dropzone {
+    border: 1px dashed var(--rule-strong);
+    padding: 12px;
+    text-align: center;
+    font-size: 10.5px;
+    color: var(--ink-faint);
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    border-radius: 2px;
+    margin-bottom: 8px;
+  }
+  .prev-rows { display: flex; flex-direction: column; gap: 4px; }
+  .prev-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 11px;
+    color: var(--ink-mute);
+    font-family: var(--font-mono);
+  }
+  .dot {
+    display: inline-block;
+    width: 6px; height: 6px;
+    border-radius: 50%;
+  }
+  .dot-g { background: var(--sev-green); }
+  .dot-a { background: var(--sev-amber); }
+  .dot-r { background: var(--sev-red); }
+
+  .prev-pipe {
+    display: flex;
+    gap: 5px;
+    align-items: center;
+  }
+  .pipe-dot {
+    width: 12px; height: 12px;
+    border-radius: 50%;
+    background: var(--rule);
+  }
+  .pipe-dot.done { background: var(--sev-green); }
+  .pipe-dot.running {
+    background: var(--accent);
+    box-shadow: 0 0 0 3px var(--accent-tint);
+  }
+  .prev-pipe-label {
+    font-size: 10.5px;
+    font-family: var(--font-mono);
+    color: var(--ink-faint);
+    margin-top: 6px;
+    letter-spacing: 0.04em;
+  }
+
+  .prev-rag {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+  .prev-rag-bar {
+    display: flex;
+    height: 6px;
+    border-radius: 2px;
+    overflow: hidden;
+  }
+  .prev-rag-bar span { display: block; height: 100%; }
+  .prev-rag-counts {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--ink-mute);
+    letter-spacing: 0.04em;
+    display: flex;
+    gap: 12px;
+  }
+  .prev-rag-counts b { color: var(--ink); font-weight: 500; }
+
+  .prev-l2 {
+    display: grid;
+    grid-template-columns: 3px 1fr;
+    gap: 10px;
+    align-items: start;
+  }
+  .prev-l2-stripe {
+    height: 44px;
+    background: var(--sev-red);
+    border-radius: 1px;
+  }
+  .prev-l2-title { font-size: 12px; color: var(--ink); font-weight: 500; }
+  .prev-l2-sub {
+    font-family: var(--font-mono);
+    font-size: 10.5px;
+    color: var(--ink-mute);
+    margin-top: 4px;
+    letter-spacing: 0.02em;
+  }
+  .prev-l2-cite {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    color: var(--ink-faint);
+    margin-top: 6px;
+  }
+
+  .prev-gauge {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .prev-gauge-num {
+    font-family: var(--font-display);
+    font-size: 30px;
+    letter-spacing: -0.01em;
+    line-height: 1;
+    color: var(--ink);
+  }
+  .prev-gauge-num sup { font-size: 12px; color: var(--ink-mute); }
+  .prev-gauge-list {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    font-family: var(--font-mono);
+    font-size: 10.5px;
+    color: var(--ink-mute);
+  }
+  .prev-gauge-list .row { display: flex; justify-content: space-between; }
+
+  .prev-hist { display: flex; flex-direction: column; gap: 4px; }
+  .prev-hist-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 4px 6px;
+    border-left: 2px solid var(--rule);
+    font-size: 11px;
+    font-family: var(--font-mono);
+    color: var(--ink-mute);
+  }
+  .prev-hist-row.active {
+    border-left-color: var(--accent);
+    background: var(--accent-tint);
+    color: var(--ink);
+  }
+
+  .prev-key {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .prev-key-icon {
+    width: 30px; height: 30px;
+    border-radius: 50%;
+    background: var(--accent-tint);
+    display: grid;
+    place-items: center;
+    color: var(--accent);
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 16px;
+  }
+  .prev-key-lines {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+  .prev-key-lines .line {
+    height: 5px;
+    background: var(--rule);
+    border-radius: 1px;
+  }
+  .prev-key-lines .line.short { width: 60%; }
+
+  .prev-exit {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: var(--sev-red);
+  }
+  .prev-exit .icon {
+    width: 26px; height: 26px;
+    border-radius: 3px;
+    background: var(--sev-red-bg);
+    display: grid;
+    place-items: center;
+    color: var(--sev-red);
+  }
+  .prev-exit .txt {
+    font-size: 12px;
+    color: var(--ink-mute);
+  }
+
+  /* legend */
+  .legend {
+    margin-top: 56px;
+    padding: 18px 24px;
+    background: var(--panel);
+    border: 1px solid var(--rule);
+    border-radius: 3px;
+    display: flex;
+    gap: 28px;
+    flex-wrap: wrap;
+    justify-content: center;
+    font-size: 12px;
+    color: var(--ink-mute);
+  }
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .legend-swatch {
+    width: 30px;
+    height: 2px;
+    background: var(--accent);
+    display: inline-block;
+  }
+  .legend-swatch.dashed {
+    background: transparent;
+    border-top: 2px dashed var(--ink-faint);
+    height: 0;
+  }
+  .legend-swatch.chip {
+    height: 14px;
+    background: transparent;
+    border: 1px solid var(--rule);
+    border-radius: 2px;
+    font-family: var(--font-mono);
+    font-size: 9.5px;
+    color: var(--ink-faint);
+    padding: 0 5px;
+    line-height: 12px;
+    width: auto;
+  }
+
+  /* traceability footer */
+  .trace {
+    margin-top: 72px;
+    padding-top: 24px;
+    border-top: 1px solid var(--rule);
+    color: var(--ink-mute);
+    font-size: 12.5px;
+  }
+  .trace .kicker {
+    font-size: 11px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+    margin-bottom: 12px;
+  }
+  .trace ol { margin: 0; padding-left: 22px; max-width: 68em; }
+  .trace ol li { margin-bottom: 6px; }
+  .trace ol li b { color: var(--ink); font-weight: 500; }
+  .trace .note {
+    margin-top: 16px;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--ink-faint);
+  }
+
+  @media (max-width: 780px) {
+    .node, .node.wide, .node.narrow { width: 100%; }
+    .fanout { grid-template-columns: 1fr; }
+    .side-flow { grid-template-columns: 1fr; }
+    h1.title { font-size: 30px; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    * { transition: none !important; animation: none !important; }
+  }
+</style>
+
+<div class="draft-strip">
+  <div class="draft-strip-inner">
+    <span class="draft-mark">DRAFT</span>
+    <span class="draft-note">
+      Phase 5 · user flow · v0.1 · 15 Jul 2026 ·
+      companion to <em>docs/designs/phase5-wireframe-v2.html</em>
+    </span>
+  </div>
+</div>
+
+<header class="top">
+  <div class="brand">
+    <div class="brand-mark">A</div>
+    <div>
+      <div class="brand-name">AI PMO Insight</div>
+      <div class="brand-sub">Phase 5 · flow diagram</div>
+    </div>
+  </div>
+  <div class="top-meta">happy path · one session · logged out → logged out</div>
+</header>
+
+<main class="canvas">
+  <div class="eyebrow"><span>Flow</span></div>
+  <h1 class="title">From sign-in to sign-out, in one session.</h1>
+  <p class="lede">
+    The path a PMO admin takes on the demo run: authenticate, ingest the client's files, watch
+    the pipeline turn them into findings, drill from the portfolio down to a single project's
+    Challenge / Review, audit past runs, then sign out. Every node in this diagram is a page in
+    <a href="https://claude.ai/code/artifact/7bdc630b-0bef-4212-bba2-768a18642e24">the v2 wireframe</a>.
+  </p>
+
+  <section class="flow">
+    <div class="flow-spine">
+
+      <!-- 1. LOGIN -->
+      <div class="node narrow">
+        <div class="node-eyebrow"><span>Step 01</span><span>#login</span></div>
+        <div class="node-title">Log in / Register</div>
+        <div class="node-sub">cookie-JWT · <span style="font-family:var(--font-mono);">httpOnly</span> · session 7 days</div>
+        <div class="node-preview">
+          <div class="prev-input"></div>
+          <div class="prev-input"></div>
+          <div class="prev-btn"></div>
+        </div>
+        <div class="node-us"><span class="us-chip">auth</span></div>
+      </div>
+      <div class="arrow">
+        <svg width="18" height="34" viewBox="0 0 18 34" fill="none" aria-hidden="true">
+          <path d="M9 0 L9 28 M4 22 L9 30 L14 22" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        <span class="label">submit → auth cookies set</span>
+      </div>
+
+      <!-- 2. UPLOAD -->
+      <div class="node">
+        <div class="node-eyebrow"><span>Step 02</span><span>#upload</span></div>
+        <div class="node-title">Upload project data</div>
+        <div class="node-sub">Orbit workbook + supporting minutes / risk registers · parse status per file</div>
+        <div class="node-preview">
+          <div class="prev-dropzone">Drop files</div>
+          <div class="prev-rows">
+            <div class="prev-row"><span class="dot dot-g"></span>orbit-export.xlsx · parsed</div>
+            <div class="prev-row"><span class="dot dot-a"></span>risk-register.xlsx · needs mapping</div>
+            <div class="prev-row"><span class="dot dot-r"></span>finance.csv · rejected</div>
+          </div>
+        </div>
+        <div class="node-us">
+          <span class="us-chip">US 1</span>
+          <span class="us-chip">US 2</span>
+        </div>
+      </div>
+      <div class="arrow">
+        <svg width="18" height="34" viewBox="0 0 18 34" fill="none" aria-hidden="true">
+          <path d="M9 0 L9 28 M4 22 L9 30 L14 22" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        <span class="label">confirm duplicates → Run analysis</span>
+      </div>
+
+      <!-- 3. ANALYSIS PIPELINE -->
+      <div class="node wide">
+        <div class="node-eyebrow"><span>Step 03</span><span>orchestrator</span></div>
+        <div class="node-title">Analysis pipeline runs</div>
+        <div class="node-sub">9 agents · Data Collector → Data Quality → Status → Risk → Financial → Resource → Narrative → Challenge → Review</div>
+        <div class="node-preview">
+          <div class="prev-pipe">
+            <span class="pipe-dot done"></span>
+            <span class="pipe-dot done"></span>
+            <span class="pipe-dot done"></span>
+            <span class="pipe-dot running"></span>
+            <span class="pipe-dot"></span>
+            <span class="pipe-dot"></span>
+            <span class="pipe-dot"></span>
+            <span class="pipe-dot"></span>
+            <span class="pipe-dot"></span>
+          </div>
+          <div class="prev-pipe-label">04 / 09 · 01:42 elapsed · ETA 01:38</div>
+        </div>
+        <div class="node-us"><span class="us-chip">US 9</span></div>
+      </div>
+      <div class="arrow">
+        <svg width="18" height="34" viewBox="0 0 18 34" fill="none" aria-hidden="true">
+          <path d="M9 0 L9 28 M4 22 L9 30 L14 22" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        <span class="label">findings published · portfolio updated</span>
+      </div>
+
+      <!-- 4. PORTFOLIO L1 -->
+      <div class="node wide">
+        <div class="node-eyebrow"><span>Step 04</span><span>#l1 · executive default</span></div>
+        <div class="node-title">Portfolio summary (L1)</div>
+        <div class="node-sub">G/A/R across 47 projects · financial exposure · decisions blocking · key-person risk · recommended actions</div>
+        <div class="node-preview">
+          <div class="prev-rag">
+            <div class="prev-rag-bar">
+              <span style="width:17%;background:var(--sev-red);"></span>
+              <span style="width:30%;background:var(--sev-amber);"></span>
+              <span style="width:53%;background:var(--sev-green);"></span>
+            </div>
+            <div class="prev-rag-counts">
+              <span><b>8</b> red</span>
+              <span><b>14</b> amber</span>
+              <span><b>25</b> green</span>
+            </div>
+          </div>
+        </div>
+        <div class="node-us">
+          <span class="us-chip">US 3</span>
+          <span class="us-chip">US 4</span>
+          <span class="us-chip">US 6</span>
+          <span class="us-chip">US 7</span>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Y-connector from Portfolio to three branches -->
+    <svg class="yconnector" viewBox="0 0 720 60" fill="none" aria-hidden="true" preserveAspectRatio="none">
+      <path d="M360 0 L360 20 M120 55 L120 40 Q120 20 360 20 Q600 20 600 40 L600 55 M360 20 L360 55"
+            stroke="currentColor" stroke-width="1.5" stroke-linecap="round" fill="none"/>
+      <path d="M115 47 L120 55 L125 47" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+      <path d="M355 47 L360 55 L365 47" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+      <path d="M595 47 L600 55 L605 47" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+    </svg>
+
+    <div class="fanout">
+      <!-- 5a. PROJECT L2 -->
+      <div class="branch">
+        <span class="label" style="font-family:var(--font-mono);font-size:11px;color:var(--ink-mute);margin-bottom:8px;">drill into a project</span>
+        <div class="node">
+          <div class="node-eyebrow"><span>Step 05·A</span><span>#l2</span></div>
+          <div class="node-title">Project detail (L2)</div>
+          <div class="node-sub">progress · deviations · RAID + Challenge/Review tabs · milestones · decisions · AI rec · score audit</div>
+          <div class="node-preview">
+            <div class="prev-l2">
+              <div class="prev-l2-stripe"></div>
+              <div>
+                <div class="prev-l2-title">Aurora Migration · Red</div>
+                <div class="prev-l2-sub">confidence 68 % · override fired</div>
+                <div class="prev-l2-cite">↳ f-014 · orbit-export.xlsx</div>
+              </div>
+            </div>
+          </div>
+          <div class="node-us">
+            <span class="us-chip">US 5</span>
+            <span class="us-chip">US 9</span>
+            <span class="us-chip">US 10</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- 5b. DATA QUALITY L3 -->
+      <div class="branch">
+        <span class="label" style="font-family:var(--font-mono);font-size:11px;color:var(--ink-mute);margin-bottom:8px;">check what's missing</span>
+        <div class="node">
+          <div class="node-eyebrow"><span>Step 05·B</span><span>#l3</span></div>
+          <div class="node-title">Data Quality (L3)</div>
+          <div class="node-sub">portfolio confidence · missing / inconsistent items · remediation · duplicate identity candidates</div>
+          <div class="node-preview">
+            <div class="prev-gauge">
+              <div class="prev-gauge-num">72<sup>%</sup></div>
+              <div class="prev-gauge-list">
+                <div class="row"><span>Schedule</span><span>95</span></div>
+                <div class="row"><span>Budget</span><span>60</span></div>
+                <div class="row"><span>Risks</span><span>65</span></div>
+              </div>
+            </div>
+          </div>
+          <div class="node-us">
+            <span class="us-chip">US 2</span>
+            <span class="us-chip">US 8</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- 5c. HISTORY -->
+      <div class="branch">
+        <span class="label" style="font-family:var(--font-mono);font-size:11px;color:var(--ink-mute);margin-bottom:8px;">audit past runs</span>
+        <div class="node">
+          <div class="node-eyebrow"><span>Step 05·C</span><span>#history</span></div>
+          <div class="node-title">History</div>
+          <div class="node-sub">every past upload + its analysis / narrative / challenge / review · prompt hash + run id preserved</div>
+          <div class="node-preview">
+            <div class="prev-hist">
+              <div class="prev-hist-row active"><span>15 Jul · 04:12</span><span>running</span></div>
+              <div class="prev-hist-row"><span>08 Jul · 09:04</span><span>done</span></div>
+              <div class="prev-hist-row"><span>01 Jul · 08:41</span><span>done</span></div>
+            </div>
+          </div>
+          <div class="node-us">
+            <span class="us-chip">US 9</span>
+            <span class="us-chip">US 10</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Side branches: from user menu -->
+  <section class="side">
+    <div class="side-kicker">Side branches · accessed from the user menu</div>
+    <h2 class="side-title">Account &amp; session</h2>
+    <p class="side-lede">
+      Available on every authenticated page (top-right avatar menu). Neither is on the main
+      workflow path — they interrupt it, and either return you where you were or drop you back
+      at the sign-in screen.
+    </p>
+
+    <div class="side-flow">
+      <!-- CHANGE PASSWORD -->
+      <div class="side-branch">
+        <div class="from">from user menu · while signed in</div>
+        <div class="arrow dashed">
+          <svg width="18" height="26" viewBox="0 0 18 26" fill="none" aria-hidden="true">
+            <path d="M9 0 L9 20 M4 14 L9 22 L14 14" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </div>
+        <div class="node">
+          <div class="node-eyebrow"><span>Side · A</span><span>#change-password</span></div>
+          <div class="node-title">Change password</div>
+          <div class="node-sub">current + new + confirm · on save, every other device is signed out; this one stays</div>
+          <div class="node-preview">
+            <div class="prev-key">
+              <div class="prev-key-icon">⚿</div>
+              <div class="prev-key-lines">
+                <div class="line"></div>
+                <div class="line"></div>
+                <div class="line short"></div>
+              </div>
+            </div>
+          </div>
+          <div class="node-us"><span class="us-chip">auth</span></div>
+        </div>
+        <div class="return-note">↩ on success or cancel · <b>return to previous page</b></div>
+      </div>
+
+      <!-- LOG OUT -->
+      <div class="side-branch">
+        <div class="from">from user menu · anywhere</div>
+        <div class="arrow dashed">
+          <svg width="18" height="26" viewBox="0 0 18 26" fill="none" aria-hidden="true">
+            <path d="M9 0 L9 20 M4 14 L9 22 L14 14" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </div>
+        <div class="node">
+          <div class="node-eyebrow"><span>Side · B</span><span>#login</span></div>
+          <div class="node-title">Log out</div>
+          <div class="node-sub"><span style="font-family:var(--font-mono);">POST /api/auth/logout</span> · revokes every refresh-token chain · clears both cookies</div>
+          <div class="node-preview">
+            <div class="prev-exit">
+              <div class="icon">→</div>
+              <div class="txt">Session closed<br><span style="font-family:var(--font-mono);font-size:10.5px;color:var(--ink-faint);">refresh_tokens · revoked</span></div>
+            </div>
+          </div>
+          <div class="node-us"><span class="us-chip">auth</span></div>
+        </div>
+        <div class="return-note">↩ loop · <b>back to step 01 · Log in</b></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Legend -->
+  <div class="legend">
+    <div class="legend-item">
+      <span class="legend-swatch"></span>
+      <span>Main workflow · every session</span>
+    </div>
+    <div class="legend-item">
+      <span class="legend-swatch dashed"></span>
+      <span>Side branch · triggered by user menu</span>
+    </div>
+    <div class="legend-item">
+      <span class="legend-swatch chip">US 5</span>
+      <span>User story reference · see PRD</span>
+    </div>
+    <div class="legend-item">
+      <span class="legend-swatch chip">auth</span>
+      <span>Infrastructure (not a user story)</span>
+    </div>
+  </div>
+
+  <!-- Traceability -->
+  <footer class="trace">
+    <div class="kicker">What this diagram is (and isn't)</div>
+    <ol>
+      <li><b>Happy path only.</b> No error branches — login failure, file rejection, duplicate confirmation, override-fired detour. Those live inline in the wireframe, not here.</li>
+      <li><b>One session.</b> The loop from Log out back to Log in is the outer edge; the diagram doesn't attempt to show multiple concurrent sessions or role-based variations.</li>
+      <li><b>Persona-neutral.</b> This is what the demo shows an executive audience. A PM's real day looks similar but starts at History or Portfolio, not Upload.</li>
+      <li><b>Numbers match the plan doc's dashboard levels</b> (01 / 02 / 03) for the reports, but the flow steps (Step 01 → 05) are just this diagram's own counter — don't confuse the two.</li>
+    </ol>
+    <div class="note">Companion doc — the interactive wireframe at <em>docs/designs/phase5-wireframe-v2.html</em>. Every node above corresponds to a page there.</div>
+  </footer>
+</main>

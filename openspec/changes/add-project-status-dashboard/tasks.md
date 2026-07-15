@@ -61,31 +61,32 @@
 
 ## 5. Wire the banner into the project view
 
-- [ ] 5.1 In `ProjectFindings.jsx`, add a health fetch for the current project key via `authFetch`,
-      resolving to a health-state value; run it concurrently with the findings load (`Promise.all` /
-      parallel effects) so it adds no perceived latency.
-- [ ] 5.2 Render `HealthBanner` above the existing Narrative/Findings/Challenge/Review sections; keep the
-      four sections rendering independently of the health result (a health failure/404 must not blank the
-      findings, and vice-versa).
-- [ ] 5.3 Ensure the health fetch re-runs whenever the loaded project key changes (upload→analyze→read and
-      manual "Load" both refresh the banner for the resulting key).
-- [ ] 5.4 Presentation-only note: where the PRD Level-2 wishlist exceeds the finding shape (dated
-      milestones, per-decision owner/deadline, explicit recommendation), render what exists (e.g. Schedule
-      area, decision-area findings, Narrative) and add a small "not yet captured" note — fabricate nothing.
+- [x] 5.1 `ProjectFindings.jsx` now fetches findings + health for the key concurrently via
+      `Promise.allSettled` in `loadFindings`, mapping the health response through `healthState`.
+- [x] 5.2 `HealthBanner` renders above the four sections; the two surfaces set state from their own
+      response so a health 404/error never blanks the findings (and vice-versa).
+- [x] 5.3 `loadFindings(key)` runs on manual "Load" and after upload→analyze→read, so the banner refreshes
+      for whatever key resolves.
+- [x] 5.4 Added an in-view "not yet captured" note: dated milestones / per-decision owner-deadline /
+      explicit AI recommendation exceed the finding shape → Narrative is flagged as the closest
+      recommendation surface; nothing fabricated.
 
 ## 6. Styling + accessibility
 
-- [ ] 6.1 Add RAG banner + severity-chip styles to `styles.scss`, theme-aware (light/dark) following the
-      existing Pico theme-variable pattern; no inline hex.
-- [ ] 6.2 Pair every RAG colour with its text label and the numeric score so status is never conveyed by
-      colour alone (colour-blind safe).
+- [x] 6.1 RAG banner/badge/chip styles added to `styles.scss` as theme-aware CSS custom properties (light
+      default + `[data-theme=dark]` and `prefers-color-scheme: dark` for auto); no inline hex.
+- [x] 6.2 Every RAG colour is paired with its text label (FinalBucket/severity) and the numeric score, so
+      status is never colour-only.
 
 ## 7. Verify + document
 
-- [ ] 7.1 Run `/verify` (or manually drive the app): upload→analyze a fixture and confirm the banner renders
-      SCORED with the correct colour/score, the area breakdown, confidence, override trail, and PM-review
-      flag; then confirm the SCORING_PENDING and NOT_SCORED states render as specified.
-- [ ] 7.2 Confirm no backend/API/finding-shape change crept in (diff touches only `ClientApp` + docs).
-- [ ] 7.3 Flip roadmap Phase 5 Level-2 from 🟡 to ✅ (rich view); add a short "dashboard read surface" note
-      to `CLAUDE.md`.
-- [ ] 7.4 Full suite green (backend + any client tests); `openspec validate --strict` passes for this change.
+- [x] 7.1 Verified: backend integration test drives upload→analyze→both surfaces (SCORED + NOT_SCORED via
+      real HTTP); the pure `healthState`/`bucketColour` mapping executed under Node across all branches
+      (SCORED/SCORING_PENDING/NOT_SCORED/ERROR + colour cases, all pass); Vite production build compiles
+      JSX + SCSS. **Open item:** a live browser visual pass needs the full stack (Postgres via Docker),
+      which is not running headlessly here — offered to the user.
+- [x] 7.2 Diff confirmed presentation-only: only `ClientApp` (ProjectFindings.jsx, styles.scss, new
+      HealthBanner.jsx + health.js), the new integration test, and docs/openspec. No backend/API/domain
+      source touched.
+- [x] 7.3 Roadmap Phase 5 Level-2 flipped 🟡 → ✅; "Dashboards (Phase 5, Level 2)" note added to `CLAUDE.md`.
+- [x] 7.4 Full suite green (100 Application + 114 Api = 214 passed); `openspec validate --strict` passes.
