@@ -161,6 +161,11 @@ The suggested 9-agent pipeline (PRD marks the exact split as "Assumption but not
   the new tokens — no JSX or data-path change; `ProjectStatusDashboardDataTests` +
   `ExecutivePortfolioEndpointsTests` + `AuthEndpointsTests` all stay green. Presentation-only — no
   `/api/auth/*`, cookie/JWT, or Identity change.
+- ✅ **History rich detail** — `add-history-rich-detail` (#36). `/history` rebuilt as a master-detail audit
+  surface (US-9/US-10): master list + detail (run-provenance header, four cited sections, score audit reusing
+  `GET /api/projects/{key}/health` per project — labelled current, per-run historical audit a follow-on).
+  Presentation-only (no backend change). Flagged follow-ons: uploader, LLM model, project count, multi-file,
+  live status.
 - ⬜ **Level 3 — Data Quality** (missing/inconsistent items + remediation) — will reuse
   `DistinctProjectKeysAsync` for portfolio-wide enumeration
 - ⬜ Confidence level surfaced per project (PRD user story #6)
