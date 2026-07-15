@@ -313,3 +313,65 @@ main.container {
     margin-bottom: 0;
   }
 }
+
+// ── History rich detail (add-history-rich-detail) ────────────────────────────────────────────
+// Master-detail audit surface on the shared tokens above (--rag-*, .records, .sev, .flagged-*).
+
+.history-layout {
+  display: grid;
+  grid-template-columns: 20rem 1fr;
+  gap: 1.5rem;
+  align-items: start;
+  @media (max-width: 800px) { grid-template-columns: 1fr; }
+}
+
+.history-master {
+  position: sticky;
+  top: 1rem;
+  @media (max-width: 800px) { position: static; }
+
+  .upload-list { list-style: none; padding: 0; margin: 0.5rem 0; }
+}
+
+.upload-row {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  width: 100%;
+  text-align: left;
+  padding: 0.6rem 0.75rem;
+  margin: 0;
+  background: none;
+  border: 1px solid transparent;
+  border-radius: var(--pico-border-radius);
+  cursor: pointer;
+  color: inherit;
+
+  &:hover { background: var(--pico-card-sectioning-background-color); }
+  &.selected {
+    background: var(--pico-card-sectioning-background-color);
+    border-color: var(--pico-muted-border-color);
+    box-shadow: inset 3px 0 0 var(--pico-primary);
+  }
+  .upload-file { font-weight: 600; }
+  .upload-date { font-size: 0.78rem; color: var(--pico-muted-color); }
+}
+
+.run-header {
+  border: 1px solid var(--pico-muted-border-color);
+  border-radius: var(--pico-border-radius);
+  padding: 1rem 1.2rem;
+  margin-bottom: 1.25rem;
+
+  .run-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem 2rem;
+    > div { display: flex; flex-direction: column; gap: 0.2rem; }
+    code { font-size: 0.82rem; }
+    .hash { margin-right: 0.4rem; }
+    .flagged { color: var(--pico-muted-color); }
+  }
+}
+
+.audit-project { margin-top: 1rem; }

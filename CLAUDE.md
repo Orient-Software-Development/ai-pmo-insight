@@ -181,5 +181,25 @@ with GitHub Actions CI and Claude skills.
 > **duplicate-identity merge (US-2)**, **live per-agent progress (US-9)** on `/upload`; **dated milestones**
 > and **per-decision owner/deadline** on L2 (the Narrative stays the closest recommendation surface).
 
+> **History rich detail (Phase 5, `add-history-rich-detail`, #36):** the `/history` page (`History.jsx`)
+> rebuilt into a **master-detail audit surface** (US-9/US-10), **presentation-only — no backend/API/
+> finding-shape change.** A sticky master list of uploads (newest-first, from `GET /api/uploads`) + a detail
+> panel for the selected upload's latest run: a **run-provenance header** (run id, run date, distinct prompt
+> hash(es) — all derived from the findings response's `RunId`/`CreatedAt`/`PromptVersion`), the **four cited
+> sections** (Analysis/Narrative #7/Challenge #8/Review #9) restyled on the shared design system, and a
+> **Score-audit section (US-10)** that **reuses `GET /api/projects/{key}/health`** per distinct project key
+> in the run (`Promise.allSettled`, independent) — rendered by reusing the L2 `HealthBanner` (bucket +
+> cited applied-override trail). Because that read is per-project-**latest**-run, the section is labelled the
+> project's **current** health with an explicit caveat that a strict **per-run historical** audit is a
+> follow-on (chosen over adding a backend read, to keep the change presentation-only). Strictly **read-only**
+> (no re-analyze/delete/edit/search/pagination). Render mapping in a pure `history.js` helper
+> (`uploadStatus`/`runProvenance`/`projectKeys`; mirrors `health.js`/`dataQuality.js`), reusing
+> `bucketColour`+`healthState`. **Presentation-only boundary holds** (flagged, never fabricated): **uploader**
+> (`Upload` has no `UserId`), **LLM model** (not on `FindingView`), **project count**/**multi-file summary**
+> (one file per upload; batch grouping = deferred `add-multi-file-analyze`), and **live Running/Failed
+> status** (analysis is synchronous — only coarse Analyzed/Not-analyzed is derivable). No JS harness — the
+> data path is locked by the existing `UploadHistoryEndpointsTests` + health-endpoint tests; render
+> `/verify`-checked in the running app.
+
 > **Client framework:** template param `--client-framework` (`-cf`) = `react` (default) or
 > `none` (API only). Driven by `ClientFramework` symbol → computed `UseReact` / `UseApiOnly`,
