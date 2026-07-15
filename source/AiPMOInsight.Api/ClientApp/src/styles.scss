@@ -831,3 +831,97 @@ a.menu-item {
 @media (max-width: 640px) {
   .user-menu-btn .user-email { display: none; }
 }
+
+// ── L2 synthesis-section polish (feat/l2-readability-polish) ────────────────────────────────
+// Narrative / Challenge / Review render each finding as a `.synth` article. Severity brackets
+// from the LLM prompt (`[red]`, `[high]`, etc.) are stripped and rendered as `.sev` chips
+// alongside the text — never as literal `[word]` prefixes. Confidence "High/Medium/Low" also
+// becomes a chip.
+
+.synth {
+  border: 1px solid var(--rule);
+  border-radius: 3px;
+  background: var(--panel);
+  padding: 16px 20px;
+  margin-bottom: 12px;
+
+  .synth-lead {
+    margin-bottom: 10px;
+  }
+  .synth-body {
+    margin: 0;
+    color: var(--ink);
+    line-height: 1.6;
+    white-space: pre-wrap;
+  }
+  .synth-footer {
+    margin-top: 14px;
+    padding-top: 10px;
+    border-top: 1px dotted var(--rule);
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px 14px;
+    font-size: 11.5px;
+    color: var(--ink-faint);
+    font-family: var(--font-mono);
+    code {
+      background: var(--panel-alt);
+      padding: 0 4px;
+      border-radius: 2px;
+      color: var(--ink-mute);
+    }
+  }
+  .synth-meta { color: var(--ink-faint); }
+}
+
+// Challenge critiques — one row per adversarial point.
+.critique-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+.critique {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  gap: 10px 14px;
+  align-items: baseline;
+  padding: 10px 0;
+  border-bottom: 1px dotted var(--rule);
+  &:last-child { border-bottom: 0; }
+  .critique-body {
+    color: var(--ink);
+    line-height: 1.55;
+  }
+}
+
+// Review — per-persona blocks with bulleted questions.
+.review-blocks {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.review-block {
+  padding: 12px 14px;
+  background: var(--panel-alt);
+  border-left: 3px solid var(--rule-strong);
+  border-radius: 0 3px 3px 0;
+}
+.review-persona {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 14px;
+  color: var(--ink);
+  letter-spacing: -0.005em;
+  margin-bottom: 6px;
+}
+.review-questions {
+  margin: 0;
+  padding-left: 20px;
+  color: var(--ink);
+  li {
+    line-height: 1.55;
+    margin-bottom: 6px;
+    &:last-child { margin-bottom: 0; }
+  }
+}
