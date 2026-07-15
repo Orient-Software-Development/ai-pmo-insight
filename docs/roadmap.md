@@ -149,6 +149,18 @@ The suggested 9-agent pipeline (PRD marks the exact split as "Assumption but not
   from `/upload` auto-loads the analyzed project. Presentation-only (no backend/data-path change;
   `ProjectStatusDashboardDataTests` stays green). **Flagged as follow-on:** per-file parse status,
   duplicate-identity merge (US-2), live per-agent progress (US-9), dated milestones, per-decision detail.
+- ✅ **Auth UI rebuild + token-base retrofit** — `add-phase5-auth-ui` (#33). The three auth surfaces
+  rebuilt to the wireframe: `Login.jsx` (centered card, tab toggle, register-mode rules hint, red-stripe
+  error), `ChangePassword.jsx` (settings card, green success reveal restating fresh-session behaviour,
+  `navigate(-1)` cancel with `/` fallback), and `NavMenu.jsx` (avatar-chip trigger opening a **disclosure**
+  panel — not ARIA menu — with header + Change password + danger-styled Log out; closes on outside
+  mousedown / Escape / route change; nav tabs hidden on `/login` via `useLocation`). The wireframe token
+  base (`--paper` / `--ink*` / `--panel*` / `--rule*` / `--accent*` / `--sev-*` / `--font-display` +
+  `--font-ui` + `--font-mono`) lands as CSS custom properties in `styles.scss`, both themes, hybrid over
+  Pico (Pico keeps form/reset/button primitives). L1 and L2 retrofitted in the same change to consume
+  the new tokens — no JSX or data-path change; `ProjectStatusDashboardDataTests` +
+  `ExecutivePortfolioEndpointsTests` + `AuthEndpointsTests` all stay green. Presentation-only — no
+  `/api/auth/*`, cookie/JWT, or Identity change.
 - ⬜ **Level 3 — Data Quality** (missing/inconsistent items + remediation) — will reuse
   `DistinctProjectKeysAsync` for portfolio-wide enumeration
 - ⬜ Confidence level surfaced per project (PRD user story #6)
