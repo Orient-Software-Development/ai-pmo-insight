@@ -142,5 +142,25 @@ with GitHub Actions CI and Claude skills.
 > later Phase 5 changes. The repo has **no JS test harness**; the L2 data path is locked by the backend
 > integration test `ProjectStatusDashboardDataTests` and the render logic verified via the running app.
 
+> **Dashboards (Phase 5, Level 1 — `add-executive-portfolio-dashboard`):** the **executive portfolio
+> roll-up** (React, route `/portfolio`, `ExecutivePortfolio.jsx`). Unlike L2 (presentation-only), this
+> adds a **real backend slice**: portfolio-wide **discovery** via `IFindingRepository.DistinctProjectKeysAsync`
+> (`SELECT DISTINCT project_key` — no first-class `Project` entity; opaque-key model preserved; no schema
+> change/migration) and a `ScorePortfolio` slice (`Application/Features/ExecutivePortfolio`) that fans out
+> over the **existing pure `HealthScoringService`** (latest run per project — no re-analysis, no LLM cost)
+> and rolls up. Exposed at `GET /api/portfolio` (`ExecutivePortfolioEndpoints`; authorized, shared-workspace,
+> view-only): **G/A/R counts** (count of each `FinalBucket`), **aggregate (mean) confidence** + count of
+> projects flagged `NeedsPmReview`, and a worst-first **intervention list** (Red-before-Amber, then
+> `RawScore` ascending) — each entry carries the project key, status, confidence, and a **cited reason**
+> (the worst-floor applied override if any, else the worst-severity area cited to its worst finding).
+> Unscoreable projects (null `Score`) are excluded from counts; empty store → **zeroed 200, never 404**.
+> The L1 view is built to the v2 wireframe (`docs/designs/phase5-wireframe-v2.html`) with a **shared SCSS
+> design system** (summary strip, RAG bar, `records` table, `sev` chips) reusing L2's `--rag-*` properties,
+> ready for the L2 retrofit. **Presentation-only boundary holds:** panels the roll-up can't back (€
+> financial exposure, per-decision detail, key-person risk, owned/dated recommendations) render a dashed
+> "not yet captured — follow-on" placeholder, never fabricated data. Backend is TDD-covered
+> (`FindingRepositoryDistinctKeysTests`, `ScorePortfolioTests`, `ExecutivePortfolioEndpointsTests`); **L3
+> Data Quality will reuse `DistinctProjectKeysAsync`** for enumeration.
+
 > **Client framework:** template param `--client-framework` (`-cf`) = `react` (default) or
 > `none` (API only). Driven by `ClientFramework` symbol → computed `UseReact` / `UseApiOnly`,

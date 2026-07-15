@@ -134,8 +134,16 @@ The suggested 9-agent pipeline (PRD marks the exact split as "Assumption but not
   trail, and the "Needs PM Review" flag above the four cited sections. Presentation-only (no backend
   change). Dated milestones / per-decision owner-deadline / explicit AI recommendation exceed the current
   finding shape and are flagged in-view as a follow-on, not built.
-- ⬜ **Level 1 — Executive Portfolio Summary** (G/A/R counts, financial exposure, intervention list)
-- ⬜ **Level 3 — Data Quality** (missing/inconsistent items + remediation)
+- ✅ **Level 1 — Executive Portfolio Summary** — `add-executive-portfolio-dashboard`. New portfolio-wide
+  read: `IFindingRepository.DistinctProjectKeysAsync` (opaque-key discovery, no `Project` entity) + a
+  `ScorePortfolio` slice fanning out over the pure `HealthScoringService`, exposed at `GET /api/portfolio`
+  (zeroed 200 on empty store). L1 React view (`/portfolio`) built to the v2 wireframe with a shared design
+  system. **Backed & live:** G/A/R counts, aggregate confidence + "Needs PM Review" count, worst-first
+  intervention list (status/confidence/reason + cited finding). **Flagged as follow-on** (exceed the
+  finding shape): € financial exposure, per-decision detail, key-person risk, owned/dated recommendations.
+  Next: retrofit the L2 view onto the shared design system.
+- ⬜ **Level 3 — Data Quality** (missing/inconsistent items + remediation) — will reuse
+  `DistinctProjectKeysAsync` for portfolio-wide enumeration
 - ⬜ Confidence level surfaced per project (PRD user story #6)
 
 ---

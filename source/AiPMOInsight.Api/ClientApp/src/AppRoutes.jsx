@@ -1,4 +1,5 @@
 import { Home } from './components/Home';
+import { ExecutivePortfolio } from './components/ExecutivePortfolio';
 import { ProjectFindings } from './components/ProjectFindings';
 import { History } from './components/History';
 import { Login } from './components/Login';
@@ -13,6 +14,15 @@ const AppRoutes = [
   {
     path: '/login',
     element: <Login />,
+  },
+  {
+    // Protected: redirects to /login when signed out.
+    path: '/portfolio',
+    element: (
+      <RequireAuth>
+        <ExecutivePortfolio />
+      </RequireAuth>
+    ),
   },
   {
     // Protected: redirects to /login when signed out.

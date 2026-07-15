@@ -6,85 +6,82 @@
 
 ## 1. Repository: distinct project-key enumeration (TDD)
 
-- [ ] 1.1 (red) Repository test (in `Api.Tests`, the EF/in-memory harness the other repo tests use): after
-      persisting findings for three distinct keys (one key with several findings), `DistinctProjectKeysAsync`
-      returns exactly those three keys, each once; an empty store returns an empty set.
-- [ ] 1.2 Add `DistinctProjectKeysAsync(CancellationToken)` to `IFindingRepository`
-      (`Application/Abstractions`) and implement it in `EfFindingRepository`
-      (`Set<Finding>().Select(f => f.ProjectKey).Distinct()`). No schema change / no migration.
-- [ ] 1.3 (green) Enumeration tests pass; existing repository tests still pass.
+- [x] 1.1 (red) `FindingRepositoryDistinctKeysTests` — three distinct keys (ALPHA with several findings)
+      → returns each once; empty store → empty. (Red confirmed via the auto-test gate: method missing.)
+- [x] 1.2 Added `DistinctProjectKeysAsync` to `IFindingRepository`; implemented in `EfFindingRepository`
+      (`Findings.Select(f => f.ProjectKey).Distinct()`). No schema change / no migration. Updated the three
+      existing test doubles (`InMemoryFindings`, two `StubRepo`) to implement the new port member.
+- [x] 1.3 (green) Enumeration tests pass; full suite green (100 Application + 116 Api = 216).
 
 ## 2. ScorePortfolio slice: aggregation semantics (TDD)
 
 > Pin the semantics from design Decision 3. Use a fake/in-memory `IFindingRepository` (or the real one)
 > feeding known findings so `HealthScoringService` produces deterministic buckets.
 
-- [ ] 2.1 (red) RAG counts: given projects scoring 2 Red / 1 Amber / 3 Green, the roll-up reports
-      red=2, amber=1, green=3.
-- [ ] 2.2 (red) Needs-PM-Review count is independent of colour (two flagged projects → count 2 regardless
-      of their buckets).
-- [ ] 2.3 (red) Aggregate confidence = mean of scored projects' `Confidence`; empty portfolio → 0.
-- [ ] 2.4 (red) An enumerated-but-unscoreable project (null `Score`) is excluded from all RAG counts and
-      contributes to no bucket.
-- [ ] 2.5 Implement `ScorePortfolio` (`Application/Features/ExecutivePortfolio/`) — enumerate keys via
-      `DistinctProjectKeysAsync`, load each project's findings (`GetByProjectKeyAsync`), score via the
-      existing `HealthScoringService.Score`, aggregate. Return records for counts / confidence / review
-      count / intervention list.
-- [ ] 2.6 (green) Aggregation tests pass.
+- [x] 2.1 (red) RAG counts: 2 Red / 1 Amber / 3 Green → red=2, amber=1, green=3.
+- [x] 2.2 (red) Needs-PM-Review count independent of colour (Green+Low-conf and Amber+Low-conf → count 2).
+- [x] 2.3 (red) Aggregate confidence = mean of scored `Confidence` (mean of {100,30}=65); empty → 0.
+- [x] 2.4 (red) Enumerated-but-unscoreable project (Narrative only, null Score) excluded from all counts.
+- [x] 2.5 Implemented `ScorePortfolio` (`Application/Features/ExecutivePortfolio/`) — enumerate keys, load
+      each project's findings, score via the existing `HealthScoringService.Score`, aggregate into
+      counts / needs-review / mean confidence / intervention list.
+- [x] 2.6 (green) Aggregation tests pass.
 
 ## 3. Intervention list: ranking + cited reason (TDD)
 
-- [ ] 3.1 (red) Ordering: Red entries rank before Amber; within a bucket, `RawScore` ascending
-      (worst first). Green projects are excluded from the list entirely.
-- [ ] 3.2 (red) Cited reason — override path: a Red project whose bucket was set by an applied override
-      yields an entry whose reason names the driving override and carries that override's citation locator.
-- [ ] 3.3 (red) Cited reason — raw-score path: a Red project with no override yields an entry whose reason
-      names the worst-severity area and carries the locator of the worst `Analysis` finding in that area
-      (never an empty locator).
-- [ ] 3.4 Implement the reason/citation derivation (design Decision 4: prefer worst-floor override, else
-      worst area + its worst finding's citation) and the ordering in the `ScorePortfolio` handler.
-- [ ] 3.5 (green) Intervention-list tests pass.
+- [x] 3.1 (red) Ordering: Red before Amber (`OrderByDescending(FinalBucket).ThenBy(RawScore)`); Green
+      excluded from the list.
+- [x] 3.2 (red) Cited reason — override path: a Red-via-override project's entry names the override
+      (`forecast-overrun-critical`) and carries that override's citation locator.
+- [x] 3.3 (red) Cited reason — raw-score path: an Amber-Resource project (no override) still names the
+      worst area ("Resource") and cites the worst Analysis finding in it (non-empty locator).
+- [x] 3.4 Implemented the reason/citation derivation (prefer worst-floor override, else worst area + its
+      worst finding's citation) and the ordering in the handler.
+- [x] 3.5 (green) Intervention-list tests pass (8/8 in `ScorePortfolioTests`).
 
 ## 4. Endpoint: GET /api/portfolio (TDD)
 
-- [ ] 4.1 (red) Integration test (`TestWebAppFactory`, `pmo-user` client): upload→analyze **multiple**
-      project keys, then `GET /api/portfolio` returns 200 with the expected RAG counts, a worst-first
-      intervention list, and each intervention entry carrying a non-empty reason + citation locator.
-- [ ] 4.2 (red) Empty store: `GET /api/portfolio` returns 200 with red=0/amber=0/green=0 and an empty
-      intervention list (not 404). Unauthenticated caller → 401.
-- [ ] 4.3 Add `ExecutivePortfolioEndpoints` (`MapExecutivePortfolioEndpoints`, `RequireAuthorization`,
-      `GET /api/portfolio`) and register it in `Program.cs`. Surface enums as strings (matching the other
-      read surfaces).
-- [ ] 4.4 (green) Endpoint tests pass; full backend suite green.
+- [x] 4.1 (red) `ExecutivePortfolioEndpointsTests` — upload→analyze → `GET /api/portfolio` 200 with counts
+      summing to the analyzed project count; every intervention entry carries a non-empty reason +
+      citation locator and a Red/Amber status.
+- [x] 4.2 (red) Empty store → 200 zeroed (red/amber/green/needs-review = 0, empty intervention list);
+      unauthenticated → 401. (Red confirmed via the gate: 404 before the endpoint existed.)
+- [x] 4.3 Added `ExecutivePortfolioEndpoints` (`GET /api/portfolio`, `RequireAuthorization`); registered in
+      `Program.cs`. Enums surface as strings via the `ScorePortfolio.Result` shape.
+- [x] 4.4 (green) Endpoint tests pass (3/3); full backend suite green (108 Application + 119 Api = 227).
 
 ## 5. L1 executive view built to v2 (no JS harness — see Change 1 §1.3)
 
 > Repo has no JS test runner; render mapping lives in a small pure module (verified by driving the app),
 > the component is built directly to the v2 layout, and correctness is anchored by the §4 integration test.
 
-- [ ] 5.1 Read `docs/designs/phase5-wireframe-v2.html` `data-page="l1"` in full; list each panel and mark
-      it backed (health counts, confidence + review count, intervention table) vs. unbacked (€ exposure,
-      per-decision detail, key-person risk, owned recommendations).
-- [ ] 5.2 Add `ExecutivePortfolio.jsx` + a protected route (`/portfolio`) in `AppRoutes.jsx` and a
-      `NavMenu` link; fetch `GET /api/portfolio` via `authFetch`.
-- [ ] 5.3 Render the **backed** panels from live data: portfolio-health G/A/R counts (+ RAG donut),
-      aggregate confidence with the "Needs PM Review" count, and the worst-first intervention table
-      (project, status, confidence, reason, cited locator).
-- [ ] 5.4 Render the **unbacked** panels (€ financial exposure, decisions-blocking detail, key-person risk,
-      owned/dated recommended actions) as a clear "not yet captured — follow-on" state — match the v2 slot,
-      fabricate nothing.
-- [ ] 5.5 Extract the reusable v2 pieces (stat cards, RAG donut, chips, intervention table, layout) into a
-      **shared** SCSS section/partial reusing Change 1's RAG custom properties, so L2 can adopt it later.
+- [x] 5.1 Read v2 `data-page="l1"` in full — panels catalogued: BACKED = summary-strip health (total +
+      RAG bar + legend), confidence (avg) + Needs-PM-Review, intervention `records` table; UNBACKED =
+      financial-exposure €, decisions-blocking, "Where the pressure is" (Money/Decisions/key-person),
+      recommended-actions (owned/dated).
+- [x] 5.2 Added `ExecutivePortfolio.jsx` + protected route `/portfolio` (`AppRoutes.jsx`) + `NavMenu`
+      "Portfolio" link; fetches `GET /api/portfolio` via `authFetch`.
+- [x] 5.3 Backed panels render live: portfolio-health total + segmented RAG bar + legend, aggregate
+      confidence with the Needs-PM-Review count, and the worst-first intervention table (project, reason +
+      cited locator, confidence, status `sev` chip).
+- [x] 5.4 Unbacked panels (€ exposure, decisions-blocking, key-person risk, owned/dated recommendations)
+      render dashed "not yet captured — follow-on" placeholders matching the v2 slots; no fabricated data.
+- [x] 5.5 Extracted the reusable v2 pieces (eyebrow, summary-strip/cells, RAG bar + legend, sec-head,
+      `records` table, `sev` chips, flagged panels) into a shared SCSS section reusing Change 1's
+      `--rag-*` custom properties — ready for the L2 retrofit.
 
 ## 6. Verify + document
 
-- [ ] 6.1 `/verify` (or drive the app): analyze a few project keys, open `/portfolio`, confirm the G/A/R
-      counts, confidence, review count, and intervention ordering match the data; confirm unbacked panels
-      show the follow-on state; confirm the empty-store zeroed 200. Node-check any pure helper across its
-      branches (as in Change 1).
-- [ ] 6.2 Confirm the diff is scoped: one additive repository method, the new `ExecutivePortfolio` slice +
-      endpoint, and client view/styles — no change to existing API contracts, finding shape, agents,
-      prompts, or DB schema.
-- [ ] 6.3 Flip roadmap Phase 5 Level-1 ⬜ → ✅; add a `## Dashboards (L1)` note to `CLAUDE.md`; note the L2
-      shared-stylesheet retrofit as the next follow-on.
-- [ ] 6.4 Full suite green; `openspec validate --strict add-executive-portfolio-dashboard` passes.
+- [x] 6.1 Verified: the `ExecutivePortfolioEndpointsTests` integration test drives upload→analyze→
+      `GET /api/portfolio` (counts + cited intervention entries + zeroed-empty 200) over real HTTP;
+      `ScorePortfolioTests` pins the ordering/aggregation; the reused `bucketColour` helper node-checked for
+      Red/Amber/Green→classes; Vite build compiles the L1 view + shared SCSS. **Open item:** a live browser
+      visual pass needs the full stack (Postgres via Docker), not running headlessly here — offered to the
+      user (same as Change 1).
+- [x] 6.2 Diff scoped: one additive port method (`DistinctProjectKeysAsync`) + its EF impl + 3 test-double
+      updates, the new `ExecutivePortfolio` slice + endpoint + `Program.cs` registration, and client
+      view/route/nav/styles. No change to existing API contracts, finding shape, agents, prompts, or DB
+      schema.
+- [x] 6.3 Roadmap Phase 5 Level-1 flipped ⬜ → ✅ (L3 noted to reuse the enumeration; L2 retrofit noted as
+      next follow-on); "Dashboards (Phase 5, Level 1)" note added to `CLAUDE.md`.
+- [x] 6.4 Full suite green (108 Application + 119 Api = 227); `openspec validate --strict` passes.

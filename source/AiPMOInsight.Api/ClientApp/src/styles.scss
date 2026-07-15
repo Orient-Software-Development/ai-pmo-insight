@@ -107,3 +107,135 @@ main.container {
 }
 
 .l2-gap-note { color: var(--pico-muted-color); }
+
+// ── Shared dashboard design system (add-executive-portfolio-dashboard) ──────────────────────
+// Extracted from the v2 wireframe (data-page="l1") as reusable pieces so the L2 view can adopt the
+// same system in a follow-on. Reuses the RAG custom properties defined above (--rag-red/amber/green).
+
+.eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+  font-size: 0.7rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--pico-muted-color);
+  .num {
+    font-family: var(--pico-font-family-monospace, monospace);
+    background: var(--pico-card-sectioning-background-color);
+    border: 1px solid var(--pico-muted-border-color);
+    border-radius: var(--pico-border-radius);
+    padding: 0.05rem 0.4rem;
+  }
+}
+
+// L1 hero numbers — a strip of stat cells.
+.summary-strip {
+  display: grid;
+  grid-template-columns: 1.4fr 1fr 1fr 1fr;
+  border: 1px solid var(--pico-muted-border-color);
+  border-radius: var(--pico-border-radius);
+  margin: 1.5rem 0 2rem;
+
+  @media (max-width: 800px) { grid-template-columns: 1fr 1fr; }
+  @media (max-width: 480px) { grid-template-columns: 1fr; }
+}
+.summary-cell {
+  padding: 1.25rem 1.4rem;
+  border-right: 1px solid var(--pico-muted-border-color);
+  &:last-child { border-right: 0; }
+}
+.summary-label {
+  font-size: 0.7rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--pico-muted-color);
+}
+.summary-value {
+  font-size: 2rem;
+  font-weight: 700;
+  margin-top: 0.3rem;
+  span { font-size: 0.9rem; font-weight: 400; color: var(--pico-muted-color); }
+  &.total { font-size: 2.6rem; }
+  &.flagged { color: var(--pico-muted-border-color); }
+}
+.summary-sub { margin-top: 0.35rem; font-size: 0.8rem; color: var(--pico-muted-color); }
+
+// Segmented RAG bar + legend.
+.rag-bar {
+  display: flex;
+  height: 8px;
+  margin-top: 0.9rem;
+  border-radius: 3px;
+  overflow: hidden;
+  background: var(--pico-muted-border-color);
+  .seg { height: 100%; }
+  .seg.rag-red { background: var(--rag-red); }
+  .seg.rag-amber { background: var(--rag-amber); }
+  .seg.rag-green { background: var(--rag-green); }
+}
+.rag-legend {
+  display: flex;
+  gap: 1.1rem;
+  margin-top: 0.6rem;
+  font-size: 0.78rem;
+  color: var(--pico-muted-color);
+  .dot {
+    display: inline-block;
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    margin-right: 0.3rem;
+    &.rag-red { background: var(--rag-red); }
+    &.rag-amber { background: var(--rag-amber); }
+    &.rag-green { background: var(--rag-green); }
+  }
+}
+
+// Section head (title + kicker).
+.sec-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1rem;
+  margin: 1.75rem 0 0.6rem;
+  .sec-title { margin: 0; }
+  .sec-kicker { font-size: 0.78rem; color: var(--pico-muted-color); }
+}
+
+// Records table (intervention list) with severity row accent + sev chip.
+.records {
+  tr.severity { border-left: 4px solid transparent; }
+  tr.severity.rag-red > td:first-child { box-shadow: inset 4px 0 0 var(--rag-red); }
+  tr.severity.rag-amber > td:first-child { box-shadow: inset 4px 0 0 var(--rag-amber); }
+  .cite { font-size: 0.78rem; color: var(--pico-muted-color); }
+  .conf { font-variant-numeric: tabular-nums; }
+}
+.sev {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.1rem 0.5rem;
+  border-radius: 0.75rem;
+  font-size: 0.78rem;
+  font-weight: 600;
+  &::before { content: ""; width: 7px; height: 7px; border-radius: 50%; }
+  &.rag-red { color: var(--rag-red); background: var(--rag-red-bg); &::before { background: var(--rag-red); } }
+  &.rag-amber { color: var(--rag-amber); background: var(--rag-amber-bg); &::before { background: var(--rag-amber); } }
+  &.rag-green { color: var(--rag-green); background: var(--rag-green-bg); &::before { background: var(--rag-green); } }
+}
+
+// Flagged (not-yet-backed) panels — reserve the v2 layout without fabricating data.
+.flagged-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1rem;
+  @media (max-width: 800px) { grid-template-columns: 1fr; }
+}
+.flagged-panel {
+  border: 1px dashed var(--pico-muted-border-color);
+  border-radius: var(--pico-border-radius);
+  padding: 1rem 1.2rem;
+  background: var(--pico-card-sectioning-background-color);
+  &.wide { grid-column: 1 / -1; }
+}
+.flagged-note { color: var(--pico-muted-color); font-size: 0.82rem; margin: 0.4rem 0 0; }

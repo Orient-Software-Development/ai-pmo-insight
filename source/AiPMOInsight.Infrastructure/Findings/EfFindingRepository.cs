@@ -33,4 +33,11 @@ internal sealed class EfFindingRepository(AppDbContext db) : IFindingRepository
             .Where(f => f.Citation.UploadId == uploadId)
             .OrderBy(f => f.CreatedAt)
             .ToListAsync(cancellationToken);
+
+    public async Task<IReadOnlyList<string>> DistinctProjectKeysAsync(CancellationToken cancellationToken) =>
+        await db.Findings
+            .AsNoTracking()
+            .Select(f => f.ProjectKey)
+            .Distinct()
+            .ToListAsync(cancellationToken);
 }
