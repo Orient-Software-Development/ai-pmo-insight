@@ -1,5 +1,6 @@
 import { Home } from './components/Home';
 import { ExecutivePortfolio } from './components/ExecutivePortfolio';
+import { DataQuality } from './components/DataQuality';
 import { ProjectFindings } from './components/ProjectFindings';
 import { History } from './components/History';
 import { Login } from './components/Login';
@@ -21,6 +22,15 @@ const AppRoutes = [
     element: (
       <RequireAuth>
         <ExecutivePortfolio />
+      </RequireAuth>
+    ),
+  },
+  {
+    // Protected: redirects to /login when signed out.
+    path: '/data-quality',
+    element: (
+      <RequireAuth>
+        <DataQuality />
       </RequireAuth>
     ),
   },

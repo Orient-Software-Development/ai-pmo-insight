@@ -142,8 +142,15 @@ The suggested 9-agent pipeline (PRD marks the exact split as "Assumption but not
   intervention list (status/confidence/reason + cited finding). **Flagged as follow-on** (exceed the
   finding shape): € financial exposure, per-decision detail, key-person risk, owned/dated recommendations.
   Next: retrofit the L2 view onto the shared design system.
-- ⬜ **Level 3 — Data Quality** (missing/inconsistent items + remediation) — will reuse
-  `DistinctProjectKeysAsync` for portfolio-wide enumeration
+- ✅ **Level 3 — Data Quality** — `add-data-quality-dashboard`. New portfolio-wide read: a
+  `SummarizeDataQuality` slice reusing `DistinctProjectKeysAsync` (enumeration) + the pure
+  `HealthScoringService` (confidence), exposed at `GET /api/data-quality/summary` (zeroed 200 on empty
+  store). L3 React view (`/data-quality`) built to the v2 wireframe on the shared design system.
+  **Backed & live:** confidence hero (mean confidence + configured publish threshold `ConfidenceFloor` +
+  below-target flag) and the worst-first **cited** missing/inconsistent items table (project · issue ·
+  severity). **Flagged as follow-on** (dashed, never fabricated — exceed the finding shape): per-item age,
+  suggested remediation, confidence-lift ordering, the eight-category areas-completeness grid, and the
+  duplicate-identity candidates table (**no merge/keep-separate control shipped — US-2 never-silently-merge**).
 - ⬜ Confidence level surfaced per project (PRD user story #6)
 
 ---
