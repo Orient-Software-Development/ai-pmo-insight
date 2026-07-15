@@ -225,5 +225,30 @@ with GitHub Actions CI and Claude skills.
 > data path is locked by the existing `UploadHistoryEndpointsTests` + health-endpoint tests; render
 > `/verify`-checked in the running app.
 
+> **Dashboards (Phase 5, Level 3 — `add-data-quality-dashboard`):** the **Data Quality read surface**
+> (React, route `/data-quality`, `DataQuality.jsx`) — the last of the three dashboard levels. Like L1 it
+> is a **read over the findings store, not new analysis** (no LLM): a `SummarizeDataQuality` slice
+> (`Application/Features/DataQuality`) enumerates projects via L1's `IFindingRepository.DistinctProjectKeysAsync`,
+> and per project collects its **latest run's** `Area==DataQuality` findings (same latest-run resolution the
+> scorer uses — **no new repository method, no schema change/migration**). It rolls them up into: a
+> **confidence block** — the mean of each **scored** project's aggregate `HealthScore.Confidence` (reusing
+> the pure `HealthScoringService`, so L3 never disagrees with L1/L2), the configured **publish threshold**
+> (`HealthScoringOptions.ConfidenceFloor`, injected — not forked), and a **below-target** flag; a
+> **worst-first cited items list** (one entry per DataQuality finding: project · issue=`Summary` ·
+> `Severity` · citation locator; ordered Red→Amber→Green, key+locator tiebreak); and **counts** (total +
+> per-project). Exposed at `GET /api/data-quality/summary` (`DataQualityEndpoints`; authorized,
+> shared-workspace, view-only); empty store → **zeroed 200, never 404**; unauthenticated → 401. Enums
+> surface as strings. The L3 view is built to the v2 wireframe (`data-page="l3"`) on the shared Phase 5
+> design system (`--rag-*`, `records`, `sev`, `eyebrow`, `flagged-panel`, plus a small `.conf-hero` block);
+> render mapping in a pure `dataQuality.js` helper (mirrors L2's `health.js`). **Presentation-only boundary
+> holds** (dashed placeholders, never fabricated): the current DataQuality finding carries only
+> `Summary`+`Severity`+`Citation`+`Confidence`, so per-item **age**, **suggested remediation**, quantified
+> confidence-**lift** ordering, the eight-category **areas-completeness grid**, and the **duplicate-identity
+> candidates** table are flagged follow-ons — and **no merge/keep-separate control is shipped** while no
+> duplicate signal exists (**US-2 never-silently-merge**). Backend is TDD-covered (`SummarizeDataQualityTests`,
+> `DataQualityEndpointsTests`; the shared `Workbook` fixture yields no DQ findings, so a dedicated
+> `OrbitFixtureBuilder.WorkbookWithDataQualityGap` seeds a deterministic milestone-no-due-date item). This
+> **completes the three-level Phase 5 dashboard set** (L1 + L2 + L3).
+
 > **Client framework:** template param `--client-framework` (`-cf`) = `react` (default) or
 > `none` (API only). Driven by `ClientFramework` symbol → computed `UseReact` / `UseApiOnly`,
