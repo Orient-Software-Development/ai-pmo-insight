@@ -12,6 +12,11 @@ export function Login() {
   const [error, setError] = useState(null);
   const [busy, setBusy] = useState(false);
 
+  function switchMode(next) {
+    setMode(next);
+    setError(null);
+  }
+
   async function submit(e) {
     e.preventDefault();
     setBusy(true);
@@ -30,45 +35,88 @@ export function Login() {
   }
 
   return (
-    <div>
-      <h1>{mode === 'login' ? 'Log in' : 'Create account'}</h1>
+    <main className="auth-page">
+      <div>
+        <div className="auth-card">
+          <div className="auth-header">
+            <div className="brand-mark" aria-hidden="true">A</div>
+            <div>
+              <div className="brand-name">AI PMO Insight</div>
+              <div className="brand-sub">Sign in to continue</div>
+            </div>
+          </div>
 
-      <form onSubmit={submit}>
-        <label>
-          Email
-          <input
-            type="email"
-            value={email}
-            autoComplete="username"
-            onChange={e => setEmail(e.target.value)}
-            required
-          />
-        </label>
-        <label>
-          Password
-          <input
-            type="password"
-            value={password}
-            autoComplete={mode === 'login' ? 'current-password' : 'new-password'}
-            onChange={e => setPassword(e.target.value)}
-            required
-          />
-        </label>
+          <div className="auth-tabs" role="tablist" aria-label="Auth mode">
+            <button
+              type="button"
+              role="tab"
+              aria-selected={mode === 'login'}
+              className={`auth-tab ${mode === 'login' ? 'active' : ''}`}
+              onClick={() => switchMode('login')}
+            >
+              Log in
+            </button>
+            <button
+              type="button"
+              role="tab"
+              aria-selected={mode === 'register'}
+              className={`auth-tab ${mode === 'register' ? 'active' : ''}`}
+              onClick={() => switchMode('register')}
+            >
+              Create account
+            </button>
+          </div>
 
-        {error && <p style={{ color: 'var(--pico-del-color)' }}>{error}</p>}
+          <form onSubmit={submit}>
+            <label className="field">
+              <span className="field-label">Email</span>
+              <input
+                type="email"
+                value={email}
+                autoComplete="username"
+                placeholder="you@company.com"
+                onChange={e => setEmail(e.target.value)}
+                required
+              />
+            </label>
 
-        <button type="submit" aria-busy={busy} disabled={busy}>
-          {mode === 'login' ? 'Log in' : 'Register & log in'}
-        </button>
-      </form>
+            <label className="field">
+              <span className="field-label">Password</span>
+              <input
+                type="password"
+                value={password}
+                autoComplete={mode === 'login' ? 'current-password' : 'new-password'}
+                onChange={e => setPassword(e.target.value)}
+                required
+              />
+              {mode === 'register' && (
+                <div className="field-hint">
+                  At least 8 characters · upper + lower + digit + symbol (ASP.NET Identity default).
+                </div>
+              )}
+            </label>
 
-      <p>
-        {mode === 'login' ? (
-          <>No account? <a href="#" onClick={e => { e.preventDefault(); setMode('register'); setError(null); }}>Register</a></>
-        ) : (
-          <>Have an account? <a href="#" onClick={e => { e.preventDefault(); setMode('login'); setError(null); }}>Log in</a></>
-        )}
-      </p>
-    </div>
+            {error && (
+              <div className="auth-error" role="alert">
+                <b>Sign-in failed.</b> {error}
+              </div>
+            )}
+
+            <button
+              type="submit"
+              className="auth-submit"
+              aria-busy={busy}
+              disabled={busy}
+            >
+              {mode === 'login' ? 'Log in' : 'Register & log in'}
+            </button>
+          </form>
+        </div>
+
+        <div className="auth-note">
+          Cookie-transported JWT · <code>httpOnly</code> · <code>SameSite=Strict</code>
+        </div>
+      </div>
+    </main>
   );
 }

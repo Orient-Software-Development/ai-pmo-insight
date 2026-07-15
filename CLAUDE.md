@@ -181,6 +181,30 @@ with GitHub Actions CI and Claude skills.
 > **duplicate-identity merge (US-2)**, **live per-agent progress (US-9)** on `/upload`; **dated milestones**
 > and **per-decision owner/deadline** on L2 (the Narrative stays the closest recommendation surface).
 
+> **Auth UI rebuild + token-base retrofit (Phase 5, `add-phase5-auth-ui`, #33):** the three auth surfaces
+> rebuilt to the wireframe, **presentation-only — no `/api/auth/*` / cookie / JWT / Identity change.**
+> `Login.jsx` is a centered `.auth-card` with a `Log in` / `Create account` tab toggle (submit label
+> follows mode), a Register-mode-only ASP.NET Identity rules hint, and a red-stripe `.auth-error` panel;
+> post-login `navigate('/upload')` preserved. `ChangePassword.jsx` is a `.settings-card` (three fields +
+> rules hint under "new") with a green `.success-panel` restating the fresh-session behaviour; cancel is
+> `navigate(-1)` with `/` fallback (no more hard-coded `/projects`); success panel resets on unmount.
+> `NavMenu.jsx` replaces the flat right-hand link list with an **avatar-chip + email + chevron** trigger
+> opening a **disclosure** popover (deliberately *not* an ARIA menu — no `role="menu"`, no roving
+> tabindex, no arrow-key nav; Tab is sufficient for two items and screen readers get an honest
+> contract) with a header (email + role chip from `user.roles.join(' · ')`) and two items: `<Link>`
+> Change password + danger-styled `<button>` Log out. Panel closes on outside `mousedown` (not `click`,
+> to avoid a re-render race), Escape (returns focus to the trigger), and route change. Nav-tabs +
+> user-menu are hidden on `/login` via `useLocation().pathname === '/login'` (not a body class). The
+> wireframe token base — `--paper` / `--ink*` / `--panel*` / `--rule*` / `--accent*` / `--sev-*` / `--font-display`
+> (Georgia) / `--font-ui` (system) / `--font-mono` (ui-monospace) — lands in `styles.scss` on `:root` with
+> a `@mixin wireframe-dark` mirror under `data-theme='dark'` + `prefers-color-scheme: dark`. Strategy is
+> **hybrid**: Pico stays underneath for form/reset/button primitives; new or retrofitted selectors
+> reference **only wireframe tokens** (a design-system comment at the top of `styles.scss` records the
+> rule). L1 (`ExecutivePortfolio.jsx`) and L2 (`ProjectFindings.jsx`) retrofitted in the same change to
+> consume the new tokens — CSS-only, no JSX or data-path change; `AuthEndpointsTests` (14),
+> `ProjectStatusDashboardDataTests` + `ExecutivePortfolioEndpointsTests` (5), and the full backend suite
+> (227) all stay green. Avatar initials derived from `user.userName` (split local on `.`/`-`, first
+> letter of first two parts; fallback to `??`).
 > **History rich detail (Phase 5, `add-history-rich-detail`, #36):** the `/history` page (`History.jsx`)
 > rebuilt into a **master-detail audit surface** (US-9/US-10), **presentation-only — no backend/API/
 > finding-shape change.** A sticky master list of uploads (newest-first, from `GET /api/uploads`) + a detail
