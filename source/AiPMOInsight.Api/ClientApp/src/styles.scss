@@ -321,6 +321,28 @@ a.nav-tab {
 }
 .summary-sub { margin-top: 0.35rem; font-size: 0.8rem; color: var(--ink-mute); }
 
+// L3 confidence hero — the portfolio data-confidence number against the publish threshold.
+.conf-hero {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 1.2rem 2rem;
+  align-items: center;
+  border: 1px solid var(--pico-muted-border-color);
+  border-radius: var(--pico-border-radius);
+  padding: 1.4rem 1.6rem;
+  margin: 1.5rem 0 2rem;
+  @media (max-width: 640px) { grid-template-columns: 1fr; }
+}
+.conf-num {
+  font-size: 3rem;
+  font-weight: 700;
+  line-height: 1;
+  margin-top: 0.3rem;
+  sup { font-size: 1.1rem; font-weight: 400; color: var(--pico-muted-color); }
+  &.below { color: var(--rag-amber); }
+}
+.conf-lede { margin: 0; color: var(--pico-muted-color); font-size: 0.9rem; }
+
 // Segmented RAG bar + legend.
 .rag-bar {
   display: flex;

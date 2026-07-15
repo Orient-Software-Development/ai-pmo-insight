@@ -45,6 +45,42 @@ internal static class OrbitFixtureBuilder
         return ms.ToArray();
     }
 
+    /// <summary>
+    /// A workbook like <see cref="Workbook"/> but with a deterministic data-quality gap: a milestone
+    /// with no due date. The Data Quality agent (#2) emits an Amber "no due date" finding for it on
+    /// every run regardless of the wall clock, so the Level-3 roll-up has a real, cited item to surface.
+    /// </summary>
+    public static byte[] WorkbookWithDataQualityGap()
+    {
+        using var wb = new XLWorkbook();
+
+        var projects = wb.AddWorksheet("Projects");
+        WriteRow(projects, 1, "Key", "Name", "PercentComplete", "LastUpdated");
+        WriteRow(projects, 2, "ALPHA", "Alpha Platform", "45", "2026-06-20");
+
+        var milestones = wb.AddWorksheet("Milestones");
+        WriteRow(milestones, 1, "ProjectKey", "Name", "DueDate", "CompletedDate", "Status", "DependsOn");
+        WriteRow(milestones, 2, "ALPHA", "Design complete", "2026-05-01", "2026-06-10", "Done", "");
+        // No due date → a deterministic Amber Data Quality finding.
+        WriteRow(milestones, 3, "ALPHA", "Beta release", "", "", "In progress", "Design complete");
+
+        var budget = wb.AddWorksheet("Budget");
+        WriteRow(budget, 1, "ProjectKey", "Category", "Budget", "Forecast", "Actual");
+        WriteRow(budget, 2, "ALPHA", "Development", "100000", "118000", "60000");
+
+        var resources = wb.AddWorksheet("Resources");
+        WriteRow(resources, 1, "ProjectKey", "Person", "Role", "AllocationPercent", "CapacityPercent", "OnLeave");
+        WriteRow(resources, 2, "ALPHA", "Sam Lee", "Engineer", "120", "100", "false");
+
+        var raid = wb.AddWorksheet("RAID");
+        WriteRow(raid, 1, "ProjectKey", "Type", "Description", "Severity", "Status");
+        WriteRow(raid, 2, "ALPHA", "Risk", "Vendor API may slip", "High", "Open");
+
+        using var ms = new MemoryStream();
+        wb.SaveAs(ms);
+        return ms.ToArray();
+    }
+
     /// <summary>Orbit-shaped XML carrying RAID items (an alternative RAID source).</summary>
     public static byte[] OrbitXml() =>
         System.Text.Encoding.UTF8.GetBytes(
