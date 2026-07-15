@@ -1,4 +1,5 @@
 import { Home } from './components/Home';
+import { Upload } from './components/Upload';
 import { ExecutivePortfolio } from './components/ExecutivePortfolio';
 import { ProjectFindings } from './components/ProjectFindings';
 import { History } from './components/History';
@@ -14,6 +15,15 @@ const AppRoutes = [
   {
     path: '/login',
     element: <Login />,
+  },
+  {
+    // Protected: redirects to /login when signed out. Post-login cold-start landing page.
+    path: '/upload',
+    element: (
+      <RequireAuth>
+        <Upload />
+      </RequireAuth>
+    ),
   },
   {
     // Protected: redirects to /login when signed out.

@@ -1,28 +1,29 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { authFetch } from '../AuthContext';
 import { HealthBanner } from './HealthBanner';
-import { HEALTH_STATE, healthState } from '../health';
+import { HEALTH_STATE, bucketColour, healthState } from '../health';
 
 const EMPTY_VIEW = { projectKey: '', findings: [], narrative: [], challenge: [], review: [] };
 const EMPTY_HEALTH = { state: HEALTH_STATE.ERROR, score: null };
 
-// The Data Collector (UploadParser) only parses these formats. CSV is intentionally NOT supported —
-// a .csv upload parses to nothing and yields zero findings, so we reject it up front rather than let
-// the user hit a silent empty result.
-const ACCEPTED_EXTENSIONS = ['.xlsx', '.xlsm', '.xml', '.docx'];
-const ACCEPT_ATTR = ACCEPTED_EXTENSIONS.join(',');
-const isAcceptedFile = name => ACCEPTED_EXTENSIONS.some(ext => name.toLowerCase().endsWith(ext));
-
-// Level-2 (individual project status) view. Reads the four analysis sections for a project key —
-// KPI findings, the synthesised narrative, the adversarial challenge, and the anticipated review
-// questions — each cited back to its source. The uploader exercises the full upload -> analyze ->
-// read flow from the UI.
+// Level-2 (individual project status) view, retrofitted to the v2 wireframe (data-page="l2") in
+// add-analyze-flow-and-l2-retrofit. Reads the four analysis sections for a project key — KPI findings,
+// the synthesised narrative, the adversarial challenge, and the anticipated review questions — each cited
+// back to its source, plus the RAG health score, and presents them in the shared Phase 5 design system.
+//
+// The upload -> analyze flow now lives on its own /upload page; a "view results" link there hands the
+// analyzed project key to this view via ?key=. The data path (concurrent findings + health read, the
+// healthState mapping, the four sections) is unchanged and locked by ProjectStatusDashboardDataTests.
+//
+// Presentation-only boundary: dated upcoming milestones, per-decision owner/deadline/consequence, and an
+// explicit AI recommendation exceed the current finding shape — rendered as flagged follow-ons, never
+// fabricated. Sponsor/PM are shown only if the surface carries them (it does not yet).
 export function ProjectFindings() {
-  const [projectKey, setProjectKey] = useState('ALPHA');
+  const [searchParams] = useSearchParams();
+  const [projectKey, setProjectKey] = useState(searchParams.get('key') ?? 'ALPHA');
   const [view, setView] = useState(EMPTY_VIEW);
   const [health, setHealth] = useState(EMPTY_HEALTH);
-  const [file, setFile] = useState(null);
-  const [status, setStatus] = useState(null);
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(false);
 
@@ -61,98 +62,76 @@ export function ProjectFindings() {
     setLoading(false);
   }
 
-  function onFileChange(e) {
-    const picked = e.target.files?.[0] ?? null;
-    if (picked && !isAcceptedFile(picked.name)) {
-      setError(`Unsupported file type "${picked.name}". Upload ${ACCEPTED_EXTENSIONS.join(', ')} — CSV is not supported.`);
-      setFile(null);
-      e.target.value = ''; // let the user re-pick the same-named file after fixing it
-      return;
-    }
-    setError(null);
-    setFile(picked);
-  }
-
-  async function uploadAnalyzeRead(e) {
-    e.preventDefault();
-    if (!file) return;
-    if (!isAcceptedFile(file.name)) { // defensive: state should already prevent this
-      setError(`Unsupported file type "${file.name}". Upload ${ACCEPTED_EXTENSIONS.join(', ')} — CSV is not supported.`);
-      return;
-    }
-    setError(null);
-    setStatus('Uploading…');
-    try {
-      const form = new FormData();
-      form.append('file', file);
-      const up = await authFetch('/api/ingest/upload', { method: 'POST', body: form });
-      if (!up.ok) throw new Error(`upload failed (${up.status})`);
-      const { uploadId } = await up.json();
-
-      setStatus('Analyzing…');
-      const an = await authFetch(`/api/analyze/${uploadId}`, { method: 'POST' });
-      if (!an.ok) throw new Error(`analyze failed (${an.status})`);
-      const analyzed = await an.json();
-      const key = analyzed.findings?.[0]?.projectKey ?? projectKey;
-      setProjectKey(key);
-
-      setStatus('Loading findings…');
-      await loadFindings(key);
-      setStatus('Done.');
-    } catch (e2) {
-      setError(e2.message);
-      setStatus(null);
-    }
-  }
+  // Auto-load when arriving with ?key= (the hand-off from /upload) or on first mount for the default key.
+  useEffect(() => {
+    loadFindings(projectKey);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const hasAnything =
     view.findings.length + view.narrative.length + view.challenge.length + view.review.length > 0;
 
+  const score = health.state === HEALTH_STATE.SCORED ? health.score : null;
+  const overridden = score && score.finalBucket !== score.rawBucket;
+
   return (
     <div>
-      <h1>Project status (Level 2)</h1>
-      <p>Upload a project export, analyze it, and read the findings, narrative, challenge, and review — every item cites the source it came from.</p>
+      {/* ── Project header (identity + RAG headline + switcher) ──────────────────────────────── */}
+      <div className="l2-header">
+        <p className="eyebrow"><span className="num">L2</span> Project Detail</p>
+        <div className="l2-title-row">
+          <h1>{view.projectKey || projectKey}</h1>
+          {score && (
+            <span className={`sev ${bucketColour(score.finalBucket)}`}>{score.finalBucket}</span>
+          )}
+          {score && (
+            <span className="conf">confidence {formatConfidence(score.confidence)}</span>
+          )}
+          {overridden && <span className="l2-overridden" title="A worst-case floor override changed the raw bucket">score overridden</span>}
+        </div>
 
-      <form onSubmit={uploadAnalyzeRead} role="group">
-        <input type="file" accept={ACCEPT_ATTR} aria-label="Project export" onChange={onFileChange} />
-        <button type="submit" disabled={!file}>Upload → analyze → read</button>
-      </form>
-      <p><small>Accepted formats: {ACCEPTED_EXTENSIONS.join(', ')}. CSV is not supported.</small></p>
+        <form className="l2-switcher" onSubmit={e => { e.preventDefault(); loadFindings(projectKey); }} role="group">
+          <input
+            type="text"
+            value={projectKey}
+            placeholder="Project key"
+            aria-label="Switch project"
+            onChange={e => setProjectKey(e.target.value)}
+          />
+          <button type="submit">Switch project</button>
+        </form>
+      </div>
 
-      <form onSubmit={e => { e.preventDefault(); loadFindings(projectKey); }} role="group">
-        <input
-          type="text"
-          value={projectKey}
-          placeholder="Project key"
-          aria-label="Project key"
-          onChange={e => setProjectKey(e.target.value)}
-        />
-        <button type="submit">Load</button>
-      </form>
-
-      {status && <p><small>{status}</small></p>}
       {error && <p style={{ color: 'var(--pico-del-color)' }}>{error}</p>}
 
       {loading ? (
         <p aria-busy="true">Loading…</p>
       ) : (
         <>
+          {/* Health headline + score audit (area breakdown, confidence, override trail, PM-review flag). */}
           <HealthBanner state={health.state} score={health.score} />
+
           {!hasAnything ? (
             <p><em>No analysis recorded for this project key yet.</em></p>
           ) : (
             <>
-              <SynthesisSection title="Narrative" items={view.narrative} />
+              <SynthesisSection title="AI recommendation (narrative)" kicker="US 5 · closest recommendation surface" items={view.narrative} />
               <FindingsSection findings={view.findings} />
-              <SynthesisSection title="Challenge" items={view.challenge} />
-              <SynthesisSection title="Review" items={view.review} />
-              <p className="l2-gap-note">
-                <small>
-                  Dated upcoming milestones, per-decision owner/deadline, and an explicit AI recommendation
-                  are not yet captured in the finding shape — the Narrative above is the closest recommendation
-                  surface. These are a Phase 5 follow-on, not rendered here.
-                </small>
-              </p>
+              <SynthesisSection title="Challenge" kicker="US 9 · adversarial critique" items={view.challenge} />
+              <SynthesisSection title="Review" kicker="US 9 · questions before publishing" items={view.review} />
+
+              {/* Wireframe l2 panels the finding shape does not carry — flagged, not fabricated. */}
+              <section className="block">
+                <div className="sec-head">
+                  <h2 className="sec-title">Milestones &amp; decisions</h2>
+                  <span className="sec-kicker">follow-on</span>
+                </div>
+                <div className="flagged-panel">
+                  <p className="flagged-note">Dated upcoming milestones and per-decision owner/deadline/consequence
+                    are not yet captured in the finding shape — a Phase 5 follow-on. The Narrative above is the
+                    closest recommendation surface; nothing is fabricated here.</p>
+                </div>
+              </section>
             </>
           )}
         </>
@@ -161,12 +140,15 @@ export function ProjectFindings() {
   );
 }
 
-// KPI findings table (analysis agents).
+// KPI findings table (analysis agents) — "Risks & Issues" in the wireframe.
 function FindingsSection({ findings }) {
   return (
-    <section>
-      <h2>Findings ({findings.length})</h2>
-      <table>
+    <section className="block">
+      <div className="sec-head">
+        <h2 className="sec-title">Findings</h2>
+        <span className="sec-kicker">{findings.length} · each cites its source</span>
+      </div>
+      <table className="records">
         <thead>
           <tr><th>Finding</th><th>Agent</th><th>Confidence</th><th>Cited source</th></tr>
         </thead>
@@ -178,8 +160,8 @@ function FindingsSection({ findings }) {
               <tr key={f.id}>
                 <td>{f.summary}</td>
                 <td>{f.producingAgent}</td>
-                <td>{f.confidence}</td>
-                <td><small>{f.citation?.locator}<br />upload {f.citation?.uploadId}</small></td>
+                <td><span className="conf">{f.confidence}</span></td>
+                <td><span className="cite">{f.citation?.locator}<br />upload {f.citation?.uploadId}</span></td>
               </tr>
             ))
           )}
@@ -190,11 +172,14 @@ function FindingsSection({ findings }) {
 }
 
 // Narrative / Challenge / Review — one synthesised finding each, rendered as prose.
-function SynthesisSection({ title, items }) {
+function SynthesisSection({ title, kicker, items }) {
   if (items.length === 0) return null;
   return (
-    <section>
-      <h2>{title}</h2>
+    <section className="block">
+      <div className="sec-head">
+        <h2 className="sec-title">{title}</h2>
+        {kicker && <span className="sec-kicker">{kicker}</span>}
+      </div>
       {items.map(item => (
         <article key={item.id}>
           <p style={{ whiteSpace: 'pre-wrap', margin: 0 }}>{item.summary}</p>
@@ -209,4 +194,9 @@ function SynthesisSection({ title, items }) {
       ))}
     </section>
   );
+}
+
+function formatConfidence(c) {
+  if (typeof c !== 'number') return '—';
+  return c <= 1 ? `${Math.round(c * 100)}%` : `${Math.round(c)}%`;
 }

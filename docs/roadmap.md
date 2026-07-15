@@ -141,7 +141,14 @@ The suggested 9-agent pipeline (PRD marks the exact split as "Assumption but not
   system. **Backed & live:** G/A/R counts, aggregate confidence + "Needs PM Review" count, worst-first
   intervention list (status/confidence/reason + cited finding). **Flagged as follow-on** (exceed the
   finding shape): € financial exposure, per-decision detail, key-person risk, owned/dated recommendations.
-  Next: retrofit the L2 view onto the shared design system.
+- ✅ **Analyze flow UI + L2 retrofit** — `add-analyze-flow-and-l2-retrofit` (#38). New `/upload` cold-start
+  page (`Upload.jsx`) extracts the upload → analyze flow out of the L2 view — drop zone, this-upload
+  panel, coarse request-lifecycle pipeline stepper — and becomes the post-login landing route. The L2
+  view (`/projects`) is retrofitted onto the shared Phase 5 design system: project header (key, RAG chip,
+  confidence, score-overridden indicator, project switcher) + styled cited sections; the `?key=` hand-off
+  from `/upload` auto-loads the analyzed project. Presentation-only (no backend/data-path change;
+  `ProjectStatusDashboardDataTests` stays green). **Flagged as follow-on:** per-file parse status,
+  duplicate-identity merge (US-2), live per-agent progress (US-9), dated milestones, per-decision detail.
 - ⬜ **Level 3 — Data Quality** (missing/inconsistent items + remediation) — will reuse
   `DistinctProjectKeysAsync` for portfolio-wide enumeration
 - ⬜ Confidence level surfaced per project (PRD user story #6)

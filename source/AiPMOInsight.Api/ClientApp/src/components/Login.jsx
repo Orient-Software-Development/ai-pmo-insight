@@ -21,7 +21,7 @@ export function Login() {
         await register(email, password);
       }
       await login(email, password);
-      navigate('/projects');
+      navigate('/upload'); // Phase 5 cold-start flow lands on the ingest page (see #33 / #38).
     } catch (err) {
       setError(err.message);
     } finally {
