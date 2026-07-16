@@ -1,3 +1,7 @@
+> Prerequisites (shared tickets): the financial-exposure roll-up consumes the structured `Finding` metric
+> (#46); the decision-backlog roll-up consumes the Decision agent's findings (#45 + #47). Those tickets
+> define the metric and the Decision agent; this capability only rolls them up and renders them.
+
 ## ADDED Requirements
 
 ### Requirement: L1 financial exposure is rolled up from findings

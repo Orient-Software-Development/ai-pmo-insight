@@ -52,35 +52,6 @@ can reflect it and the critical-milestone override can fire.
 - **WHEN** a milestone has no adverse status and its due date falls within the upcoming window
 - **THEN** the Status agent emits the existing informational "due soon" finding
 
-### Requirement: Decision agent emits decision-backlog findings
-
-The pipeline SHALL include a deterministic Decision agent that reads parsed decision records for the project
-and emits an `Area == Decision` finding for each decision that is overdue (past its needed-by date and not
-approved) or due soon (needed-by within the near window). Each finding SHALL be cited to its decision record
-and carry a severity reflecting overdue/blocking. No LLM is used.
-
-#### Scenario: An overdue decision produces a cited Decision finding
-
-- **WHEN** a decision's needed-by date has passed and its status is not "Approved"
-- **THEN** the Decision agent emits an overdue Decision-area finding cited to that decision record
-
-#### Scenario: An approved decision produces no backlog finding
-
-- **WHEN** a decision is marked "Approved"
-- **THEN** no overdue/due-soon finding is emitted for it
-
-### Requirement: Numeric and structured findings carry their value as data
-
-An agent SHALL carry a computed, dashboard-rendered quantity (e.g. the Financial agent's total exposure
-amount, the Narrative agent's recommendation owner/deadline/action) in the structured finding metric, not
-only inside the summary prose, so consumers read data rather than text.
-
-#### Scenario: Financial exposure amount is on the finding metric
-
-- **WHEN** the Financial agent computes a total exposure amount
-- **THEN** the emitted finding carries that amount and its currency as a structured metric, in addition to the summary
-
-#### Scenario: Narrative recommendation is structured
-
-- **WHEN** the Narrative agent produces a recommendation with an owner, deadline, and action
-- **THEN** those fields are carried as structured metric/metadata on the finding, not only flattened into the summary string
+> The Decision agent, the structured `Finding` metric, and the structured Narrative recommendation moved to
+> the shared tickets — #47 (Decisions parse + `DecisionSkill`), #46 (Finding metric field), #48 (structured
+> recommendation). This change consumes them; it does not define them.
