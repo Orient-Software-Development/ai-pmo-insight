@@ -54,6 +54,8 @@ public sealed record BudgetLineRecord
     public decimal Budget { get; init; }
     public decimal Forecast { get; init; }
     public decimal Actual { get; init; }
+    /// <summary>ISO currency of the budget figures (e.g. "EUR"); null when the source omits it.</summary>
+    public string? Currency { get; init; }
     public required SourceRef Source { get; init; }
 }
 

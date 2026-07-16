@@ -9,13 +9,14 @@ namespace AiPMOInsight.Application.Tests.Analysis;
 
 public class FinancialAgentTests
 {
-    private static BudgetLineRecord Budget(decimal budget, decimal forecast, decimal actual) => new()
+    private static BudgetLineRecord Budget(decimal budget, decimal forecast, decimal actual, string? currency = null) => new()
     {
         ProjectKey = "ALPHA",
         Category = "Development",
         Budget = budget,
         Forecast = forecast,
         Actual = actual,
+        Currency = currency,
         Source = new SourceRef("Budget!row2"),
     };
 
@@ -83,5 +84,18 @@ public class FinancialAgentTests
 
         findings.Should().Contain(f => f.Summary.Contains("forecast", StringComparison.OrdinalIgnoreCase)
                                        && f.Severity == Severity.Amber);
+    }
+
+    [Fact]
+    public async Task Exposure_finding_carries_the_amount_and_currency_on_its_metric()
+    {
+        // Forecast 118k vs budget 100k → exposure 18k. The exposure finding should carry the amount as a
+        // typed metric value + the line's currency as the unit, not only inside the summary text.
+        var findings = await Run(45, Budget(budget: 100000, forecast: 118000, actual: 60000, currency: "EUR"));
+
+        var exposure = findings.Should()
+            .ContainSingle(f => f.Summary.Contains("exposure", StringComparison.OrdinalIgnoreCase)).Subject;
+        exposure.MetricValue.Should().Be(18000m);
+        exposure.MetricUnit.Should().Be("EUR");
     }
 }

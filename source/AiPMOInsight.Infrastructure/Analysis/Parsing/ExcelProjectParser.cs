@@ -58,6 +58,7 @@ internal static class ExcelProjectParser
             Budget = ParseDecimal(cell("Budget")),
             Forecast = ParseDecimal(cell("Forecast")),
             Actual = ParseDecimal(cell("Actual")),
+            Currency = NullIfBlank(cell("Currency")),
             Source = source,
         });
 

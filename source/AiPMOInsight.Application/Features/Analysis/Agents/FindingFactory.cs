@@ -24,7 +24,10 @@ internal static class FindingFactory
         SourceRef source,
         Confidence confidence,
         HealthArea area,
-        Severity severity) =>
+        Severity severity,
+        decimal? metricValue = null,
+        string? metricUnit = null,
+        IReadOnlyDictionary<string, string>? metricDetail = null) =>
         Finding.Create(
             projectKey: slice.ProjectKey,
             summary: summary,
@@ -35,5 +38,8 @@ internal static class FindingFactory
             kind: FindingKind.Analysis,
             confidence: confidence,
             area: area,
-            severity: severity);
+            severity: severity,
+            metricValue: metricValue,
+            metricUnit: metricUnit,
+            metricDetail: metricDetail);
 }

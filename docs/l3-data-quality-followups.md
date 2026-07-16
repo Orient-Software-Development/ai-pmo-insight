@@ -206,10 +206,17 @@ truly mandatory* for the completeness grid. Logged for kick-off alongside the sc
 
 ---
 
-## 🔗 Cross-cutting: `Finding` has no structured metric field (affects L1 + L3)
+## 🔗 Cross-cutting: `Finding` structured metric field — ✅ LANDED (#46, `add-finding-metric`)
 
-Every number the agents compute is baked into the `Summary` **string** because the `Finding` aggregate
-(`Domain/Findings/Finding.cs`) carries only `Summary / Area / Severity / Confidence / Citation` — no typed
+> **Update:** the shape change below shipped in `add-finding-metric` (#46). `Finding` now carries optional
+> `MetricValue` (decimal?) + `MetricUnit` (string?) + `MetricDetail` (string→string map, `jsonb`), with the
+> `AddFindingMetric` migration. `FinancialSkill` stamps the exposure amount + currency. The **L3 Age
+> column** can now render from `MetricValue`/`MetricUnit` (its own follow-on), and **#48**'s recommendation
+> owner/deadline/action has a home in `MetricDetail`. The paragraph below is the original rationale, kept
+> for context.
+
+Every number the agents compute *was* baked into the `Summary` **string** because the `Finding` aggregate
+(`Domain/Findings/Finding.cs`) carried only `Summary / Area / Severity / Confidence / Citation` — no typed
 numeric or metadata field.
 
 ```
