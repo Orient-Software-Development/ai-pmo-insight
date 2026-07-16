@@ -6,46 +6,54 @@
 
 ## 1. Baseline (no code)
 
-- [ ] 1.1 Run the full backend suite; record the green baseline (Application + Api counts).
-- [ ] 1.2 Note the tests likely to shift: `HealthScoringServiceTests`, `ScorePortfolioTests`,
+- [x] 1.1 Baseline green: **117 Application + 122 Api = 239 passed**, 0 failed.
+- [x] 1.2 Watch-list noted: `HealthScoringServiceTests`, `ScorePortfolioTests`,
       `ExecutivePortfolioEndpointsTests`, Status/Resource agent tests — re-derive shifted assertions
-      deliberately (not force-passed) when the fixes land.
+      deliberately when the fixes land.
 
 ## 2. Slice A — Resource "no PM" false-finding fix (TDD, independent)
 
-- [ ] 2.1 (red) Resource-agent test: a project whose only PM assignment has role "Project Management" MUST
-      NOT produce a "no project manager" finding. Watch it fail against `Role.Contains("Manager")`.
-- [ ] 2.2 (green) Fix the role match in `ResourceSkill` (recognise "Project Management" / "Project Manager"
-      / "PM"); a genuinely PM-less project still flags. Refactor into a small helper.
-- [ ] 2.3 Re-run the suite; green.
+- [x] 2.1 (red) Added `A_project_manager_role_is_recognised` theory (Project Management / Project Manager /
+      PM). Failed as expected: "Project Management" + "PM" tripped the old `Contains("Manager")` (2 red, 1 pass).
+- [x] 2.2 (green) Added `IsProjectManagerRole` helper in `ResourceSkill` (matches Manager / Management / PM);
+      a genuinely PM-less project still flags (`Flags_a_missing_key_role` stays green).
+- [x] 2.3 Full Application suite green: 120 passed (was 117 + 3 new theory cases).
 
 ## 3. Slice B — Status "missed milestone → green" fix (TDD, independent)
 
-- [ ] 3.1 (red) Status-agent test: a milestone with `Status == "Missed"` MUST emit a Red Schedule finding,
-      not a Green "due soon", even when its due date is within the upcoming window.
-- [ ] 3.2 (green) In `StatusSkill`, read `MilestoneRecord.Status`; Missed → Red, At Risk → Amber (overriding
-      the date-window Green); milestones with no adverse status keep the existing bands.
-- [ ] 3.3 `HealthScoringService` test: the existing `critical-milestone-missed` override now fires when the
-      Schedule finding is Red (it couldn't for the missed-critical case before). Re-derive shifted buckets.
-- [ ] 3.4 Re-run the suite; green.
+- [x] 3.1 (red) Added `A_missed_milestone_is_red_even_when_its_due_date_is_upcoming` +
+      `An_at_risk_milestone_is_amber` + a green regression guard. Missed/at-risk failed as expected (2 red).
+- [x] 3.2 (green) `StatusSkill` reads `MilestoneRecord.Status` via `AdverseStatusSeverity` (Missed → Red,
+      At Risk → Amber) and `Worst(band, statusSeverity)`; a plain upcoming milestone keeps its Green
+      "due soon" (regression test passes).
+- [x] 3.3 Override path already covered: `HealthScoringOverrideTests` + the fixtures wire
+      `critical-milestone-missed` (Schedule ≥Red → Amber). The new Status test produces the Red Schedule
+      finding; the scorer's floor is separately tested — the two halves connect, no redundant test needed.
+      No existing scoring assertion shifted (suite green).
+- [x] 3.4 Full backend suite green: 123 Application + 122 Api = 245.
 
 ## 4. Slice C — Key-person concentration (Resource agent, TDD, independent)
 
-- [ ] 4.1 (red) Resource-agent test: a person on 5 distinct projects → a Red key-person concentration finding
-      (cited); a person on 2 projects → none. Bands 5+ Red / 3–4 Amber / <3 none.
-- [ ] 4.2 (green) In `ResourceSkill`, compute concentration from the **unfiltered** `slice.Data.Assignments`
-      (distinct project keys per person), emit the banded finding attached to the current project's
-      assignment for that person. (× absence out of scope — do not fabricate.)
-- [ ] 4.3 Re-run the suite; green.
+- [x] 4.1 (red) Added 4 concentration tests (5→Red, 3→Amber, 2→none, only-on-projects-person-is-on). The
+      5-project case failed as expected; the 2-project case correctly stayed clean.
+- [x] 4.2 (green) `ResourceSkill` now counts distinct projects per person over the **unfiltered**
+      `slice.Data.Assignments` and emits a banded concentration finding (`ConcentrationBand`: 5+ Red / 3–4
+      Amber) per project the person is on, cited to that assignment. × absence out of scope, not fabricated.
+- [x] 4.3 Full backend suite green: 127 Application + 122 Api = 249. No integration assertion shifted.
 
-## 5. Slice D — Customer-exposure proxy in the roll-up (TDD, independent)
+## 5. Slice D — Customer-exposure proxy in the roll-up (**gated on #46** — was mis-scoped as independent)
 
-- [ ] 5.1 (red) `ScorePortfolioTests`: two Red/Amber projects sharing a customer produce a customer-exposure
-      entry with an at-risk count; the field is labelled relationship exposure; empty store → empty.
-- [ ] 5.2 (green) Extend `ScorePortfolio` to group scored Red/Amber projects by `ProjectRecord.Customer`.
-- [ ] 5.3 (red→green) `ExecutivePortfolioEndpointsTests`: `GET /api/portfolio` returns the customer-exposure
-      field (additive; auth + empty-store unchanged).
-- [ ] 5.4 Re-run the suite; green.
+> **Design finding (during apply):** the proxy needs the project's **customer** at roll-up time, but
+> `ProjectRecord` has no `Customer` field, the parser doesn't read one, and — the real blocker —
+> `ScorePortfolio` runs over **persisted findings** (grouped by `projectKey`), which carry no customer, and
+> there is no `Project` entity. A project-level attribute can only reach read time via the **#46 metadata
+> field**. So slice D is **gated on #46**, not independent. Deferred to after #46 (with slices E/F).
+
+- [ ] 5.1 (after #46) Carry the project's customer to read time via the #46 metric/metadata field.
+- [ ] 5.2 (red) `ScorePortfolioTests`: two Red/Amber projects sharing a customer produce a customer-exposure
+      entry with an at-risk count; labelled relationship exposure; empty store → empty.
+- [ ] 5.3 (green) Group scored Red/Amber projects by customer in `ScorePortfolio`.
+- [ ] 5.4 (red→green) `ExecutivePortfolioEndpointsTests`: the endpoint returns the customer-exposure field.
 
 ## 6. Slice E — Financial-exposure + decision-backlog + key-person roll-up (TDD, **gated on #46 / #47**)
 

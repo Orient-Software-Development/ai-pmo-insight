@@ -35,11 +35,13 @@ Every scoring number stays an `EXAMPLE` placeholder.
 - **Key-person concentration (US-7, plan-doc line 148)** — count distinct projects per person from the
   **unfiltered** `slice.Data.Assignments` (already the full portfolio in every slice) and band it
   **5+ Red / 3–4 Amber / <3 Green**. The `× absence` half is deferred (no parsed absence signal — design).
-- **Customer-exposure proxy** — group at-risk (Red/Amber) projects by `ProjectRecord.Customer`, labelled
-  **relationship exposure**. The true commercial signal (contract value / margin / SLA) stays a kick-off
-  question — not fabricated.
 
 **Depends on the shared tickets landing first (L1 roll-up + view):**
+
+- **Customer-exposure proxy** — group at-risk (Red/Amber) projects by customer, labelled **relationship
+  exposure**. *Gated on #46:* the customer is not on findings and there is no `Project` entity, so it must
+  reach read time via the #46 metadata field (discovered during apply — it is not independent). The true
+  commercial signal (contract value / margin / SLA) stays a kick-off question — not fabricated.
 
 - **L1 roll-up + view** — extend the `ScorePortfolio` result (`GET /api/portfolio`) with financial exposure
   € (from the #46 metric on Financial findings), a decision-backlog count (from #47 Decision findings),

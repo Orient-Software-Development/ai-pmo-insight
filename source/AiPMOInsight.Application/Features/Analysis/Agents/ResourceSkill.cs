@@ -57,15 +57,63 @@ public sealed class ResourceSkill : IAgentSkill<AnalysisInput, IReadOnlyList<Fin
         }
 
         // Missing key role: no Project Manager on the project.
-        if (assignments.Count > 0 &&
-            !assignments.Any(a => a.Role.Contains("Manager", StringComparison.OrdinalIgnoreCase)))
+        if (assignments.Count > 0 && !assignments.Any(a => IsProjectManagerRole(a.Role)))
         {
             findings.Add(Finding(slice, confidence,
                 "No Project Manager is assigned to the project (missing key role).",
                 assignments[0].Source, Severity.Amber));
         }
 
+        // Cross-project key-person concentration (plan-doc line 148 / US-7, concentration half): count each
+        // person's distinct projects across the WHOLE portfolio — slice.Data is the full CollectedData, not
+        // just this project — and flag people on the current project who are spread thin. 5+ projects → Red,
+        // 3–4 → Amber, <3 → not flagged. Emitted per project the person is on (so the L2 view keeps it, and
+        // the L1 roll-up dedupes to distinct people). The × absence half of US-7 is out of scope (no parsed
+        // absence signal); nothing is fabricated here.
+        var allAssignments = slice.Data.Assignments;
+        foreach (var person in assignments.Select(a => a.Person).Distinct(StringComparer.OrdinalIgnoreCase))
+        {
+            var projectCount = allAssignments
+                .Where(a => string.Equals(a.Person, person, StringComparison.OrdinalIgnoreCase))
+                .Select(a => a.ProjectKey)
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .Count();
+
+            if (ConcentrationBand(projectCount) is { } severity)
+            {
+                var source = assignments.First(a => string.Equals(a.Person, person, StringComparison.OrdinalIgnoreCase)).Source;
+                findings.Add(Finding(slice, confidence,
+                    $"{person} is allocated across {projectCount} projects — key-person concentration risk.",
+                    source, severity));
+            }
+        }
+
         return Task.FromResult<IReadOnlyList<Finding>>(findings);
+    }
+
+    /// <summary>
+    /// Key-person concentration band by the number of distinct projects a person is allocated to
+    /// (plan-doc: 5+ Red, 3–4 Amber, fewer than 3 not flagged). Returns null when not flagged.
+    /// </summary>
+    private static Severity? ConcentrationBand(int projectCount) => projectCount switch
+    {
+        >= 5 => Severity.Red,
+        >= 3 => Severity.Amber,
+        _ => null,
+    };
+
+    /// <summary>
+    /// Recognises the project-manager role across the spellings the data actually uses — "Project
+    /// Manager", "Project Management" (the fixture's <c>professional_group</c> value), a bare "Manager",
+    /// or "PM". A brittle <c>Contains("Manager")</c> test failed on "Project Management" and produced a
+    /// false "no project manager" finding.
+    /// </summary>
+    private static bool IsProjectManagerRole(string role)
+    {
+        var r = role.Trim();
+        return r.Contains("Manager", StringComparison.OrdinalIgnoreCase)
+               || r.Contains("Management", StringComparison.OrdinalIgnoreCase)
+               || r.Equals("PM", StringComparison.OrdinalIgnoreCase);
     }
 
     // Over-allocation beyond this many percentage points over capacity is treated as critical (Red).

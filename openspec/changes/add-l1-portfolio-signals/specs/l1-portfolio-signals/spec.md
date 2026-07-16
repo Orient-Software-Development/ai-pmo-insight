@@ -1,6 +1,9 @@
 > Prerequisites (shared tickets): the financial-exposure roll-up consumes the structured `Finding` metric
-> (#46); the decision-backlog roll-up consumes the Decision agent's findings (#45 + #47). Those tickets
-> define the metric and the Decision agent; this capability only rolls them up and renders them.
+> (#46); the decision-backlog roll-up consumes the Decision agent's findings (#45 + #47); the
+> **customer-exposure proxy** needs the project's customer carried to read time via the #46 metadata field
+> (findings carry no project-level customer today, and there is no `Project` entity). Those tickets define
+> the metric and the Decision agent; this capability only rolls them up and renders them. The
+> **key-person concentration** finding is produced in this change (Resource agent) and only needs rolling up.
 
 ## ADDED Requirements
 
