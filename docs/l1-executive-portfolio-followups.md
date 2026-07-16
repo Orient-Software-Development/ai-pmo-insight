@@ -129,7 +129,13 @@ filter inline by key). So the whole portfolio's assignments are already in hand 
 
 ---
 
-## #7 — Recommended actions (owner / deadline / confidence) 🟠 (a contract, not a formula)
+## #7 — Recommended actions ✅ structured (`add-structured-recommendation`, #48) · L1 render pending
+
+> **Update:** the Narrative agent's `Recommendation { owner, deadline, action, rationale }` is no longer
+> flattened into prose — it's persisted on the finding's `MetricDetail` (via the #46 metric field). The L1
+> recommended-actions panel can now render those fields as data (presentation follow-on). Confidence stays
+> the finding's `Confidence`. Enriching owner/deadline from decision data (#47) is a soft follow-on.
+> Original rationale below.
 
 **No formula — and correctly so.** This is an LLM synthesis job, not deterministic math. But the doc /
 PRD specify the **output shape**:

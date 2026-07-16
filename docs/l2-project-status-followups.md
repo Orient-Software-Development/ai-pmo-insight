@@ -105,7 +105,11 @@ OVERDUE signal. Blocked on adding `HealthArea.Decision` (the enum gap documented
 
 ---
 
-## 🟠 #7 — AI recommendation (practical next action)
+## ✅ #7 — AI recommendation — structured (`add-structured-recommendation`, #48) · L2 render pending
+
+> **Update:** the recommendation is now persisted structured (`owner`/`deadline`/`action`/`rationale` on
+> the finding's `MetricDetail`, #48) as well as in the prose summary. The L2 view can render a proper
+> recommendation panel from those fields (presentation follow-on). Original rationale below.
 
 **Same as L1 #7** — a structured-output contract, not a formula. The Narrative agent already writes a
 recommendation as a **prose blob** (e.g. *"Recommendation (Sponsoring Executive / PMO Director, by Within

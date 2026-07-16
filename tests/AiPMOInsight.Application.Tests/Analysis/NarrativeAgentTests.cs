@@ -94,4 +94,32 @@ public class NarrativeAgentTests
         llm.Calls.Should().Be(1);
         narrative.PromptVersion.Should().NotBeNull();
     }
+
+    [Fact]
+    public async Task Llm_narrative_carries_the_recommendation_as_structured_detail()
+    {
+        var llm = new StubLlm(FakeNarrative);
+
+        var narrative = await Run(llm, AnalysisFinding("Status"), AnalysisFinding("Financial"), AnalysisFinding("Resource"));
+
+        narrative.MetricDetail.Should().NotBeNull();
+        narrative.MetricDetail!["owner"].Should().Be("PMO Lead");
+        narrative.MetricDetail!["deadline"].Should().Be("2026-07-31");
+        narrative.MetricDetail!["action"].Should().Be("Escalate vendor risk");
+        narrative.MetricDetail!["rationale"].Should().Be("Two RED signals cross-reference.");
+        // The prose summary is preserved for back-compat.
+        narrative.Summary.Should().Contain("Escalate vendor risk");
+    }
+
+    [Fact]
+    public async Task Template_narrative_also_carries_structured_detail()
+    {
+        var llm = new StubLlm(FakeNarrative);
+
+        var narrative = await Run(llm, AnalysisFinding("Status"));
+
+        llm.Calls.Should().Be(0); // template path
+        narrative.MetricDetail.Should().NotBeNull();
+        narrative.MetricDetail!.Should().ContainKeys("owner", "deadline", "action", "rationale");
+    }
 }

@@ -103,7 +103,7 @@ formula-produced**. Only the **prose** — narrative, challenge, review — is L
 | 4 | Resource / key-person | Chip + count | 🔢 | `ResourceSkill` over `slice.Data.Assignments` (concentration) | 🔷 planned |
 | 5 | Decision backlog | Count + table | 🔢 | `DecisionSkill` findings (built, #47); **count roll-up = slice E** | 🔷 roll-up pending |
 | 6 | Client / commercial risk | Grouped list (proxy) | 🔢 | proxy: at-risk projects by `ProjectRecord.Customer` · true signal 🔷 needs client | 🔷 planned |
-| 7 | Recommended actions | Owner · deadline · action card | 🔀 | `NarrativeSkill.Recommendation` — flattened into `Finding.Summary` | 🔷 planned |
+| 7 | Recommended actions | Owner · deadline · action card | 🔀 | `NarrativeSkill.Recommendation` → structured on `MetricDetail` (#48, built) | 🟡 structured; L1 view rendering pending |
 
 ## Level 2 — Individual Project Dashboard
 
@@ -114,7 +114,7 @@ formula-produced**. Only the **prose** — narrative, challenge, review — is L
 | 4 | Risks & issues | Table rows; severity chip + citation | 🔀 | `RiskAndIssueSkill` (`RaidItemRecord` + minutes) | ✅ |
 | 3 | Key deviations (budget/time/scope/risks/resources) | Findings table | 🔢 | Financial + Status + Risk + Resource findings | 🟡 4/5 — Scope has no data/rule |
 | 5 | Upcoming milestones | Finding rows | 🔢 | `StatusSkill` over `MilestoneRecord.DueDate` | 🐞 ignores `Status`/baseline/`is_critical` |
-| 7 | AI recommendation | Prose blob today | 🔀 | `NarrativeSkill.Recommendation` (flattened) | 🟡 structured but flattened |
+| 7 | AI recommendation | Owner/deadline/action + prose | 🔀 | `NarrativeSkill.Recommendation` → `MetricDetail` (#48, built) + summary | 🟡 structured; L2 panel rendering pending |
 | 2 | This-period progress | — | 🔢 | planned run-over-run delta + 🔷 "activity" threshold (client) | 🔷 planned |
 | 6 | Decisions needed (owner/deadline/consequence) | Findings rows | 🔢 | `DecisionSkill` (built, #47) — flows to the findings read | 🟡 findings produced; dedicated owner/deadline panel pending |
 | — | Challenge (US-9) | Prose critique list | 🤖 | `ChallengeSkill` | ✅ |
@@ -242,18 +242,17 @@ or structural gap (no falsehood) · **Low** = a threshold/tuning choice differin
 
 ## Structured Values Flattened into Text
 
-The `Finding` record carries only `Summary / Area / Severity / Confidence / Citation` — no typed numeric or
-metadata field. Three formula outputs are computed correctly, then flattened into the `Summary` string, so
-the dashboard can't render them as structured values:
+The `Finding` metric field (#46, landed) gives computed values a typed home. Status of the three cases that
+were formerly trapped in the `Summary` string:
 
-| Output | Computed by | Flattened into |
-|--------|-------------|----------------|
-| Financial exposure (€) | Financial agent | `"…exposure is 80,000."` |
-| Staleness age (days) | Data Quality agent | `"…stale… N days ago."` |
-| Recommendation owner/deadline | Narrative agent | `"Recommendation (owner, by deadline): …"` |
+| Output | Computed by | Status |
+|--------|-------------|--------|
+| Financial exposure (€) | Financial agent | ✅ on `MetricValue`/`MetricUnit` (#46) |
+| Recommendation owner/deadline/action | Narrative agent | ✅ on `MetricDetail` (#48) |
+| Staleness age (days) | Data Quality agent | 🔷 still in the summary — L3 follow-on to stamp `MetricValue` |
 
-**One `Finding`-shape change** (typed metric/metadata fields) surfaces all three as structured outputs at
-once — the highest-leverage single change across the three dashboards.
+**The one `Finding`-shape change (#46)** unlocked all three; two now carry structured data, the L3 Age is a
+small remaining follow-on.
 
 ---
 

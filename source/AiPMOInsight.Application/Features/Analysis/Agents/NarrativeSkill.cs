@@ -104,6 +104,17 @@ public sealed class NarrativeSkill(ILlmClient llm, PromptRegistry prompts)
             $"Recommendation ({result.Recommendation.Owner}, by {result.Recommendation.Deadline}): " +
             $"{result.Recommendation.Action} — {result.Recommendation.Rationale}";
 
+        // Carry the recommendation as structured data (not only in the prose) so the L1/L2 recommendation
+        // panels read fields, not a parsed string. Keys are a stable contract (owner/deadline/action/
+        // rationale). Confidence stays the finding's Confidence — not duplicated here.
+        var detail = new Dictionary<string, string>
+        {
+            ["owner"] = result.Recommendation.Owner,
+            ["deadline"] = result.Recommendation.Deadline,
+            ["action"] = result.Recommendation.Action,
+            ["rationale"] = result.Recommendation.Rationale,
+        };
+
         return Finding.Create(
             projectKey: slice.ProjectKey,
             summary: summary,
@@ -113,6 +124,7 @@ public sealed class NarrativeSkill(ILlmClient llm, PromptRegistry prompts)
             producingAgent: LlmAgentSkills.Narrative,
             kind: FindingKind.Narrative,
             confidence: confidence,
-            promptVersion: promptVersion);
+            promptVersion: promptVersion,
+            metricDetail: detail);
     }
 }
