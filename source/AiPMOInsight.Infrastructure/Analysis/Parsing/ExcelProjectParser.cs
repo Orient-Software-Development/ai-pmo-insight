@@ -24,6 +24,7 @@ internal static class ExcelProjectParser
             BudgetLines = ReadBudget(workbook),
             Assignments = ReadResources(workbook),
             RaidItems = ReadRaid(workbook),
+            Decisions = ReadDecisions(workbook),
             Minutes = [],
         };
     }
@@ -82,6 +83,18 @@ internal static class ExcelProjectParser
             Description = cell("Description"),
             Severity = NullIfBlank(cell("Severity")),
             Status = NullIfBlank(cell("Status")),
+            Source = source,
+        });
+
+    private static List<DecisionRecord> ReadDecisions(XLWorkbook wb) =>
+        ReadSheet(wb, "Decisions", (cell, source) => new DecisionRecord
+        {
+            ProjectKey = cell("ProjectKey"),
+            Title = cell("Title"),
+            Status = NullIfBlank(cell("Status")),
+            Owner = NullIfBlank(cell("Owner")),
+            NeededBy = ParseDate(cell("NeededBy")),
+            Consequence = NullIfBlank(cell("Consequence")),
             Source = source,
         });
 

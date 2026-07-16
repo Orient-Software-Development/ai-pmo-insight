@@ -90,6 +90,19 @@ public sealed record RaidItemRecord
     public required SourceRef Source { get; init; }
 }
 
+public sealed record DecisionRecord
+{
+    public required string ProjectKey { get; init; }
+    public required string Title { get; init; }
+    /// <summary>e.g. "Overdue", "Pending", "Approved"; null when the source omits it.</summary>
+    public string? Status { get; init; }
+    public string? Owner { get; init; }
+    /// <summary>Date the decision is needed by; null when unknown (then it can't be judged overdue/due-soon).</summary>
+    public DateTimeOffset? NeededBy { get; init; }
+    public string? Consequence { get; init; }
+    public required SourceRef Source { get; init; }
+}
+
 /// <summary>
 /// The Data Collector's output: the typed records parsed from one upload, grouped by category. This
 /// is the shared input the analysis agents (#2–#6) read; it is never persisted.
@@ -102,6 +115,7 @@ public sealed record CollectedData
     public required IReadOnlyList<AssignmentRecord> Assignments { get; init; }
     public required IReadOnlyList<MinuteEntryRecord> Minutes { get; init; }
     public required IReadOnlyList<RaidItemRecord> RaidItems { get; init; }
+    public IReadOnlyList<DecisionRecord> Decisions { get; init; } = [];
 
     public static CollectedData Empty { get; } = new()
     {
@@ -111,5 +125,6 @@ public sealed record CollectedData
         Assignments = [],
         Minutes = [],
         RaidItems = [],
+        Decisions = [],
     };
 }

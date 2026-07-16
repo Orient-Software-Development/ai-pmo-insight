@@ -40,6 +40,10 @@ internal static class OrbitFixtureBuilder
         WriteRow(raid, 1, "ProjectKey", "Type", "Description", "Severity", "Status");
         WriteRow(raid, 2, "ALPHA", "Risk", "Vendor API may slip", "High", "Open");
 
+        var decisions = wb.AddWorksheet("Decisions");
+        WriteRow(decisions, 1, "ProjectKey", "Title", "Status", "Owner", "NeededBy", "Consequence");
+        WriteRow(decisions, 2, "ALPHA", "Approve revised go-live date", "Overdue", "Steering Committee", "2026-06-20", "Cutover cannot be scheduled; team idle");
+
         using var ms = new MemoryStream();
         wb.SaveAs(ms);
         return ms.ToArray();

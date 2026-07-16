@@ -56,7 +56,12 @@ noted here for completeness though it is not one of the four items below.
 
 ---
 
-## #5 — Decision backlog 🟢 (highest formula-to-effort ratio; do first)
+## #5 — Decision backlog ✅ agent LANDED (`add-decisions-agent`, #45+#47) · roll-up = slice E
+
+> **Update:** the Decision agent shipped — `HealthArea.Decision` + weight (10, EXAMPLE), `DecisionRecord`
+> parsing, `DecisionSkill` (overdue→Red / due-soon→Amber, cited), and the `key-decision-overdue` override.
+> The missed D-1002-1 OVERDUE signal is now produced. The L1 **backlog count** roll-up remains slice E of
+> `add-l1-portfolio-signals` (gated). Original rationale below.
 
 **Doc formula** — Decision KPI table (lines 134–144) + override (line 191):
 - **Overdue** — decision past `needed_by` and not made (status ≠ Approved).

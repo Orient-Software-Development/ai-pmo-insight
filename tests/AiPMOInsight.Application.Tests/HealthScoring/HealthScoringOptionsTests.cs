@@ -106,4 +106,19 @@ public class HealthScoringOptionsTests
         act.Should().Throw<InvalidOperationException>()
             .WithMessage("*Overrides*bad*");
     }
+
+    [Fact]
+    public void Decision_is_a_recognised_weighted_area()
+    {
+        var options = Valid();
+        // Rebalance to fund a Decision weight while keeping the configured weights summing to WeightTotal.
+        options.Weights["Budget"] = 25;
+        options.Weights["Risk"] = 25;
+        options.Weights["Decision"] = 10;
+
+        var act = () => options.Validate();
+
+        act.Should().NotThrow();
+        options.WeightFor(HealthArea.Decision).Should().Be(10);
+    }
 }

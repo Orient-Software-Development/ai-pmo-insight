@@ -90,7 +90,12 @@ client question — a code check.**
 
 ---
 
-## 🟢 #6 — Decisions needed (owner / deadline / consequence)
+## ✅ #6 — Decisions needed — agent LANDED (`add-decisions-agent`, #45+#47)
+
+> **Update:** the shared Decision agent shipped (see the L1 register #5). Decision findings (overdue /
+> due-soon, cited) now flow to `GET /api/projects/{key}` and appear in the L2 findings section. A dedicated
+> "decisions needed" panel with structured owner/deadline is a presentation follow-on (the owner/deadline
+> can ride the #46 `MetricDetail`). Original notes below.
 
 **Same build as L1 #5** — see [`l1-executive-portfolio-followups.md`](l1-executive-portfolio-followups.md#5--decision-backlog--highest-formula-to-effort-ratio-do-first).
 Doc formula clear (lines 134–144); `decisions.csv` carries status / needed_by / owner /

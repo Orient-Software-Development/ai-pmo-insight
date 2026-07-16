@@ -29,6 +29,7 @@ internal static class HealthScoringFixtures
             new OverrideRuleOptions { Id = "forecast-overrun-critical", Area = "Budget", WhenSeverityAtLeast = "Red", Floor = "Red" },
             new OverrideRuleOptions { Id = "critical-milestone-missed", Area = "Schedule", WhenSeverityAtLeast = "Red", Floor = "Amber" },
             new OverrideRuleOptions { Id = "critical-unmitigated-risk", Area = "Risk", WhenSeverityAtLeast = "Red", Floor = "Red" },
+            new OverrideRuleOptions { Id = "key-decision-overdue", Area = "Decision", WhenSeverityAtLeast = "Red", Floor = "Amber" },
         ],
     };
 
