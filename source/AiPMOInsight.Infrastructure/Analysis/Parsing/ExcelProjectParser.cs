@@ -36,6 +36,7 @@ internal static class ExcelProjectParser
             Name = cell("Name"),
             PercentComplete = ParseDouble(cell("PercentComplete")),
             LastUpdated = ParseDate(cell("LastUpdated")),
+            Customer = NullIfBlank(cell("Customer")),
             Source = source,
         });
 

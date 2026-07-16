@@ -23,11 +23,11 @@ The doc (lines 235–242) lists seven L1 panels. Current status:
 |---|-------------|:---:|-----------------|
 | 1 | Overall portfolio health (G/A/R count) | ✅ | `ScorePortfolio` counts each `FinalBucket`; L1 renders the bar + legend |
 | 2 | Projects needing intervention (top + reason) | ✅ | Worst-first Red/Amber list with a cited reason |
-| 3 | Financial exposure (€) | 🟢 | Computed already, trapped in prose — see below |
-| 4 | Resource bottlenecks / key-person | 🟢 | **Corrected** — cross-project data already in `slice.Data`; agent just filters it away — see below |
-| 5 | Decision backlog | 🟢 | Doc formula + fixture data both exist; pure plumbing — see below |
-| 6 | Client / commercial risk | 🟠/🔵 | **Split** — a data-backed customer-exposure proxy is buildable; the true commercial signal needs the client — see below |
-| 7 | Recommended actions (owner/deadline/confidence) | 🟠 | Not a formula — a structured-output contract (internal decision) — see below |
+| 3 | Financial exposure (€) | ✅ | **LANDED** — `FinancialSkill` stamps amount+currency (#46); `ScorePortfolio` sums it; L1 strip renders it |
+| 4 | Resource bottlenecks / key-person | ✅ | **LANDED** — concentration 5+/3–4/<3 from `slice.Data`; rolled up distinct-by-person; L1 table renders it (× absence still a follow-on) |
+| 5 | Decision backlog | ✅ | **LANDED** — `DecisionSkill` (#45+#47); `ScorePortfolio` counts overdue/due-soon; L1 strip renders it |
+| 6 | Client / commercial risk | ✅/🔵 | **Proxy LANDED** — customer-exposure (at-risk projects by customer, via the Narrative-finding channel), labelled; true commercial signal still a kick-off question |
+| 7 | Recommended actions (owner/deadline/confidence) | 🟡 | Structured on findings (#48); portfolio-level L1 roll-up of recommendations still a follow-on |
 
 > ➕ The current L1 view also shows **Confidence (avg)** + **"Needs PM Review" count** as a headline
 > cell. These are backed but **not in the doc's L1 list** — arguably a Data-Lead/L3 concern, not an

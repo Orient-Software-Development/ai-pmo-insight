@@ -20,8 +20,8 @@ internal static class OrbitFixtureBuilder
         using var wb = new XLWorkbook();
 
         var projects = wb.AddWorksheet("Projects");
-        WriteRow(projects, 1, "Key", "Name", "PercentComplete", "LastUpdated");
-        WriteRow(projects, 2, "ALPHA", "Alpha Platform", "45", "2026-06-20");
+        WriteRow(projects, 1, "Key", "Name", "PercentComplete", "LastUpdated", "Customer");
+        WriteRow(projects, 2, "ALPHA", "Alpha Platform", "45", "2026-06-20", "Acme Corp");
 
         var milestones = wb.AddWorksheet("Milestones");
         WriteRow(milestones, 1, "ProjectKey", "Name", "DueDate", "CompletedDate", "Status", "DependsOn");
@@ -59,8 +59,8 @@ internal static class OrbitFixtureBuilder
         using var wb = new XLWorkbook();
 
         var projects = wb.AddWorksheet("Projects");
-        WriteRow(projects, 1, "Key", "Name", "PercentComplete", "LastUpdated");
-        WriteRow(projects, 2, "ALPHA", "Alpha Platform", "45", "2026-06-20");
+        WriteRow(projects, 1, "Key", "Name", "PercentComplete", "LastUpdated", "Customer");
+        WriteRow(projects, 2, "ALPHA", "Alpha Platform", "45", "2026-06-20", "Acme Corp");
 
         var milestones = wb.AddWorksheet("Milestones");
         WriteRow(milestones, 1, "ProjectKey", "Name", "DueDate", "CompletedDate", "Status", "DependsOn");

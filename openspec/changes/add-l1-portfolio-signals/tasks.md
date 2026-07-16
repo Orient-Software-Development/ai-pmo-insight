@@ -49,43 +49,47 @@
 > there is no `Project` entity. A project-level attribute can only reach read time via the **#46 metadata
 > field**. So slice D is **gated on #46**, not independent. Deferred to after #46 (with slices E/F).
 
-- [ ] 5.1 (after #46) Carry the project's customer to read time via the #46 metric/metadata field.
-- [ ] 5.2 (red) `ScorePortfolioTests`: two Red/Amber projects sharing a customer produce a customer-exposure
-      entry with an at-risk count; labelled relationship exposure; empty store → empty.
-- [ ] 5.3 (green) Group scored Red/Amber projects by customer in `ScorePortfolio`.
-- [ ] 5.4 (red→green) `ExecutivePortfolioEndpointsTests`: the endpoint returns the customer-exposure field.
+- [x] 5.1 Customer reaches read time via the **Narrative finding's `MetricDetail["customer"]`** (the one
+      finding guaranteed per analyzed project). `ProjectRecord.Customer` + parser (`Customer` column) added;
+      `NarrativeSkill` stamps it; fixture Projects sheet carries a `Customer` column.
+- [x] 5.2 (red→green) `ScorePortfolioTests.Customer_exposure_groups_at_risk_projects_by_customer` — two Red
+      projects sharing a customer → one entry, count 2; empty store → empty.
+- [x] 5.3 (green) `ScorePortfolio` groups scored Red/Amber projects by the Narrative-finding customer,
+      labelled relationship exposure.
+- [x] 5.4 `ExecutivePortfolioEndpointsTests` stays green with the additive field.
 
 ## 6. Slice E — Financial-exposure + decision-backlog + key-person roll-up (TDD, **gated on #46 / #47**)
 
 > Prerequisite: #46 (Finding metric) for exposure; #47 (Decisions agent) for the decision-backlog count.
 > Do this slice only after those land; until then, leave the exposure/decision panels as placeholders.
 
-- [ ] 6.1 (red) `ScorePortfolioTests`: the result carries total financial exposure (amount + currency, from
-      the #46 metric on Financial findings), a decision-backlog count (from #47 Decision findings), and a
-      key-person concentration list (distinct people over threshold — not a sum of per-project findings);
-      empty store → zeroed/empty.
-- [ ] 6.2 (green) Extend the `ScorePortfolio` result + handler to compute those from the scored projects'
-      findings.
-- [ ] 6.3 (red→green) `ExecutivePortfolioEndpointsTests`: the endpoint returns the new fields (additive).
-- [ ] 6.4 Re-run the suite; green (re-derive shifted expectations deliberately).
+- [x] 6.1 (red→green) `ScorePortfolioTests`: 6 new cases — exposure sums the metric (+ currency), exposure
+      zero when no amount, decision-backlog counts Decision findings, key-person distinct-by-person, empty
+      portfolio empty.
+- [x] 6.2 (green) `ScorePortfolio.Result` + handler extended: `FinancialExposure`, `DecisionBacklog`,
+      `KeyPersons`, `CustomerExposure`, each from the latest-run findings. Wired the producing agents:
+      `ResourceSkill` stamps person + project-count on the concentration finding; `FinancialSkill` already
+      stamps exposure (#46); Decision findings from #47.
+- [x] 6.3 `ExecutivePortfolioEndpointsTests` green (additive fields; endpoint returns `ScorePortfolio.Result`).
+- [x] 6.4 Full backend suite green: 147 Application + 126 Api = 273.
 
 ## 7. Slice F — L1 view (presentation)
 
-- [ ] 7.1 Update `ExecutivePortfolio.jsx` to render the customer-exposure and key-person panels from the
-      response (available after slices D + C).
-- [ ] 7.2 Render the financial-exposure and decision-backlog panels once slice E lands, replacing those
-      dashed placeholders. Keep the true commercial-risk panel flagged (labelled, not fabricated).
-- [ ] 7.3 Client `vite build` clean.
+- [x] 7.1 `ExecutivePortfolio.jsx` renders live **key-person concentration** and **customer-exposure**
+      tables (labelled relationship exposure).
+- [x] 7.2 Financial-exposure and decision-backlog summary-strip cells now render live values (replaced the
+      dashed placeholders); portfolio-level recommendations stay flagged (L1 doesn't roll those up).
+- [x] 7.3 Client `vite build` clean.
 
 ## 8. Verify + document
 
-- [ ] 8.1 Full backend suite green; `openspec validate add-l1-portfolio-signals --strict` passes;
-      `dotnet build` clean.
-- [ ] 8.2 `/verify` against the running stack: upload `orbit-sample.xlsx`, analyze; confirm ORB-1002 no
-      longer shows "no PM" and the missed dress-rehearsal milestone is no longer green; `GET /api/portfolio`
-      returns the customer-exposure + key-person (and, once #46/#47 land, exposure € + decision backlog); the
-      L1 view renders them.
-- [ ] 8.3 Update `docs/l1-executive-portfolio-followups.md` (#4 key-person + no-PM done; #6 proxy done; #3/#5
-      done once slice E lands) and `docs/dashboard-output-formats.md` (flip the relevant states).
-- [ ] 8.4 Confirm the boundary held: no fabricated commercial-risk figure; `× absence` not invented; no L2/L3
-      view work; the shared pieces came from #45/#46/#47/#48, not re-implemented here.
+- [x] 8.1 Full suite green (147 Application + 126 Api = 273); `openspec validate --strict` passes; build clean.
+- [ ] 8.2 **Pending /verify (needs running stack):** upload `orbit-sample.xlsx`, analyze; confirm ORB-1002
+      no longer shows "no PM", the missed dress-rehearsal milestone is no longer green, and `GET /api/portfolio`
+      returns exposure € / decision backlog / key-person / customer-exposure rendered by the L1 view. This
+      also settles the real fixture's `Customer` + `Decisions` columns.
+- [x] 8.3 Updated `docs/l1-executive-portfolio-followups.md` (#3/#4/#6) and `docs/dashboard-output-formats.md`
+      (L1 rows flipped to backed).
+- [x] 8.4 Boundary held: no fabricated commercial-risk figure; `× absence` not invented; no L2/L3 view work;
+      the shared pieces came from #45/#46/#47/#48. New this change: the customer channel (Narrative finding)
+      + `ProjectRecord.Customer` parsing + the concentration-finding metric stamp.

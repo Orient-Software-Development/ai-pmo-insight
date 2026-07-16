@@ -115,6 +115,15 @@ public sealed class NarrativeSkill(ILlmClient llm, PromptRegistry prompts)
             ["rationale"] = result.Recommendation.Rationale,
         };
 
+        // The Narrative finding is the one finding guaranteed per analyzed project, so it also carries the
+        // project's customer — the read-side channel the L1 customer-exposure roll-up groups on (there is
+        // no Project entity, and findings otherwise carry no project-level attributes).
+        var customer = slice.Data.Projects.FirstOrDefault(p => p.Key == slice.ProjectKey)?.Customer;
+        if (!string.IsNullOrWhiteSpace(customer))
+        {
+            detail["customer"] = customer;
+        }
+
         return Finding.Create(
             projectKey: slice.ProjectKey,
             summary: summary,

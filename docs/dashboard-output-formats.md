@@ -99,11 +99,11 @@ formula-produced**. Only the **prose** — narrative, challenge, review — is L
 | 1 | Portfolio health (G/A/R) | Segmented RAG bar + legend + counts | 🔢 | `ScorePortfolio` → count of `HealthScore.FinalBucket` | ✅ |
 | 2 | Projects needing intervention | Table, worst-first; severity chip + cited reason | 🔢 | `ScorePortfolio.InterventionView` | ✅ |
 | + | Confidence (avg) + Needs-PM-Review | Number `%` + count | 🔢 | mean `HealthScore.Confidence` vs `ConfidenceFloor` | ✅ |
-| 3 | Financial exposure (€) | Currency number | 🔢 | `FinancialSkill` Σ(forecast−budget) — in `Finding.Summary` | 🔷 planned |
-| 4 | Resource / key-person | Chip + count | 🔢 | `ResourceSkill` over `slice.Data.Assignments` (concentration) | 🔷 planned |
-| 5 | Decision backlog | Count + table | 🔢 | `DecisionSkill` findings (built, #47); **count roll-up = slice E** | 🔷 roll-up pending |
-| 6 | Client / commercial risk | Grouped list (proxy) | 🔢 | proxy: at-risk projects by `ProjectRecord.Customer` · true signal 🔷 needs client | 🔷 planned |
-| 7 | Recommended actions | Owner · deadline · action card | 🔀 | `NarrativeSkill.Recommendation` → structured on `MetricDetail` (#48, built) | 🟡 structured; L1 view rendering pending |
+| 3 | Financial exposure (€) | Currency number | 🔢 | `ScorePortfolio` sums `MetricValue` of Financial exposure findings (#46) | ✅ |
+| 4 | Resource / key-person | Table (person · count · band) | 🔢 | `ScorePortfolio` dedupes `ResourceSkill` concentration findings by person | ✅ (× absence follow-on) |
+| 5 | Decision backlog | Count | 🔢 | `ScorePortfolio` counts `DecisionSkill` findings (#45+#47) | ✅ |
+| 6 | Client / commercial risk | Grouped table (proxy) | 🔢 | at-risk projects grouped by customer (Narrative-finding channel), labelled | ✅ proxy (true signal 🔵 needs client) |
+| 7 | Recommended actions | Owner · deadline · action card | 🔀 | `NarrativeSkill.Recommendation` → `MetricDetail` (#48) | 🟡 structured; portfolio roll-up of recommendations pending |
 
 ## Level 2 — Individual Project Dashboard
 

@@ -33,6 +33,8 @@ public sealed record ProjectRecord
     public required string Name { get; init; }
     public double? PercentComplete { get; init; }
     public DateTimeOffset? LastUpdated { get; init; }
+    /// <summary>The customer/client this project is for; null when the source omits it.</summary>
+    public string? Customer { get; init; }
     public required SourceRef Source { get; init; }
 }
 

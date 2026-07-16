@@ -82,9 +82,12 @@ public sealed class ResourceSkill : IAgentSkill<AnalysisInput, IReadOnlyList<Fin
             if (ConcentrationBand(projectCount) is { } severity)
             {
                 var source = assignments.First(a => string.Equals(a.Person, person, StringComparison.OrdinalIgnoreCase)).Source;
-                findings.Add(Finding(slice, confidence,
+                // Carry the person + project count as structured data so the L1 roll-up can dedupe to
+                // distinct people without parsing the summary.
+                findings.Add(FindingFactory.Analysis(slice, "Resource",
                     $"{person} is allocated across {projectCount} projects — key-person concentration risk.",
-                    source, severity));
+                    source, confidence, HealthArea.Resource, severity,
+                    metricValue: projectCount, metricDetail: new Dictionary<string, string> { ["person"] = person }));
             }
         }
 
