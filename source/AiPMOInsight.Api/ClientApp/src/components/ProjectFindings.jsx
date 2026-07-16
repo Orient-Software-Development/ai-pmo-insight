@@ -3,6 +3,13 @@ import { useSearchParams } from 'react-router-dom';
 import { authFetch } from '../AuthContext';
 import { HealthBanner } from './HealthBanner';
 import { HEALTH_STATE, bucketColour, healthState } from '../health';
+import {
+  ChallengeArticle,
+  ConfidenceChip,
+  NarrativeArticle,
+  ReviewArticle,
+  renderFindingSummary,
+} from '../synthesis';
 
 const EMPTY_VIEW = { projectKey: '', findings: [], narrative: [], challenge: [], review: [] };
 const EMPTY_HEALTH = { state: HEALTH_STATE.ERROR, score: null };
@@ -115,10 +122,10 @@ export function ProjectFindings() {
             <p><em>No analysis recorded for this project key yet.</em></p>
           ) : (
             <>
-              <SynthesisSection title="AI recommendation (narrative)" kicker="US 5 · closest recommendation surface" items={view.narrative} />
+              <NarrativeSection items={view.narrative} />
               <FindingsSection findings={view.findings} />
-              <SynthesisSection title="Challenge" kicker="US 9 · adversarial critique" items={view.challenge} />
-              <SynthesisSection title="Review" kicker="US 9 · questions before publishing" items={view.review} />
+              <ChallengeSection items={view.challenge} />
+              <ReviewSection items={view.review} />
 
               {/* Wireframe l2 panels the finding shape does not carry — flagged, not fabricated. */}
               <section className="block">
@@ -158,9 +165,9 @@ function FindingsSection({ findings }) {
           ) : (
             findings.map(f => (
               <tr key={f.id}>
-                <td>{f.summary}</td>
+                <td>{renderFindingSummary(f.summary)}</td>
                 <td>{f.producingAgent}</td>
-                <td><span className="conf">{f.confidence}</span></td>
+                <td><ConfidenceChip value={f.confidence} /></td>
                 <td><span className="cite">{f.citation?.locator}<br />upload {f.citation?.uploadId}</span></td>
               </tr>
             ))
@@ -171,27 +178,41 @@ function FindingsSection({ findings }) {
   );
 }
 
-// Narrative / Challenge / Review — one synthesised finding each, rendered as prose.
-function SynthesisSection({ title, kicker, items }) {
+function NarrativeSection({ items }) {
   if (items.length === 0) return null;
   return (
     <section className="block">
       <div className="sec-head">
-        <h2 className="sec-title">{title}</h2>
-        {kicker && <span className="sec-kicker">{kicker}</span>}
+        <h2 className="sec-title">AI recommendation (narrative)</h2>
+        <span className="sec-kicker">US 5 · closest recommendation surface</span>
       </div>
-      {items.map(item => (
-        <article key={item.id}>
-          <p style={{ whiteSpace: 'pre-wrap', margin: 0 }}>{item.summary}</p>
-          <footer>
-            <small>
-              confidence: {item.confidence}
-              {item.promptVersion ? ` · prompt ${item.promptVersion.slice(0, 14)}…` : ' · template (no LLM)'}
-              {' · '}cites {item.citation?.locator}
-            </small>
-          </footer>
-        </article>
-      ))}
+      {items.map(item => <NarrativeArticle key={item.id} item={item} />)}
+    </section>
+  );
+}
+
+function ChallengeSection({ items }) {
+  if (items.length === 0) return null;
+  return (
+    <section className="block">
+      <div className="sec-head">
+        <h2 className="sec-title">Challenge</h2>
+        <span className="sec-kicker">US 9 · adversarial critique</span>
+      </div>
+      {items.map(item => <ChallengeArticle key={item.id} item={item} />)}
+    </section>
+  );
+}
+
+function ReviewSection({ items }) {
+  if (items.length === 0) return null;
+  return (
+    <section className="block">
+      <div className="sec-head">
+        <h2 className="sec-title">Review</h2>
+        <span className="sec-kicker">US 9 · questions before publishing</span>
+      </div>
+      {items.map(item => <ReviewArticle key={item.id} item={item} />)}
     </section>
   );
 }

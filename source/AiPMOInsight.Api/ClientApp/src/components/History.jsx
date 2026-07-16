@@ -3,6 +3,13 @@ import { authFetch } from '../AuthContext';
 import { bucketColour, healthState, HEALTH_STATE } from '../health';
 import { HealthBanner } from './HealthBanner';
 import { uploadStatus, runProvenance, projectKeys, UPLOAD_STATUS } from '../history';
+import {
+  ChallengeArticle,
+  ConfidenceChip,
+  NarrativeArticle,
+  ReviewArticle,
+  renderFindingSummary,
+} from '../synthesis';
 
 const EMPTY_VIEW = { uploadId: '', findings: [], narrative: [], challenge: [], review: [] };
 
@@ -132,10 +139,10 @@ export function History() {
           ) : (
             <>
               <RunHeader prov={prov} />
-              <SynthesisSection title="Narrative" kicker="Agent #7" items={view.narrative} />
+              <NarrativeSection items={view.narrative} />
               <FindingsSection findings={view.findings} />
-              <SynthesisSection title="Challenge" kicker="Agent #8" items={view.challenge} />
-              <SynthesisSection title="Review" kicker="Agent #9" items={view.review} />
+              <ChallengeSection items={view.challenge} />
+              <ReviewSection items={view.review} />
               <ScoreAudit audits={audits} />
             </>
           )}
@@ -188,9 +195,9 @@ function FindingsSection({ findings }) {
           ) : (
             findings.map(f => (
               <tr key={f.id}>
-                <td>{f.summary}</td>
+                <td>{renderFindingSummary(f.summary)}</td>
                 <td>{f.producingAgent}</td>
-                <td><span className="conf">{f.confidence}</span></td>
+                <td><ConfidenceChip value={f.confidence} /></td>
                 <td><span className="cite">↳ {f.citation?.locator}</span></td>
               </tr>
             ))
@@ -201,27 +208,41 @@ function FindingsSection({ findings }) {
   );
 }
 
-// Narrative / Challenge / Review — one synthesised finding each, rendered as prose with its citation.
-function SynthesisSection({ title, kicker, items }) {
+function NarrativeSection({ items }) {
   if (items.length === 0) return null;
   return (
     <section className="block">
       <div className="sec-head">
-        <h2 className="sec-title">{title}</h2>
-        <span className="sec-kicker">{kicker}</span>
+        <h2 className="sec-title">Narrative</h2>
+        <span className="sec-kicker">Agent #7</span>
       </div>
-      {items.map(item => (
-        <article key={item.id}>
-          <p style={{ whiteSpace: 'pre-wrap', margin: 0 }}>{item.summary}</p>
-          <footer>
-            <small>
-              confidence: {item.confidence}
-              {item.promptVersion ? ` · prompt ${item.promptVersion.slice(0, 14)}…` : ' · template (no LLM)'}
-              {' · '}<span className="cite">cites {item.citation?.locator}</span>
-            </small>
-          </footer>
-        </article>
-      ))}
+      {items.map(item => <NarrativeArticle key={item.id} item={item} />)}
+    </section>
+  );
+}
+
+function ChallengeSection({ items }) {
+  if (items.length === 0) return null;
+  return (
+    <section className="block">
+      <div className="sec-head">
+        <h2 className="sec-title">Challenge</h2>
+        <span className="sec-kicker">Agent #8</span>
+      </div>
+      {items.map(item => <ChallengeArticle key={item.id} item={item} />)}
+    </section>
+  );
+}
+
+function ReviewSection({ items }) {
+  if (items.length === 0) return null;
+  return (
+    <section className="block">
+      <div className="sec-head">
+        <h2 className="sec-title">Review</h2>
+        <span className="sec-kicker">Agent #9</span>
+      </div>
+      {items.map(item => <ReviewArticle key={item.id} item={item} />)}
     </section>
   );
 }
