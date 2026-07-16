@@ -25,4 +25,7 @@ public enum HealthArea
 
     /// <summary>Data-quality health (missing fields, staleness). Data Quality agent (#2).</summary>
     DataQuality = 4,
+
+    /// <summary>Decision health (overdue / due-soon decisions, blocked work). Decision agent.</summary>
+    Decision = 5,
 }

@@ -51,13 +51,17 @@ public sealed class FinancialSkill : IAgentSkill<AnalysisInput, IReadOnlyList<Fi
             }
         }
 
-        var exposure = lines.Where(l => l.Forecast > l.Budget).Sum(l => l.Forecast - l.Budget);
+        var overLines = lines.Where(l => l.Forecast > l.Budget).ToList();
+        var exposure = overLines.Sum(l => l.Forecast - l.Budget);
         if (exposure > 0)
         {
-            var source = lines.First(l => l.Forecast > l.Budget).Source;
-            findings.Add(Finding(slice, confidence,
+            var currency = overLines.First().Currency;
+            // Carry the amount + currency as a typed metric so the L1 roll-up can sum exposures without
+            // parsing the summary string; currency is null when the source omits it (no fabrication).
+            findings.Add(FindingFactory.Analysis(slice, "Financial",
                 $"Total financial exposure across budget lines is {exposure:N0}.",
-                source, Severity.Amber));
+                overLines[0].Source, confidence, HealthArea.Budget, Severity.Amber,
+                metricValue: exposure, metricUnit: currency));
         }
 
         return Task.FromResult<IReadOnlyList<Finding>>(findings);

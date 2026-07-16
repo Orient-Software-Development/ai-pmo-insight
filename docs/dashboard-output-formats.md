@@ -99,11 +99,11 @@ formula-produced**. Only the **prose** — narrative, challenge, review — is L
 | 1 | Portfolio health (G/A/R) | Segmented RAG bar + legend + counts | 🔢 | `ScorePortfolio` → count of `HealthScore.FinalBucket` | ✅ |
 | 2 | Projects needing intervention | Table, worst-first; severity chip + cited reason | 🔢 | `ScorePortfolio.InterventionView` | ✅ |
 | + | Confidence (avg) + Needs-PM-Review | Number `%` + count | 🔢 | mean `HealthScore.Confidence` vs `ConfidenceFloor` | ✅ |
-| 3 | Financial exposure (€) | Currency number | 🔢 | `FinancialSkill` Σ(forecast−budget) — in `Finding.Summary` | 🔷 planned |
-| 4 | Resource / key-person | Chip + count | 🔢 | `ResourceSkill` over `slice.Data.Assignments` (concentration) | 🔷 planned |
-| 5 | Decision backlog | Count + table | 🔢 | planned `DecisionSkill` over `decisions` | 🔷 planned |
-| 6 | Client / commercial risk | Grouped list (proxy) | 🔢 | proxy: at-risk projects by `ProjectRecord.Customer` · true signal 🔷 needs client | 🔷 planned |
-| 7 | Recommended actions | Owner · deadline · action card | 🔀 | `NarrativeSkill.Recommendation` — flattened into `Finding.Summary` | 🔷 planned |
+| 3 | Financial exposure (€) | Currency number | 🔢 | `ScorePortfolio` sums `MetricValue` of Financial exposure findings (#46) | ✅ |
+| 4 | Resource / key-person | Table (person · count · band) | 🔢 | `ScorePortfolio` dedupes `ResourceSkill` concentration findings by person | ✅ (× absence follow-on) |
+| 5 | Decision backlog | Count | 🔢 | `ScorePortfolio` counts `DecisionSkill` findings (#45+#47) | ✅ |
+| 6 | Client / commercial risk | Grouped table (proxy) | 🔢 | at-risk projects grouped by customer (Narrative-finding channel), labelled | ✅ proxy (true signal 🔵 needs client) |
+| 7 | Recommended actions | Owner · deadline · action card | 🔀 | `NarrativeSkill.Recommendation` → `MetricDetail` (#48) | 🟡 structured; portfolio roll-up of recommendations pending |
 
 ## Level 2 — Individual Project Dashboard
 
@@ -114,9 +114,9 @@ formula-produced**. Only the **prose** — narrative, challenge, review — is L
 | 4 | Risks & issues | Table rows; severity chip + citation | 🔀 | `RiskAndIssueSkill` (`RaidItemRecord` + minutes) | ✅ |
 | 3 | Key deviations (budget/time/scope/risks/resources) | Findings table | 🔢 | Financial + Status + Risk + Resource findings | 🟡 4/5 — Scope has no data/rule |
 | 5 | Upcoming milestones | Finding rows | 🔢 | `StatusSkill` over `MilestoneRecord.DueDate` | 🐞 ignores `Status`/baseline/`is_critical` |
-| 7 | AI recommendation | Prose blob today | 🔀 | `NarrativeSkill.Recommendation` (flattened) | 🟡 structured but flattened |
+| 7 | AI recommendation | Owner/deadline/action + prose | 🔀 | `NarrativeSkill.Recommendation` → `MetricDetail` (#48, built) + summary | 🟡 structured; L2 panel rendering pending |
 | 2 | This-period progress | — | 🔢 | planned run-over-run delta + 🔷 "activity" threshold (client) | 🔷 planned |
-| 6 | Decisions needed (owner/deadline/consequence) | Placeholder | 🔢 | planned `DecisionSkill` | 🔷 planned |
+| 6 | Decisions needed (owner/deadline/consequence) | Findings rows | 🔢 | `DecisionSkill` (built, #47) — flows to the findings read | 🟡 findings produced; dedicated owner/deadline panel pending |
 | — | Challenge (US-9) | Prose critique list | 🤖 | `ChallengeSkill` | ✅ |
 | — | Review (US-9) | Per-persona question list | 🤖 | `ReviewSkill` | ✅ |
 
@@ -147,20 +147,20 @@ or structural gap (no falsehood) · **Low** = a threshold/tuning choice differin
 - **Formula:** per area, take the worst severity → map to a number (Green 100 · Amber 70 · Red 30);
   weight-normalised average over the areas present → bucket; then apply override floors (worst-case).
 - **Thresholds — actual shipped placeholder** (`appsettings.json` → `HealthScoring`, `IsPlaceholder: true`):
-  weights **Schedule 20 · Budget 30 · Risk 30 · Resource 15 · DataQuality 5** (total 100). Buckets: ≥80
-  Green · ≥60 Amber · else Red. Confidence: Low 30 / Medium 70 / High 100; **`ConfidenceFloor = 50`** →
-  aggregate confidence below 50 flags "Needs PM Review" (a **separate** check, *not* an override).
-- **Overrides — actual (3 wired), generic `{ Area, WhenSeverityAtLeast, Floor }`:**
-  Budget ≥Red → floor **Red** · Schedule ≥Red → floor **Amber** · Risk ≥Red → floor **Red**.
+  weights **Schedule 20 · Budget 25 · Risk 25 · Resource 15 · Decision 10 · DataQuality 5** (total 100;
+  Decision added + Budget/Risk rebalanced 30→25 in `add-decisions-agent`). Buckets: ≥80 Green · ≥60 Amber ·
+  else Red. Confidence: Low 30 / Medium 70 / High 100; **`ConfidenceFloor = 50`** → aggregate confidence
+  below 50 flags "Needs PM Review" (a **separate** check, *not* an override).
+- **Overrides — actual (4 wired), generic `{ Area, WhenSeverityAtLeast, Floor }`:**
+  Budget ≥Red → floor **Red** · Schedule ≥Red → floor **Amber** · Risk ≥Red → floor **Red** ·
+  Decision ≥Red → floor **Amber** (`key-decision-overdue`, added in `add-decisions-agent`).
 - **Plan Reference:** the plan doc's "Project Health Scoring — EXAMPLE!" table: weights
   20/20/15/15/15/10/5 over **7** areas; 5 named overrides incl. "key decision overdue+blocking" and
   "data confidence very low".
 - **Implementation:** `HealthScoringService.cs`; numbers bound from `HealthScoringOptions`.
-- **Known Divergence (Medium):** the shipped weights use **5 areas, not the plan-doc's 7** — Scope (15%) and
-  Decisions (10%) are absent (`HealthArea` has no bucket for them), redistributed into Budget/Risk (both
-  bumped to 30). So **25% of the plan-doc weight is not scored.** Two plan-doc overrides are also not wired:
-  "key decision overdue + blocking" is **inexpressible** (no Decision area), and "data confidence very low"
-  is handled by the `ConfidenceFloor` check, not the override list.
+- **Known Divergence (Medium):** the shipped weights now cover **6 areas** (Decision added); only **Scope
+  (15%) remains absent** from the plan-doc's 7 (blocked on a client Scope-RAG rule). "Data confidence very
+  low" is still handled by the `ConfidenceFloor` check, not the override list (by design).
 - **Known Divergence (High, cross-refs Schedule):** the `critical-milestone-missed` override (Schedule
   ≥Red → Amber) **is** wired, but the Status agent bug renders a missed critical milestone as a Green
   "due soon" finding — so the Schedule area never reaches Red for that case, and **the override never fires
@@ -227,30 +227,32 @@ or structural gap (no falsehood) · **Low** = a threshold/tuning choice differin
   plan-doc's first example); consistency is **orphan-only** — no budget/time/resource cross-agreement, and
   no duplicate detection yet. (L3 register.)
 
-### Decision — planned agent (not yet built)
-- **Purpose:** overdue / due-soon decisions, blocked-by count.
-- **Thresholds:** overdue = past `needed_by` and not made; due soon = within 1–2 weeks; override: key
-  decision overdue + blocking → min Amber.
+### Decision — `DecisionSkill` (HealthArea.Decision) — ✅ built (`add-decisions-agent`, #45+#47)
+- **Purpose:** overdue / due-soon decisions.
+- **Thresholds:** overdue = `NeededBy` past the run's as-of date and `Status` not "Approved" → **Red**;
+  due-soon = `NeededBy` within 14 days and not approved → **Amber**; else no finding. Each cites its
+  `Decisions!row`.
+- **Override:** `key-decision-overdue` (Decision ≥Red → floor Amber) — wired.
 - **Plan Reference:** the Decision KPI table + the "key decision overdue and blocking" override.
-- **Implementation:** none yet — data present in `decisions` (status / needed_by / owner / consequence);
-  blocked on adding `HealthArea.Decision`. (L1 register §#5.)
+- **Implementation:** `DecisionSkill` (parallel stage); `DecisionRecord` parsed from a `Decisions` sheet by
+  `ExcelProjectParser`; `HealthArea.Decision` scored at weight 10 (EXAMPLE). Recovers the missed D-1002-1
+  OVERDUE signal. The L1 decision-backlog **count** roll-up is still slice E of `add-l1-portfolio-signals`.
 
 ---
 
 ## Structured Values Flattened into Text
 
-The `Finding` record carries only `Summary / Area / Severity / Confidence / Citation` — no typed numeric or
-metadata field. Three formula outputs are computed correctly, then flattened into the `Summary` string, so
-the dashboard can't render them as structured values:
+The `Finding` metric field (#46, landed) gives computed values a typed home. Status of the three cases that
+were formerly trapped in the `Summary` string:
 
-| Output | Computed by | Flattened into |
-|--------|-------------|----------------|
-| Financial exposure (€) | Financial agent | `"…exposure is 80,000."` |
-| Staleness age (days) | Data Quality agent | `"…stale… N days ago."` |
-| Recommendation owner/deadline | Narrative agent | `"Recommendation (owner, by deadline): …"` |
+| Output | Computed by | Status |
+|--------|-------------|--------|
+| Financial exposure (€) | Financial agent | ✅ on `MetricValue`/`MetricUnit` (#46) |
+| Recommendation owner/deadline/action | Narrative agent | ✅ on `MetricDetail` (#48) |
+| Staleness age (days) | Data Quality agent | 🔷 still in the summary — L3 follow-on to stamp `MetricValue` |
 
-**One `Finding`-shape change** (typed metric/metadata fields) surfaces all three as structured outputs at
-once — the highest-leverage single change across the three dashboards.
+**The one `Finding`-shape change (#46)** unlocked all three; two now carry structured data, the L3 Age is a
+small remaining follow-on.
 
 ---
 

@@ -35,6 +35,21 @@ public class HealthScoringOverrideTests
     }
 
     [Fact]
+    public void Overdue_key_decision_floors_the_bucket_to_amber()
+    {
+        // Raw is Green (all filler areas Green); a Red Decision finding trips "key-decision-overdue →
+        // minimum Amber". The floor fires regardless of the Decision area's weight.
+        var decision = AnalysisFinding(HealthArea.Decision, Severity.Red, Run, locator: "Decisions!D-1002-1");
+        var findings = GreenFillers().Append(decision).ToArray();
+
+        var score = new HealthScoringService(Options()).Score("ALPHA", findings)!;
+
+        score.RawBucket.Should().Be(Severity.Green);
+        score.FinalBucket.Should().Be(Severity.Amber);
+        score.AppliedOverrides.Should().Contain(o => o.RuleId == "key-decision-overdue");
+    }
+
+    [Fact]
     public void Worst_case_floor_wins_when_overrides_collide()
     {
         // Schedule Red (→ min Amber) AND Budget Red (→ min Red) both fire; the Red floor wins.

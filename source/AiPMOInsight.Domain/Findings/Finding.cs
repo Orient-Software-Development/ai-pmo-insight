@@ -54,6 +54,22 @@ public sealed class Finding
     /// </summary>
     public Severity? Severity { get; init; }
 
+    /// <summary>
+    /// Optional typed numeric metric this finding computed — e.g. a financial exposure amount, a staleness
+    /// age in days, a count. Paired with <see cref="MetricUnit"/>. Null when the finding carries no number.
+    /// Lets consumers sum/sort on the value instead of parsing it back out of <see cref="Summary"/>.
+    /// </summary>
+    public decimal? MetricValue { get; init; }
+
+    /// <summary>The unit for <see cref="MetricValue"/> (e.g. "EUR", "days", "count"); null when absent.</summary>
+    public string? MetricUnit { get; init; }
+
+    /// <summary>
+    /// Optional structured detail that is not a single number — a small key/value map, e.g. a
+    /// recommendation's owner / deadline / action. Null when the finding carries no such detail.
+    /// </summary>
+    public IReadOnlyDictionary<string, string>? MetricDetail { get; init; }
+
     public required DateTimeOffset CreatedAt { get; init; }
 
     public static Finding Create(
@@ -67,7 +83,10 @@ public sealed class Finding
         Confidence confidence,
         string? promptVersion = null,
         HealthArea? area = null,
-        Severity? severity = null)
+        Severity? severity = null,
+        decimal? metricValue = null,
+        string? metricUnit = null,
+        IReadOnlyDictionary<string, string>? metricDetail = null)
     {
         if (string.IsNullOrWhiteSpace(projectKey))
         {
@@ -127,6 +146,9 @@ public sealed class Finding
             PromptVersion = promptVersion,
             Area = area,
             Severity = severity,
+            MetricValue = metricValue,
+            MetricUnit = metricUnit,
+            MetricDetail = metricDetail,
             CreatedAt = now,
         };
     }

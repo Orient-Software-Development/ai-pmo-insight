@@ -9,12 +9,13 @@ namespace AiPMOInsight.Application.Tests.Analysis;
 
 public class StatusAgentTests
 {
-    private static MilestoneRecord Milestone(string name, string? due, string? completed, string? dependsOn = null) => new()
+    private static MilestoneRecord Milestone(string name, string? due, string? completed, string? dependsOn = null, string? status = null) => new()
     {
         ProjectKey = "ALPHA",
         Name = name,
         DueDate = due is null ? null : DateTimeOffset.Parse(due),
         CompletedDate = completed is null ? null : DateTimeOffset.Parse(completed),
+        Status = status,
         DependsOn = dependsOn,
         Source = new SourceRef($"Milestones!{name}"),
     };
@@ -96,6 +97,42 @@ public class StatusAgentTests
         var findings = await Run(DataQualitySignal.Clean(), Milestone("Design", "2026-05-01", "2026-05-04"));
 
         findings.Should().Contain(f => f.Summary.Contains("late", StringComparison.OrdinalIgnoreCase)
+                                       && f.Severity == Severity.Green);
+    }
+
+    [Fact]
+    public async Task A_missed_milestone_is_red_even_when_its_due_date_is_upcoming()
+    {
+        // Due 5 days out (inside the "due soon" window) but recorded as Missed — the old code rendered
+        // this as a Green informational "due soon". A missed milestone must be Red and not lost in green.
+        var findings = await Run(
+            DataQualitySignal.Clean(),
+            Milestone("Cutover rehearsal", due: "2026-07-15", completed: null, status: "Missed"));
+
+        findings.Should().Contain(f => f.Severity == Severity.Red);
+        findings.Should().NotContain(f => f.Summary.Contains("due soon", StringComparison.OrdinalIgnoreCase)
+                                          && f.Severity == Severity.Green);
+    }
+
+    [Fact]
+    public async Task An_at_risk_milestone_is_amber()
+    {
+        var findings = await Run(
+            DataQualitySignal.Clean(),
+            Milestone("Certification", due: "2026-07-20", completed: null, status: "At Risk"));
+
+        findings.Should().Contain(f => f.Severity == Severity.Amber);
+    }
+
+    [Fact]
+    public async Task An_upcoming_milestone_with_no_adverse_status_is_still_informational_green()
+    {
+        // Regression guard: a plain upcoming milestone keeps the existing Green "due soon" behaviour.
+        var findings = await Run(
+            DataQualitySignal.Clean(),
+            Milestone("Kickoff", due: "2026-07-18", completed: null));
+
+        findings.Should().Contain(f => f.Summary.Contains("due soon", StringComparison.OrdinalIgnoreCase)
                                        && f.Severity == Severity.Green);
     }
 }

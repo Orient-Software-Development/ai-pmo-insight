@@ -45,6 +45,28 @@ public class DataCollectorParserTests
     }
 
     [Fact]
+    public void Excel_workbook_parses_the_decisions_sheet()
+    {
+        var data = Parser.Parse("orbit.xlsx", OrbitFixtureBuilder.Workbook());
+
+        data.Decisions.Should().ContainSingle();
+        data.Decisions[0].ProjectKey.Should().Be("ALPHA");
+        data.Decisions[0].Status.Should().Be("Overdue");
+        data.Decisions[0].Owner.Should().Be("Steering Committee");
+        data.Decisions[0].NeededBy.Should().Be(DateTimeOffset.Parse("2026-06-20", System.Globalization.CultureInfo.InvariantCulture, System.Globalization.DateTimeStyles.AssumeUniversal));
+        data.Decisions[0].Source.Locator.Should().Contain("Decisions");
+    }
+
+    [Fact]
+    public void A_workbook_with_no_decisions_sheet_yields_no_decision_records()
+    {
+        // The XML path has no Decisions concept → empty, not an error.
+        var data = Parser.Parse("orbit.xml", OrbitFixtureBuilder.OrbitXml());
+
+        data.Decisions.Should().BeEmpty();
+    }
+
+    [Fact]
     public void Orbit_xml_parses_into_raid_items()
     {
         var data = Parser.Parse("orbit.xml", OrbitFixtureBuilder.OrbitXml());

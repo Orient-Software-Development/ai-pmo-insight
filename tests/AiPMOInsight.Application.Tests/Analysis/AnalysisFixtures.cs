@@ -40,7 +40,8 @@ internal static class AnalysisFixtures
         IReadOnlyList<BudgetLineRecord>? budgetLines = null,
         IReadOnlyList<AssignmentRecord>? assignments = null,
         IReadOnlyList<MinuteEntryRecord>? minutes = null,
-        IReadOnlyList<RaidItemRecord>? raidItems = null) => new()
+        IReadOnlyList<RaidItemRecord>? raidItems = null,
+        IReadOnlyList<DecisionRecord>? decisions = null) => new()
     {
         Projects = projects ?? [],
         Milestones = milestones ?? [],
@@ -48,5 +49,6 @@ internal static class AnalysisFixtures
         Assignments = assignments ?? [],
         Minutes = minutes ?? [],
         RaidItems = raidItems ?? [],
+        Decisions = decisions ?? [],
     };
 }

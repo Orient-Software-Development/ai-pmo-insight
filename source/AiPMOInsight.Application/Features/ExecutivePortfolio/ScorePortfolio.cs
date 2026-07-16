@@ -23,7 +23,11 @@ public static class ScorePortfolio
         int Green,
         int NeedsPmReview,
         double AverageConfidence,
-        IReadOnlyList<InterventionView> Intervention);
+        IReadOnlyList<InterventionView> Intervention,
+        FinancialExposureView FinancialExposure,
+        int DecisionBacklog,
+        IReadOnlyList<KeyPersonView> KeyPersons,
+        IReadOnlyList<CustomerExposureView> CustomerExposure);
 
     /// <summary>One project needing intervention: its status colour, confidence, and a cited reason.</summary>
     public sealed record InterventionView(
@@ -32,6 +36,15 @@ public static class ScorePortfolio
         double Confidence,
         string Reason,
         string CitationLocator);
+
+    /// <summary>Portfolio financial exposure — the summed forecast-overrun amount + its currency.</summary>
+    public sealed record FinancialExposureView(decimal Amount, string? Currency);
+
+    /// <summary>A person concentrated across many projects: the count and the worst RAG band seen.</summary>
+    public sealed record KeyPersonView(string Person, int ProjectCount, string Status);
+
+    /// <summary>Relationship exposure: a customer and how many of its projects are at risk (Red/Amber).</summary>
+    public sealed record CustomerExposureView(string Customer, int AtRiskCount);
 
     internal sealed class Handler(IFindingRepository findings, HealthScoringService scoring)
         : IRequestHandler<Query, Result>
@@ -68,7 +81,53 @@ public static class ScorePortfolio
                 .Select(s => ToIntervention(s.Score, s.Findings))
                 .ToList();
 
-            return new Result(red, amber, green, needsReview, avgConfidence, intervention);
+            // Additional backed L1 signals (slices D/E). Each reads the latest run's findings — the same
+            // run the score used — so nothing double-counts across historical runs.
+            var latest = scored
+                .Select(s => s.Findings.Where(f => f.RunId == s.Score.RunId).ToList())
+                .ToList();
+            var latestFindings = latest.SelectMany(f => f).ToList();
+
+            // Financial exposure: sum the amount metric the Financial agent stamps on its exposure finding.
+            var exposureFindings = latestFindings
+                .Where(f => f.ProducingAgent == "Financial" && f.MetricValue is not null)
+                .ToList();
+            var exposure = new FinancialExposureView(
+                exposureFindings.Sum(f => f.MetricValue!.Value),
+                exposureFindings.Select(f => f.MetricUnit).FirstOrDefault(u => u is not null));
+
+            // Decision backlog: count of Decision-area findings (overdue / due-soon) across latest runs.
+            var decisionBacklog = latestFindings.Count(f => f.Area == HealthArea.Decision);
+
+            // Key-person concentration: distinct people from the Resource agent's concentration findings
+            // (person on MetricDetail, project count on MetricValue), worst band per person.
+            var keyPersons = latestFindings
+                .Where(f => f.ProducingAgent == "Resource" && f.MetricDetail is not null
+                            && f.MetricDetail.ContainsKey("person"))
+                .GroupBy(f => f.MetricDetail!["person"], StringComparer.OrdinalIgnoreCase)
+                .Select(g => new KeyPersonView(
+                    g.Key,
+                    (int)g.Max(f => f.MetricValue ?? 0),
+                    g.Max(f => f.Severity ?? Severity.Green).ToString()))
+                .OrderByDescending(k => k.ProjectCount)
+                .ToList();
+
+            // Customer exposure: at-risk (Red/Amber) projects grouped by customer, read from each project's
+            // Narrative finding (the one finding guaranteed per analyzed project). A labelled relationship
+            // proxy — NOT true commercial risk (which needs contract/margin/SLA data the findings lack).
+            var customerExposure = scored
+                .Where(s => s.Score.FinalBucket is Severity.Red or Severity.Amber)
+                .Select(s => s.Findings.FirstOrDefault(f =>
+                    f.RunId == s.Score.RunId && f.Kind == FindingKind.Narrative
+                    && f.MetricDetail is not null && f.MetricDetail.ContainsKey("customer"))?.MetricDetail?["customer"])
+                .Where(c => !string.IsNullOrWhiteSpace(c))
+                .GroupBy(c => c!, StringComparer.OrdinalIgnoreCase)
+                .Select(g => new CustomerExposureView(g.Key, g.Count()))
+                .OrderByDescending(c => c.AtRiskCount)
+                .ToList();
+
+            return new Result(red, amber, green, needsReview, avgConfidence, intervention,
+                exposure, decisionBacklog, keyPersons, customerExposure);
         }
 
         /// <summary>

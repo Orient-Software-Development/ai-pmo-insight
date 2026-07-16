@@ -6,11 +6,14 @@ import { bucketColour } from '../health';
 // (docs/designs/phase5-wireframe-v2.html, data-page="l1"). Consumes GET /api/portfolio.
 //
 // Presentation-only boundary (same as the L2 view): panels the roll-up can back are populated from live
-// data (portfolio health G/A/R, confidence + Needs-PM-Review count, projects needing intervention);
-// panels that exceed the current finding shape (€ financial exposure, per-decision detail, key-person
-// risk, owned/dated recommendations) render a clear "not yet captured — follow-on" state, never
-// fabricated figures.
-const EMPTY = { red: 0, amber: 0, green: 0, needsPmReview: 0, averageConfidence: 0, intervention: [] };
+// data (portfolio health G/A/R, confidence + Needs-PM-Review count, projects needing intervention,
+// financial exposure €, decision backlog, key-person concentration, and a labelled customer-exposure
+// proxy). Panels the roll-up still cannot back (owned/dated recommendations at portfolio level, true
+// commercial risk) render a clear "not yet captured — follow-on" state, never fabricated figures.
+const EMPTY = {
+  red: 0, amber: 0, green: 0, needsPmReview: 0, averageConfidence: 0, intervention: [],
+  financialExposure: { amount: 0, currency: null }, decisionBacklog: 0, keyPersons: [], customerExposure: [],
+};
 
 export function ExecutivePortfolio() {
   const [data, setData] = useState(EMPTY);
@@ -59,9 +62,17 @@ export function ExecutivePortfolio() {
           </div>
         </div>
 
-        <FlaggedCell label="Financial exposure" note="€ exposure not yet captured — findings carry severity, not amounts (follow-on)." />
+        <div className="summary-cell">
+          <div className="summary-label">Financial exposure</div>
+          <div className="summary-value">{formatExposure(data.financialExposure)}</div>
+          <div className="summary-sub">forecast over budget, summed across the portfolio</div>
+        </div>
 
-        <FlaggedCell label="Decisions blocking" note="Per-decision age/owner not yet captured (follow-on)." />
+        <div className="summary-cell">
+          <div className="summary-label">Decisions blocking</div>
+          <div className="summary-value">{data.decisionBacklog}</div>
+          <div className="summary-sub">overdue or due-soon decisions</div>
+        </div>
 
         <div className="summary-cell">
           <div className="summary-label">Confidence (avg)</div>
@@ -99,28 +110,79 @@ export function ExecutivePortfolio() {
         </table>
       </section>
 
-      {/* ── FLAGGED sections: match v2 layout, no fabricated data ────────────────────────────── */}
+      {/* ── Key-person concentration (BACKED) ───────────────────────────────────────────────── */}
       <section className="block">
         <div className="sec-head">
-          <h2 className="sec-title">Where the pressure is</h2>
-          <span className="sec-kicker">Money · Decisions · People</span>
+          <h2 className="sec-title">Key-person concentration</h2>
+          <span className="sec-kicker">People spread across many projects · worst first</span>
         </div>
-        <div className="flagged-grid">
-          <FlaggedPanel title="Financial exposure (M€)" />
-          <FlaggedPanel title="Decision backlog (days open)" />
-          <FlaggedPanel title="Key-person risk (alloc × absence)" />
-        </div>
+        {data.keyPersons.length === 0 ? (
+          <p><em>No key-person concentration flagged.</em></p>
+        ) : (
+          <table className="records">
+            <thead>
+              <tr><th>Person</th><th>Projects</th><th>Band</th></tr>
+            </thead>
+            <tbody>
+              {data.keyPersons.map(k => (
+                <tr key={k.person} className={`severity ${bucketColour(k.status)}`}>
+                  <td><strong>{k.person}</strong></td>
+                  <td><span className="conf">{k.projectCount}</span></td>
+                  <td><span className={`sev ${bucketColour(k.status)}`}>{k.status}</span></td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
+        <p className="flagged-note">Concentration only (project count). The × absence dimension of
+          key-person risk isn’t yet captured in the data — a follow-on.</p>
       </section>
 
+      {/* ── Customer exposure proxy (BACKED, LABELLED) ──────────────────────────────────────── */}
+      <section className="block">
+        <div className="sec-head">
+          <h2 className="sec-title">Customer exposure</h2>
+          <span className="sec-kicker">At-risk projects grouped by customer · relationship exposure</span>
+        </div>
+        {data.customerExposure.length === 0 ? (
+          <p><em>No customers with at-risk projects.</em></p>
+        ) : (
+          <table className="records">
+            <thead>
+              <tr><th>Customer</th><th>At-risk projects</th></tr>
+            </thead>
+            <tbody>
+              {data.customerExposure.map(c => (
+                <tr key={c.customer}>
+                  <td><strong>{c.customer}</strong></td>
+                  <td><span className="conf">{c.atRiskCount}</span></td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
+        <p className="flagged-note"><strong>Relationship exposure</strong>, not true commercial risk:
+          it counts at-risk projects per customer. Contract value / margin / SLA-penalty exposure isn’t in
+          the data — a kick-off question, not fabricated here.</p>
+      </section>
+
+      {/* ── STILL FLAGGED: portfolio-level owned/dated recommendations ───────────────────────── */}
       <section className="block">
         <div className="sec-head">
           <h2 className="sec-title">Recommended actions</h2>
           <span className="sec-kicker">Owner · Deadline · Confidence</span>
         </div>
-        <FlaggedPanel title="Owned &amp; dated recommendations" wide />
+        <FlaggedPanel title="Portfolio-level owned &amp; dated recommendations" wide />
       </section>
     </div>
   );
+}
+
+// Formats the portfolio exposure amount with its currency; "—" when nothing is over budget.
+function formatExposure({ amount, currency }) {
+  if (!amount) return '—';
+  const n = Math.round(amount).toLocaleString();
+  return currency ? `${currency} ${n}` : n;
 }
 
 // Segmented RAG bar; widths are proportions of the scored total (0 total → empty bar).
@@ -131,17 +193,6 @@ function RagBar({ red, amber, green, total }) {
       <span className="seg rag-red" style={{ width: `${pct(red)}%` }} />
       <span className="seg rag-amber" style={{ width: `${pct(amber)}%` }} />
       <span className="seg rag-green" style={{ width: `${pct(green)}%` }} />
-    </div>
-  );
-}
-
-// A summary-strip cell whose data the finding shape can't yet back.
-function FlaggedCell({ label, note }) {
-  return (
-    <div className="summary-cell">
-      <div className="summary-label">{label}</div>
-      <div className="summary-value flagged">—</div>
-      <div className="summary-sub flagged-note">{note}</div>
     </div>
   );
 }

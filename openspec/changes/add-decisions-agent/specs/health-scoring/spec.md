@@ -3,22 +3,28 @@
 ### Requirement: Decisions is a scored health area
 
 The scoring configuration SHALL include a `Decision` health area with a configured weight (a placeholder
-`EXAMPLE` value until the PMO agrees real numbers). Decision-area findings SHALL contribute to the weighted
-score exactly like the other areas — reduced to their worst severity, weighted, and weight-normalised over
-the areas present.
+`EXAMPLE` value; `IsPlaceholder` stays true). Adding the Decision weight SHALL keep the configured weights
+summing to `WeightTotal` (the startup validation enforces this), so the other weights are rebalanced rather
+than exceeded. Decision-area findings SHALL contribute to the weighted score exactly like the other areas —
+reduced to their worst severity, weighted, and weight-normalised over the areas present.
 
 #### Scenario: Decision findings contribute to the weighted score
 
 - **WHEN** a project's latest run has an `Area == Decision` finding and the config includes a Decision weight
 - **THEN** the Decision area participates in the weighted, weight-normalised score alongside the other areas
 
+#### Scenario: Adding the Decision weight keeps the configuration valid
+
+- **WHEN** the Decision weight is added to the scoring configuration
+- **THEN** the configured weights still sum to `WeightTotal` and startup validation passes
+
 ### Requirement: Key-decision-overdue override applies a worst-case floor
 
 The scoring configuration SHALL support an override that raises a project's health to at least a configured
 floor (per the plan doc: minimum Amber) when a Decision-area finding at or above the configured severity is
-present ("key decision overdue and blocking work"). The override SHALL use the existing generic
-`{ Area, WhenSeverityAtLeast, Floor }` model and behave as a worst-case floor (never lowering the bucket),
-and it SHALL be auditable like the other overrides.
+present ("key decision overdue"). The override SHALL use the existing generic
+`{ Area, WhenSeverityAtLeast, Floor }` model, behave as a worst-case floor (never lowering the bucket), and
+be auditable like the other overrides — recording the tripping finding.
 
 #### Scenario: An overdue key decision floors the bucket to Amber
 

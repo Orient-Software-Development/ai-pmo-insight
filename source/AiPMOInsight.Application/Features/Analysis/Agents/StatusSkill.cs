@@ -33,6 +33,11 @@ public sealed class StatusSkill : IAgentSkill<AnalysisInput, IReadOnlyList<Findi
                 continue; // Data Quality already flagged the missing due date.
             }
 
+            // A recorded adverse status (e.g. "Missed", "At Risk") is authoritative regardless of the date
+            // window — a missed milestone that has been re-baselined to a future date must not be rendered as
+            // a benign green "due soon". Missed → Red, At Risk → Amber; it floors any date-derived severity.
+            var statusSeverity = AdverseStatusSeverity(milestone.Status);
+
             if (milestone.CompletedDate is { } completed)
             {
                 if (completed > due)
@@ -40,7 +45,7 @@ public sealed class StatusSkill : IAgentSkill<AnalysisInput, IReadOnlyList<Findi
                     var days = (int)(completed - due).TotalDays;
                     findings.Add(Finding(slice, confidence,
                         $"Milestone '{milestone.Name}' completed {days} days late ({Severity(days)} schedule variance).",
-                        milestone.Source, Band(days)));
+                        milestone.Source, Worst(Band(days), statusSeverity)));
                 }
 
                 continue;
@@ -51,7 +56,14 @@ public sealed class StatusSkill : IAgentSkill<AnalysisInput, IReadOnlyList<Findi
                 var days = (int)(asOf - due).TotalDays;
                 findings.Add(Finding(slice, confidence,
                     $"Milestone '{milestone.Name}' is overdue by {days} days ({Severity(days)} delay).",
-                    milestone.Source, Band(days)));
+                    milestone.Source, Worst(Band(days), statusSeverity)));
+            }
+            else if (statusSeverity is { } adverse)
+            {
+                // Not yet due, but recorded as missed/at-risk — report the status, not a green heads-up.
+                findings.Add(Finding(slice, confidence,
+                    $"Milestone '{milestone.Name}' is marked '{milestone.Status}' (schedule risk).",
+                    milestone.Source, adverse));
             }
             else if (due <= asOf.AddDays(UpcomingWindowDays))
             {
@@ -103,6 +115,25 @@ public sealed class StatusSkill : IAgentSkill<AnalysisInput, IReadOnlyList<Findi
         >= 7 => Domain.Findings.Severity.Amber,
         _ => Domain.Findings.Severity.Green,
     };
+
+    /// <summary>
+    /// The RAG severity implied by a milestone's recorded status word, or null when the status is
+    /// absent/benign. "Missed" is a Red schedule signal; "At Risk" an Amber one. Case-insensitive.
+    /// </summary>
+    private static Severity? AdverseStatusSeverity(string? status)
+    {
+        var text = status?.Trim().ToLowerInvariant();
+        return text switch
+        {
+            "missed" => Domain.Findings.Severity.Red,
+            "at risk" or "atrisk" or "at-risk" => Domain.Findings.Severity.Amber,
+            _ => null,
+        };
+    }
+
+    /// <summary>The worse (higher-ordinal) of a date-derived severity and an optional status severity.</summary>
+    private static Severity Worst(Severity band, Severity? status) =>
+        status is { } s && (int)s > (int)band ? s : band;
 
     private static Finding Finding(
         ProjectSlice slice, Confidence confidence, string summary, SourceRef source, Severity severity) =>

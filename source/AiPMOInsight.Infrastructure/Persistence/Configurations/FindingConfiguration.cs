@@ -1,4 +1,6 @@
+using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.ChangeTracking;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using AiPMOInsight.Domain.Findings;
 
@@ -68,6 +70,29 @@ internal sealed class FindingConfiguration : IEntityTypeConfiguration<Finding>
             .HasColumnName("severity")
             .HasConversion<string>()
             .HasMaxLength(10);
+
+        // Optional structured metric (add-finding-metric, #46). All nullable + additive. The typed
+        // value+unit let consumers sum/sort without parsing the summary; the detail map carries structured
+        // metadata (e.g. a recommendation's owner/deadline/action) as jsonb.
+        builder.Property(f => f.MetricValue)
+            .HasColumnName("metric_value");
+
+        builder.Property(f => f.MetricUnit)
+            .HasColumnName("metric_unit")
+            .HasMaxLength(20);
+
+        var detailComparer = new ValueComparer<IReadOnlyDictionary<string, string>?>(
+            (a, b) => JsonSerializer.Serialize(a, (JsonSerializerOptions?)null) == JsonSerializer.Serialize(b, (JsonSerializerOptions?)null),
+            v => v == null ? 0 : JsonSerializer.Serialize(v, (JsonSerializerOptions?)null).GetHashCode(),
+            v => v == null ? null : (IReadOnlyDictionary<string, string>)new Dictionary<string, string>((IDictionary<string, string>)v));
+
+        builder.Property(f => f.MetricDetail)
+            .HasColumnName("metric_detail")
+            .HasColumnType("jsonb")
+            .HasConversion(
+                v => v == null ? null : JsonSerializer.Serialize(v, (JsonSerializerOptions?)null),
+                v => v == null ? null : (IReadOnlyDictionary<string, string>)JsonSerializer.Deserialize<Dictionary<string, string>>(v, (JsonSerializerOptions?)null)!)
+            .Metadata.SetValueComparer(detailComparer);
 
         builder.Property(f => f.CreatedAt)
             .HasColumnName("created_at")

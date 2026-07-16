@@ -28,6 +28,27 @@ public class ResourceAgentTests
         return new ResourceSkill().ExecuteAsync(new AnalysisInput(slice, DataQualitySignal.Clean()), CancellationToken.None);
     }
 
+    // A PM assignment for a person on a specific project — used to build cross-project concentration.
+    private static AssignmentRecord PmIn(string project, string person) => new()
+    {
+        ProjectKey = project,
+        Person = person,
+        Role = "Project Manager",
+        AllocationPercent = 30,
+        CapacityPercent = 100,
+        OnLeave = false,
+        Source = new SourceRef($"Resources!{project}:{person}"),
+    };
+
+    // Analyse a specific project's slice over a portfolio-wide set of assignments.
+    private static Task<IReadOnlyList<Finding>> RunFor(string projectKey, params AssignmentRecord[] assignments)
+    {
+        var slice = AnalysisFixtures.Slice(projectKey: projectKey, data: AnalysisFixtures.Data(
+            projects: [AnalysisFixtures.Project()],
+            assignments: assignments));
+        return new ResourceSkill().ExecuteAsync(new AnalysisInput(slice, DataQualitySignal.Clean()), CancellationToken.None);
+    }
+
     [Fact]
     public async Task Flags_over_allocation_beyond_capacity()
     {
@@ -45,6 +66,19 @@ public class ResourceAgentTests
         var findings = await Run(Assign("Sam", "Engineer", allocation: 80));
 
         findings.Should().Contain(f => f.Summary.Contains("Project Manager", StringComparison.OrdinalIgnoreCase));
+    }
+
+    [Theory]
+    [InlineData("Project Management")] // the fixture value that the old Contains("Manager") match failed on
+    [InlineData("Project Manager")]
+    [InlineData("PM")]
+    public async Task A_project_manager_role_is_recognised(string pmRole)
+    {
+        // A project WITH a PM (under any of these role spellings) must not be flagged "no project manager".
+        var findings = await Run(Assign("Sam", pmRole, allocation: 40));
+
+        findings.Should().NotContain(f =>
+            f.Summary.Contains("No Project Manager", StringComparison.OrdinalIgnoreCase));
     }
 
     [Fact]
@@ -91,5 +125,50 @@ public class ResourceAgentTests
 
         findings.Should().Contain(f => f.Summary.Contains("leave", StringComparison.OrdinalIgnoreCase)
                                        && f.Severity == Severity.Red);
+    }
+
+    [Fact]
+    public async Task A_person_on_five_projects_is_a_red_concentration_risk()
+    {
+        // Anna is allocated across five distinct projects; analysing one of them (P1) surfaces the
+        // portfolio-wide concentration, attached to this project, at Red (5+ band).
+        var findings = await RunFor("P1",
+            PmIn("P1", "Anna"), PmIn("P2", "Anna"), PmIn("P3", "Anna"),
+            PmIn("P4", "Anna"), PmIn("P5", "Anna"));
+
+        findings.Should().Contain(f =>
+            f.Summary.Contains("Anna", StringComparison.OrdinalIgnoreCase)
+            && f.Summary.Contains("concentration", StringComparison.OrdinalIgnoreCase)
+            && f.Severity == Severity.Red);
+    }
+
+    [Fact]
+    public async Task A_person_on_three_projects_is_an_amber_concentration_risk()
+    {
+        var findings = await RunFor("P1", PmIn("P1", "Anna"), PmIn("P2", "Anna"), PmIn("P3", "Anna"));
+
+        findings.Should().Contain(f =>
+            f.Summary.Contains("concentration", StringComparison.OrdinalIgnoreCase)
+            && f.Severity == Severity.Amber);
+    }
+
+    [Fact]
+    public async Task A_person_on_two_projects_is_not_a_concentration_risk()
+    {
+        var findings = await RunFor("P1", PmIn("P1", "Bob"), PmIn("P2", "Bob"));
+
+        findings.Should().NotContain(f => f.Summary.Contains("concentration", StringComparison.OrdinalIgnoreCase));
+    }
+
+    [Fact]
+    public async Task Concentration_is_only_emitted_on_projects_the_person_is_on()
+    {
+        // Anna is on P2..P6 (5 projects) but NOT on P1; analysing P1 must not emit her concentration here.
+        var findings = await RunFor("P1",
+            PmIn("P1", "Bob"),
+            PmIn("P2", "Anna"), PmIn("P3", "Anna"), PmIn("P4", "Anna"),
+            PmIn("P5", "Anna"), PmIn("P6", "Anna"));
+
+        findings.Should().NotContain(f => f.Summary.Contains("Anna", StringComparison.OrdinalIgnoreCase));
     }
 }

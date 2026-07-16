@@ -16,7 +16,10 @@ public class FindingTests
         Confidence confidence = Confidence.Medium,
         string? promptVersion = null,
         HealthArea? area = HealthArea.Schedule,
-        Severity? severity = Severity.Amber) =>
+        Severity? severity = Severity.Amber,
+        decimal? metricValue = null,
+        string? metricUnit = null,
+        IReadOnlyDictionary<string, string>? metricDetail = null) =>
         Finding.Create(
             projectKey,
             summary,
@@ -28,7 +31,10 @@ public class FindingTests
             confidence,
             promptVersion,
             area,
-            severity);
+            severity,
+            metricValue,
+            metricUnit,
+            metricDetail);
 
     [Fact]
     public void Create_requires_a_citation()
@@ -139,6 +145,47 @@ public class FindingTests
     public void Create_throws_when_analysis_finding_has_no_severity()
     {
         var act = () => Create(kind: FindingKind.Analysis, area: HealthArea.Schedule, severity: null);
+
+        act.Should().Throw<ArgumentException>();
+    }
+
+    [Fact]
+    public void Create_accepts_an_optional_numeric_metric()
+    {
+        var finding = Create(metricValue: 80000m, metricUnit: "EUR");
+
+        finding.MetricValue.Should().Be(80000m);
+        finding.MetricUnit.Should().Be("EUR");
+    }
+
+    [Fact]
+    public void Create_accepts_an_optional_detail_map()
+    {
+        var detail = new Dictionary<string, string> { ["owner"] = "PMO Director", ["deadline"] = "next week" };
+
+        var finding = Create(metricDetail: detail);
+
+        finding.MetricDetail.Should().NotBeNull();
+        finding.MetricDetail!["owner"].Should().Be("PMO Director");
+        finding.MetricDetail!["deadline"].Should().Be("next week");
+    }
+
+    [Fact]
+    public void Create_leaves_the_metric_null_when_not_supplied()
+    {
+        var finding = Create();
+
+        finding.MetricValue.Should().BeNull();
+        finding.MetricUnit.Should().BeNull();
+        finding.MetricDetail.Should().BeNull();
+    }
+
+    [Fact]
+    public void Analysis_invariants_still_hold_with_a_metric_present()
+    {
+        // A metric is orthogonal to the existing invariants: a Kind==Analysis finding with no area still
+        // throws even when a metric is supplied.
+        var act = () => Create(kind: FindingKind.Analysis, area: null, severity: Severity.Amber, metricValue: 5m);
 
         act.Should().Throw<ArgumentException>();
     }

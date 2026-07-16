@@ -79,4 +79,71 @@ public class FindingAreaSeverityPersistenceTests
         read[0].Area.Should().BeNull();
         read[0].Severity.Should().BeNull();
     }
+
+    [Fact]
+    public async Task Finding_round_trips_its_structured_metric()
+    {
+        var uploadId = Guid.NewGuid();
+        var options = SharedStore($"metric-{uploadId}");
+
+        using (var writeDb = new AppDbContext(options))
+        {
+            var finding = Finding.Create(
+                projectKey: "ALPHA",
+                summary: "Total financial exposure across budget lines is 80,000.",
+                citation: Citation.Create(uploadId, "Budget!row3"),
+                now: DateTimeOffset.UtcNow,
+                runId: Guid.NewGuid(),
+                producingAgent: "Financial",
+                kind: FindingKind.Analysis,
+                confidence: Confidence.High,
+                area: HealthArea.Budget,
+                severity: Severity.Amber,
+                metricValue: 80000m,
+                metricUnit: "EUR",
+                metricDetail: new Dictionary<string, string> { ["owner"] = "PMO Director", ["deadline"] = "next 2 weeks" });
+            await new EfFindingRepository(writeDb).AddAsync(finding, CancellationToken.None);
+        }
+
+        using var readDb = new AppDbContext(options);
+        var read = await new EfFindingRepository(readDb).GetByUploadIdAsync(uploadId, CancellationToken.None);
+
+        read.Should().ContainSingle();
+        read[0].MetricValue.Should().Be(80000m);
+        read[0].MetricUnit.Should().Be("EUR");
+        read[0].MetricDetail.Should().NotBeNull();
+        read[0].MetricDetail!["owner"].Should().Be("PMO Director");
+        read[0].MetricDetail!["deadline"].Should().Be("next 2 weeks");
+    }
+
+    [Fact]
+    public async Task Finding_without_a_metric_reads_back_null()
+    {
+        var uploadId = Guid.NewGuid();
+        var options = SharedStore($"metric-null-{uploadId}");
+
+        using (var writeDb = new AppDbContext(options))
+        {
+            var finding = Finding.Create(
+                projectKey: "ALPHA",
+                summary: "A risk with no numeric metric.",
+                citation: Citation.Create(uploadId, "RAID!row2"),
+                now: DateTimeOffset.UtcNow,
+                runId: Guid.NewGuid(),
+                producingAgent: "RiskAndIssue",
+                kind: FindingKind.Analysis,
+                confidence: Confidence.Medium,
+                area: HealthArea.Risk,
+                severity: Severity.Red);
+            await new EfFindingRepository(writeDb).AddAsync(finding, CancellationToken.None);
+        }
+
+        using var readDb = new AppDbContext(options);
+        var read = await new EfFindingRepository(readDb).GetByUploadIdAsync(uploadId, CancellationToken.None);
+
+        read.Should().ContainSingle();
+        read[0].MetricValue.Should().BeNull();
+        read[0].MetricUnit.Should().BeNull();
+        read[0].MetricDetail.Should().BeNull();
+    }
 }

@@ -50,6 +50,19 @@ namespace AiPMOInsight.Infrastructure.Migrations
                         .HasColumnType("character varying(20)")
                         .HasColumnName("kind");
 
+                    b.Property<string>("MetricDetail")
+                        .HasColumnType("jsonb")
+                        .HasColumnName("metric_detail");
+
+                    b.Property<string>("MetricUnit")
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)")
+                        .HasColumnName("metric_unit");
+
+                    b.Property<decimal?>("MetricValue")
+                        .HasColumnType("numeric")
+                        .HasColumnName("metric_value");
+
                     b.Property<string>("ProducingAgent")
                         .IsRequired()
                         .HasMaxLength(100)

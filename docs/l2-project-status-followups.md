@@ -90,7 +90,12 @@ client question — a code check.**
 
 ---
 
-## 🟢 #6 — Decisions needed (owner / deadline / consequence)
+## ✅ #6 — Decisions needed — agent LANDED (`add-decisions-agent`, #45+#47)
+
+> **Update:** the shared Decision agent shipped (see the L1 register #5). Decision findings (overdue /
+> due-soon, cited) now flow to `GET /api/projects/{key}` and appear in the L2 findings section. A dedicated
+> "decisions needed" panel with structured owner/deadline is a presentation follow-on (the owner/deadline
+> can ride the #46 `MetricDetail`). Original notes below.
 
 **Same build as L1 #5** — see [`l1-executive-portfolio-followups.md`](l1-executive-portfolio-followups.md#5--decision-backlog--highest-formula-to-effort-ratio-do-first).
 Doc formula clear (lines 134–144); `decisions.csv` carries status / needed_by / owner /
@@ -100,7 +105,11 @@ OVERDUE signal. Blocked on adding `HealthArea.Decision` (the enum gap documented
 
 ---
 
-## 🟠 #7 — AI recommendation (practical next action)
+## ✅ #7 — AI recommendation — structured (`add-structured-recommendation`, #48) · L2 render pending
+
+> **Update:** the recommendation is now persisted structured (`owner`/`deadline`/`action`/`rationale` on
+> the finding's `MetricDetail`, #48) as well as in the prose summary. The L2 view can render a proper
+> recommendation panel from those fields (presentation follow-on). Original rationale below.
 
 **Same as L1 #7** — a structured-output contract, not a formula. The Narrative agent already writes a
 recommendation as a **prose blob** (e.g. *"Recommendation (Sponsoring Executive / PMO Director, by Within

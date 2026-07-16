@@ -74,6 +74,7 @@ public class AnalysisOrchestratorTests
             new RiskAndIssueSkill(llm, prompts),
             new FinancialSkill(),
             new ResourceSkill(),
+            new DecisionSkill(),
             new NarrativeSkill(llm, prompts),
             new ChallengeSkill(llm, prompts),
             new ReviewSkill(llm, prompts),
