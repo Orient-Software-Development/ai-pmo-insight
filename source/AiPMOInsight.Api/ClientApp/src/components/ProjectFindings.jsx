@@ -126,22 +126,10 @@ export function ProjectFindings() {
               <DecisionsSection findings={view.findings} />
               <KeyDeviationsSection findings={view.findings} />
               <RisksSection findings={view.findings} />
+              <UpcomingMilestonesSection findings={view.findings} />
               <DataQualitySection findings={view.findings} />
               <ChallengeSection items={view.challenge} />
               <ReviewSection items={view.review} />
-
-              {/* Upcoming-milestones dedicated panel is the next follow-on (Panel 5); decisions now have a
-                  real panel above. Schedule findings still appear in Findings until then. */}
-              <section className="block">
-                <div className="sec-head">
-                  <h2 className="sec-title">Upcoming milestones</h2>
-                  <span className="sec-kicker">follow-on</span>
-                </div>
-                <div className="flagged-panel">
-                  <p className="flagged-note">A dedicated dated-milestone view (next 2–4 weeks) is the next Phase 5
-                    follow-on. Schedule findings appear under Findings above; nothing is fabricated here.</p>
-                </div>
-              </section>
             </>
           )}
         </>
@@ -201,7 +189,13 @@ const KEY_DEVIATION_AREAS = [
 
 function KeyDeviationsSection({ findings }) {
   const groups = KEY_DEVIATION_AREAS
-    .map(g => ({ ...g, items: findings.filter(f => f.area === g.area) }))
+    // Time/schedule shows only actual deviations — the forward-looking "upcoming" milestones live in
+    // their own Upcoming-milestones panel (Panel 5), so exclude them here.
+    .map(g => ({
+      ...g,
+      items: findings.filter(f =>
+        f.area === g.area && !(g.area === 'Schedule' && f.metricDetail?.kind === 'upcoming')),
+    }))
     .filter(g => g.items.length > 0);
 
   if (groups.length === 0) return null;
@@ -233,6 +227,41 @@ function RisksSection({ findings }) {
         <span className="sec-kicker">{risks.length} · top items needing attention</span>
       </div>
       <FindingsTable findings={risks} />
+    </section>
+  );
+}
+
+// Upcoming milestones (Panel 5): the forward-looking Status findings (kind === 'upcoming') — milestones
+// due in the next ~4 weeks, plus any not-yet-due milestone flagged missed/at-risk. Dated, nearest-first,
+// coloured by status (a plain heads-up is Green; a flagged one carries its Red/Amber).
+function UpcomingMilestonesSection({ findings }) {
+  const upcoming = findings
+    .filter(f => f.metricDetail?.kind === 'upcoming')
+    .sort((a, b) => (a.metricDetail?.dueDate ?? '').localeCompare(b.metricDetail?.dueDate ?? ''));
+
+  if (upcoming.length === 0) return null;
+
+  return (
+    <section className="block">
+      <div className="sec-head">
+        <h2 className="sec-title">Upcoming milestones</h2>
+        <span className="sec-kicker">{upcoming.length} · next 4 weeks · by due date</span>
+      </div>
+      <table className="records">
+        <thead>
+          <tr><th>Milestone</th><th>Due</th><th>Note</th><th>Status</th></tr>
+        </thead>
+        <tbody>
+          {upcoming.map(f => (
+            <tr key={f.id} className={`severity ${bucketColour(f.severity)}`}>
+              <td><strong>{f.metricDetail?.milestone ?? '—'}</strong></td>
+              <td>{f.metricDetail?.dueDate || '—'}</td>
+              <td>{renderFindingSummary(f.summary)}</td>
+              <td>{f.severity ? <span className={`sev ${bucketColour(f.severity)}`}>{f.severity}</span> : '—'}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
     </section>
   );
 }

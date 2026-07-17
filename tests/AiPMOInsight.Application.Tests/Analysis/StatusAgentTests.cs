@@ -135,4 +135,46 @@ public class StatusAgentTests
         findings.Should().Contain(f => f.Summary.Contains("due soon", StringComparison.OrdinalIgnoreCase)
                                        && f.Severity == Severity.Green);
     }
+
+    [Fact]
+    public async Task A_milestone_due_within_four_weeks_is_upcoming()
+    {
+        // 2026-07-30 is 20 days out — outside the old 2-week window, inside the widened 4-week one (as-of 07-10).
+        var findings = await Run(
+            DataQualitySignal.Clean(),
+            Milestone("Pilot go-live", due: "2026-07-30", completed: null));
+
+        findings.Should().Contain(f =>
+            f.Summary.Contains("due soon", StringComparison.OrdinalIgnoreCase)
+            && f.MetricDetail != null && f.MetricDetail["kind"] == "upcoming");
+    }
+
+    [Fact]
+    public async Task Upcoming_finding_carries_structured_milestone_name_and_due_date()
+    {
+        // The L2 "Upcoming milestones" panel renders dated rows — so the finding carries milestone/dueDate/kind.
+        var findings = await Run(
+            DataQualitySignal.Clean(),
+            Milestone("Pilot go-live", due: "2026-07-18", completed: null));
+
+        var upcoming = findings.Should()
+            .ContainSingle(f => f.MetricDetail != null && f.MetricDetail.GetValueOrDefault("kind") == "upcoming").Which;
+        upcoming.MetricDetail!["milestone"].Should().Be("Pilot go-live");
+        upcoming.MetricDetail["dueDate"].Should().Be("2026-07-18");
+    }
+
+    [Fact]
+    public async Task An_overdue_milestone_is_marked_a_deviation_not_upcoming()
+    {
+        // Deviations (overdue/late) must NOT be tagged upcoming, so the view keeps them out of the
+        // Upcoming-milestones panel and under Key deviations > Time.
+        var findings = await Run(
+            DataQualitySignal.Clean(),
+            Milestone("Beta", due: "2026-06-15", completed: null));
+
+        var overdue = findings.Should()
+            .ContainSingle(f => f.Summary.Contains("overdue", StringComparison.OrdinalIgnoreCase)).Which;
+        overdue.MetricDetail.Should().NotBeNull();
+        overdue.MetricDetail!["kind"].Should().Be("overdue");
+    }
 }

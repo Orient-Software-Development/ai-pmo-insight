@@ -11,7 +11,8 @@ namespace AiPMOInsight.Application.Features.Analysis.Agents;
 /// </summary>
 public sealed class StatusSkill : IAgentSkill<AnalysisInput, IReadOnlyList<Finding>>
 {
-    private const int UpcomingWindowDays = 14;
+    // The doc's "Upcoming milestones — next 2–4 weeks": look 4 weeks ahead for due-soon heads-ups.
+    private const int UpcomingWindowDays = 28;
 
     public string Name => "Status";
 
@@ -45,7 +46,7 @@ public sealed class StatusSkill : IAgentSkill<AnalysisInput, IReadOnlyList<Findi
                     var days = (int)(completed - due).TotalDays;
                     findings.Add(Finding(slice, confidence,
                         $"Milestone '{milestone.Name}' completed {days} days late ({Severity(days)} schedule variance).",
-                        milestone.Source, Worst(Band(days), statusSeverity)));
+                        milestone.Source, Worst(Band(days), statusSeverity), Detail(milestone, "late")));
                 }
 
                 continue;
@@ -56,28 +57,29 @@ public sealed class StatusSkill : IAgentSkill<AnalysisInput, IReadOnlyList<Findi
                 var days = (int)(asOf - due).TotalDays;
                 findings.Add(Finding(slice, confidence,
                     $"Milestone '{milestone.Name}' is overdue by {days} days ({Severity(days)} delay).",
-                    milestone.Source, Worst(Band(days), statusSeverity)));
+                    milestone.Source, Worst(Band(days), statusSeverity), Detail(milestone, "overdue")));
             }
             else if (statusSeverity is { } adverse)
             {
-                // Not yet due, but recorded as missed/at-risk — report the status, not a green heads-up.
+                // Not yet due, but recorded as missed/at-risk — an upcoming milestone flagged as a risk (so it
+                // still belongs in the Upcoming-milestones view, coloured by its status rather than green).
                 findings.Add(Finding(slice, confidence,
                     $"Milestone '{milestone.Name}' is marked '{milestone.Status}' (schedule risk).",
-                    milestone.Source, adverse));
+                    milestone.Source, adverse, Detail(milestone, "upcoming")));
             }
             else if (due <= asOf.AddDays(UpcomingWindowDays))
             {
                 var days = (int)(due - asOf).TotalDays;
                 findings.Add(Finding(slice, confidence,
                     $"Milestone '{milestone.Name}' is due soon (in {days} days).",
-                    milestone.Source, Domain.Findings.Severity.Green)); // informational heads-up, not yet a variance
+                    milestone.Source, Domain.Findings.Severity.Green, Detail(milestone, "upcoming"))); // heads-up, not yet a variance
             }
 
             if (milestone.DependsOn is { } dependsOn && IsAtRisk(dependsOn, milestones))
             {
                 findings.Add(Finding(slice, confidence,
                     $"Milestone '{milestone.Name}' is at dependency risk: it depends on '{dependsOn}', which is not yet complete.",
-                    milestone.Source, Domain.Findings.Severity.Amber));
+                    milestone.Source, Domain.Findings.Severity.Amber, Detail(milestone, "dependency")));
             }
         }
 
@@ -135,7 +137,22 @@ public sealed class StatusSkill : IAgentSkill<AnalysisInput, IReadOnlyList<Findi
     private static Severity Worst(Severity band, Severity? status) =>
         status is { } s && (int)s > (int)band ? s : band;
 
+    /// <summary>
+    /// Structured detail for the L2 milestone views: the milestone name, its (adjusted) due date, and a
+    /// <paramref name="kind"/> tag — "upcoming" for forward-looking heads-ups (the Upcoming-milestones
+    /// panel) vs "overdue"/"late"/"dependency" deviations (Key deviations &gt; Time). Columns, not prose.
+    /// </summary>
+    private static IReadOnlyDictionary<string, string> Detail(MilestoneRecord milestone, string kind) =>
+        new Dictionary<string, string>
+        {
+            ["milestone"] = milestone.Name,
+            ["dueDate"] = milestone.DueDate?.ToString("yyyy-MM-dd") ?? string.Empty,
+            ["kind"] = kind,
+        };
+
     private static Finding Finding(
-        ProjectSlice slice, Confidence confidence, string summary, SourceRef source, Severity severity) =>
-        FindingFactory.Analysis(slice, "Status", summary, source, confidence, HealthArea.Schedule, severity);
+        ProjectSlice slice, Confidence confidence, string summary, SourceRef source, Severity severity,
+        IReadOnlyDictionary<string, string>? metricDetail = null) =>
+        FindingFactory.Analysis(
+            slice, "Status", summary, source, confidence, HealthArea.Schedule, severity, metricDetail: metricDetail);
 }
