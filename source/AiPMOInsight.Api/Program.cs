@@ -203,6 +203,7 @@ app.MapUploadHistoryEndpoints();
 app.MapHealthScoringEndpoints();
 app.MapExecutivePortfolioEndpoints();
 app.MapDataQualityEndpoints();
+app.MapProgressEndpoints();
 
 
 // SPA client-side routing: serve index.html for unmatched non-API routes.

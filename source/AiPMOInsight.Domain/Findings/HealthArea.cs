@@ -28,4 +28,11 @@ public enum HealthArea
 
     /// <summary>Decision health (overdue / due-soon decisions, blocked work). Decision agent.</summary>
     Decision = 5,
+
+    /// <summary>
+    /// Scope health (scope-change control / creep). Scope agent. <b>Display-only (POC):</b> Scope findings
+    /// render in the L2 key-deviations view but are deliberately NOT scored — the health scorer excludes
+    /// this area until the PMO agrees a real Scope weight + RAG rule at kickoff.
+    /// </summary>
+    Scope = 6,
 }

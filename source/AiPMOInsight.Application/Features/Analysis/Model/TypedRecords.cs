@@ -106,6 +106,24 @@ public sealed record DecisionRecord
 }
 
 /// <summary>
+/// A scope-change record (POC placeholder shape — the real Orbit export convention isn't yet agreed).
+/// The Scope agent reads these to surface scope-change control / creep as a key deviation.
+/// </summary>
+public sealed record ScopeChangeRecord
+{
+    public required string ProjectKey { get; init; }
+    public required string Title { get; init; }
+    /// <summary>e.g. "Add", "Remove", "Modify"; null when the source omits it.</summary>
+    public string? Type { get; init; }
+    /// <summary>e.g. "Requested", "Approved", "Rejected"; null when unknown.</summary>
+    public string? Status { get; init; }
+    /// <summary>Estimated effort impact as a percentage (positive = scope increase); null when unknown.</summary>
+    public decimal? EffortImpactPct { get; init; }
+    public DateTimeOffset? DateRaised { get; init; }
+    public required SourceRef Source { get; init; }
+}
+
+/// <summary>
 /// The Data Collector's output: the typed records parsed from one upload, grouped by category. This
 /// is the shared input the analysis agents (#2–#6) read; it is never persisted.
 /// </summary>
@@ -118,6 +136,7 @@ public sealed record CollectedData
     public required IReadOnlyList<MinuteEntryRecord> Minutes { get; init; }
     public required IReadOnlyList<RaidItemRecord> RaidItems { get; init; }
     public IReadOnlyList<DecisionRecord> Decisions { get; init; } = [];
+    public IReadOnlyList<ScopeChangeRecord> ScopeChanges { get; init; } = [];
 
     public static CollectedData Empty { get; } = new()
     {
@@ -128,5 +147,6 @@ public sealed record CollectedData
         Minutes = [],
         RaidItems = [],
         Decisions = [],
+        ScopeChanges = [],
     };
 }

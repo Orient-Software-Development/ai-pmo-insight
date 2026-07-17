@@ -32,7 +32,15 @@ public static class GetProjectFindings
         string? PromptVersion,
         Guid RunId,
         CitationView Citation,
-        DateTimeOffset CreatedAt);
+        DateTimeOffset CreatedAt,
+        // Self-describing analysis fields (null on non-Analysis findings): the health area + severity the
+        // agent computed, and any structured metric (value/unit + a detail bag, e.g. a decision's
+        // owner/deadline/consequence). The L2 view groups by Area and renders the decisions/milestones panels.
+        string? Area,
+        string? Severity,
+        decimal? MetricValue,
+        string? MetricUnit,
+        IReadOnlyDictionary<string, string>? MetricDetail);
 
     public sealed record CitationView(Guid UploadId, string Locator, string? StructuredExcerpt, string? TextSnippet);
 
@@ -68,6 +76,11 @@ public static class GetProjectFindings
                 f.PromptVersion,
                 f.RunId,
                 new CitationView(f.Citation.UploadId, f.Citation.Locator, f.Citation.StructuredExcerpt, f.Citation.TextSnippet),
-                f.CreatedAt);
+                f.CreatedAt,
+                f.Area?.ToString(),
+                f.Severity?.ToString(),
+                f.MetricValue,
+                f.MetricUnit,
+                f.MetricDetail);
     }
 }

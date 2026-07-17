@@ -40,7 +40,11 @@ public sealed class HealthScoringService(HealthScoringOptions options)
         var scoreable = projectFindings
             .Where(f => f.RunId == latestRunId
                         && f.Kind == FindingKind.Analysis
-                        && f is { Area: not null, Severity: not null })
+                        && f is { Area: not null, Severity: not null }
+                        // Scope is display-only (POC): its findings render in the L2 key-deviations view
+                        // but must not move the score or the confidence average until the PMO agrees a
+                        // real Scope weight + RAG rule at kickoff.
+                        && f.Area != HealthArea.Scope)
             .ToList();
 
         if (scoreable.Count == 0)

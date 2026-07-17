@@ -26,6 +26,7 @@ public sealed class AnalysisOrchestrator(
     FinancialSkill financial,
     ResourceSkill resource,
     DecisionSkill decision,
+    ScopeSkill scope,
     NarrativeSkill narrative,
     ChallengeSkill challenge,
     ReviewSkill review,
@@ -95,13 +96,14 @@ public sealed class AnalysisOrchestrator(
         var quality = await dataQuality.ExecuteAsync(slice, cancellationToken);
         var input = new AnalysisInput(slice, quality.Signal);
 
-        // #3–#6 + Decision are independent — fan out.
+        // #3–#6 + Decision + Scope are independent — fan out.
         var analysisResults = await Task.WhenAll(
             status.ExecuteAsync(input, cancellationToken),
             riskAndIssue.ExecuteAsync(input, cancellationToken),
             financial.ExecuteAsync(input, cancellationToken),
             resource.ExecuteAsync(input, cancellationToken),
-            decision.ExecuteAsync(input, cancellationToken));
+            decision.ExecuteAsync(input, cancellationToken),
+            scope.ExecuteAsync(input, cancellationToken));
 
         var merged = new List<Finding>(quality.Findings);
         foreach (var result in analysisResults)
