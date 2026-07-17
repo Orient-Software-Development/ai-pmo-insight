@@ -53,6 +53,14 @@ public class ScorePortfolioTests
             runId, "Narrative", FindingKind.Narrative, Confidence.Medium, promptVersion: "sha256:x",
             metricDetail: new Dictionary<string, string> { ["customer"] = customer });
 
+    // A narrative finding carrying a structured recommendation (owner / deadline / action / rationale).
+    private static Finding NarrativeWithRecommendation(string project, Guid runId,
+        string owner, string deadline, string action) =>
+        Finding.Create(project, "[red] narrative", Citation.Create(Guid.NewGuid(), "synthesis:narrative"), T0,
+            runId, "Narrative", FindingKind.Narrative, Confidence.Medium, promptVersion: "sha256:x",
+            metricDetail: new Dictionary<string, string>
+            { ["owner"] = owner, ["deadline"] = deadline, ["action"] = action, ["rationale"] = "why" });
+
     // ── §4 additional backed L1 signals (add-l1-portfolio-signals slices D/E) ─────────────────
 
     [Fact]
@@ -137,6 +145,40 @@ public class ScorePortfolioTests
         result.DecisionBacklog.Should().Be(0);
         result.KeyPersons.Should().BeEmpty();
         result.CustomerExposure.Should().BeEmpty();
+        result.RecommendedActions.Should().BeEmpty();
+    }
+
+    [Fact]
+    public async Task Recommended_actions_are_rolled_up_for_at_risk_projects()
+    {
+        var runRed = Guid.NewGuid();
+        var seed = new[]
+        {
+            AreaOnRun(HealthArea.Risk, Severity.Red, "RED", runRed),
+            NarrativeWithRecommendation("RED", runRed, owner: "PMO Director", deadline: "next 2 weeks", action: "Escalate the vendor risk"),
+        };
+
+        var result = await Run(seed);
+
+        var rec = result.RecommendedActions.Should().ContainSingle(r => r.ProjectKey == "RED").Subject;
+        rec.Action.Should().Be("Escalate the vendor risk");
+        rec.Owner.Should().Be("PMO Director");
+        rec.Deadline.Should().Be("next 2 weeks");
+    }
+
+    [Fact]
+    public async Task Green_projects_have_no_recommended_action_entry()
+    {
+        var runGreen = Guid.NewGuid();
+        var seed = new[]
+        {
+            AreaOnRun(HealthArea.Schedule, Severity.Green, "GRN", runGreen),
+            NarrativeWithRecommendation("GRN", runGreen, owner: "PM", deadline: "n/a", action: "Maintain the plan"),
+        };
+
+        var result = await Run(seed);
+
+        result.RecommendedActions.Should().NotContain(r => r.ProjectKey == "GRN");
     }
 
     // ── §2 aggregation ───────────────────────────────────────────────────────────────────────

@@ -27,7 +27,8 @@ public static class ScorePortfolio
         FinancialExposureView FinancialExposure,
         int DecisionBacklog,
         IReadOnlyList<KeyPersonView> KeyPersons,
-        IReadOnlyList<CustomerExposureView> CustomerExposure);
+        IReadOnlyList<CustomerExposureView> CustomerExposure,
+        IReadOnlyList<RecommendedActionView> RecommendedActions);
 
     /// <summary>One project needing intervention: its status colour, confidence, and a cited reason.</summary>
     public sealed record InterventionView(
@@ -45,6 +46,10 @@ public static class ScorePortfolio
 
     /// <summary>Relationship exposure: a customer and how many of its projects are at risk (Red/Amber).</summary>
     public sealed record CustomerExposureView(string Customer, int AtRiskCount);
+
+    /// <summary>Leadership to-do: an at-risk project's recommended next action, with owner + deadline.</summary>
+    public sealed record RecommendedActionView(
+        string ProjectKey, string Status, string Action, string Owner, string Deadline);
 
     internal sealed class Handler(IFindingRepository findings, HealthScoringService scoring)
         : IRequestHandler<Query, Result>
@@ -126,8 +131,31 @@ public static class ScorePortfolio
                 .OrderByDescending(c => c.AtRiskCount)
                 .ToList();
 
+            // Recommended actions (#7): for each at-risk project, surface the recommendation the Narrative
+            // agent stamped on its narrative finding (owner/deadline/action, #48) — the leadership to-do
+            // list. Worst-first, matching the intervention ordering. Green projects contribute nothing.
+            var recommendedActions = scored
+                .Where(s => s.Score.FinalBucket is Severity.Red or Severity.Amber)
+                .OrderByDescending(s => (int)s.Score.FinalBucket)
+                .ThenBy(s => s.Score.RawScore)
+                .Select(s =>
+                {
+                    var rec = s.Findings.FirstOrDefault(f =>
+                        f.RunId == s.Score.RunId && f.Kind == FindingKind.Narrative
+                        && f.MetricDetail is not null && f.MetricDetail.ContainsKey("action"))?.MetricDetail;
+                    return rec is null
+                        ? null
+                        : new RecommendedActionView(
+                            s.Score.ProjectKey, s.Score.FinalBucket.ToString(),
+                            rec.GetValueOrDefault("action", ""), rec.GetValueOrDefault("owner", ""),
+                            rec.GetValueOrDefault("deadline", ""));
+                })
+                .Where(r => r is not null)
+                .Select(r => r!)
+                .ToList();
+
             return new Result(red, amber, green, needsReview, avgConfidence, intervention,
-                exposure, decisionBacklog, keyPersons, customerExposure);
+                exposure, decisionBacklog, keyPersons, customerExposure, recommendedActions);
         }
 
         /// <summary>

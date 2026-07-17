@@ -13,6 +13,7 @@ import { bucketColour } from '../health';
 const EMPTY = {
   red: 0, amber: 0, green: 0, needsPmReview: 0, averageConfidence: 0, intervention: [],
   financialExposure: { amount: 0, currency: null }, decisionBacklog: 0, keyPersons: [], customerExposure: [],
+  recommendedActions: [],
 };
 
 export function ExecutivePortfolio() {
@@ -166,13 +167,35 @@ export function ExecutivePortfolio() {
           the data — a kick-off question, not fabricated here.</p>
       </section>
 
-      {/* ── STILL FLAGGED: portfolio-level owned/dated recommendations ───────────────────────── */}
+      {/* ── Recommended actions (BACKED) — leadership to-do per at-risk project ──────────────── */}
       <section className="block">
         <div className="sec-head">
           <h2 className="sec-title">Recommended actions</h2>
-          <span className="sec-kicker">Owner · Deadline · Confidence</span>
+          <span className="sec-kicker">Project · Action · Owner · Deadline · worst first</span>
         </div>
-        <FlaggedPanel title="Portfolio-level owned &amp; dated recommendations" wide />
+        {data.recommendedActions.length === 0 ? (
+          <p><em>No recommended actions — no projects need intervention.</em></p>
+        ) : (
+          <table className="records">
+            <thead>
+              <tr><th>Project</th><th>Recommended action</th><th>Owner</th><th>Deadline</th><th>Status</th></tr>
+            </thead>
+            <tbody>
+              {data.recommendedActions.map(r => (
+                <tr key={r.projectKey} className={`severity ${bucketColour(r.status)}`}>
+                  <td><strong>{r.projectKey}</strong></td>
+                  <td>{r.action}</td>
+                  <td>{r.owner}</td>
+                  <td>{r.deadline}</td>
+                  <td><span className={`sev ${bucketColour(r.status)}`}>{r.status}</span></td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
+        <p className="flagged-note">Each project's AI recommendation (owner · deadline · action), rolled up
+          for the at-risk projects. The owner/deadline are the Narrative agent's — enriching them from
+          decision data is a follow-on.</p>
       </section>
     </div>
   );
