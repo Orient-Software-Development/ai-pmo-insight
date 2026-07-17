@@ -123,20 +123,21 @@ export function ProjectFindings() {
           ) : (
             <>
               <NarrativeSection items={view.narrative} />
-              <FindingsSection findings={view.findings} />
+              <DecisionsSection findings={view.findings} />
+              <FindingsSection findings={view.findings.filter(f => f.area !== 'Decision')} />
               <ChallengeSection items={view.challenge} />
               <ReviewSection items={view.review} />
 
-              {/* Wireframe l2 panels the finding shape does not carry — flagged, not fabricated. */}
+              {/* Upcoming-milestones dedicated panel is the next follow-on (Panel 5); decisions now have a
+                  real panel above. Schedule findings still appear in Findings until then. */}
               <section className="block">
                 <div className="sec-head">
-                  <h2 className="sec-title">Milestones &amp; decisions</h2>
+                  <h2 className="sec-title">Upcoming milestones</h2>
                   <span className="sec-kicker">follow-on</span>
                 </div>
                 <div className="flagged-panel">
-                  <p className="flagged-note">Dated upcoming milestones and per-decision owner/deadline/consequence
-                    are not yet captured in the finding shape — a Phase 5 follow-on. The Narrative above is the
-                    closest recommendation surface; nothing is fabricated here.</p>
+                  <p className="flagged-note">A dedicated dated-milestone view (next 2–4 weeks) is the next Phase 5
+                    follow-on. Schedule findings appear under Findings above; nothing is fabricated here.</p>
                 </div>
               </section>
             </>
@@ -144,6 +145,46 @@ export function ProjectFindings() {
         </>
       )}
     </div>
+  );
+}
+
+// Decisions needed (Panel 6): the un-approved decisions the Decision agent flagged (overdue = Red,
+// due-soon = Amber). Rendered with structured owner/deadline/consequence carried on each finding's
+// metricDetail — columns, not a parsed summary string. Worst-first, then by nearest deadline.
+const SEV_RANK = { Red: 3, Amber: 2, Green: 1 };
+
+function DecisionsSection({ findings }) {
+  const decisions = findings
+    .filter(f => f.area === 'Decision')
+    .sort((a, b) =>
+      (SEV_RANK[b.severity] ?? 0) - (SEV_RANK[a.severity] ?? 0)
+      || (a.metricDetail?.deadline ?? '').localeCompare(b.metricDetail?.deadline ?? ''));
+
+  if (decisions.length === 0) return null;
+
+  return (
+    <section className="block">
+      <div className="sec-head">
+        <h2 className="sec-title">Decisions needed</h2>
+        <span className="sec-kicker">{decisions.length} · owner · deadline · consequence · worst first</span>
+      </div>
+      <table className="records">
+        <thead>
+          <tr><th>Decision</th><th>Owner</th><th>Deadline</th><th>Consequence</th><th>Status</th></tr>
+        </thead>
+        <tbody>
+          {decisions.map(d => (
+            <tr key={d.id} className={`severity ${bucketColour(d.severity)}`}>
+              <td><strong>{d.metricDetail?.title ?? d.summary}</strong></td>
+              <td>{d.metricDetail?.owner ?? '—'}</td>
+              <td>{d.metricDetail?.deadline ?? '—'}</td>
+              <td>{d.metricDetail?.consequence || '—'}</td>
+              <td><span className={`sev ${bucketColour(d.severity)}`}>{d.severity}</span></td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </section>
   );
 }
 

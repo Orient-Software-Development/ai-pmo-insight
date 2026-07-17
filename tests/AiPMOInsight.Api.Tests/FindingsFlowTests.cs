@@ -59,6 +59,31 @@ public class FindingsFlowTests
     }
 
     [Fact]
+    public async Task Read_exposes_area_severity_and_structured_decision_detail()
+    {
+        using var factory = new TestWebAppFactory();
+        using var client = factory.CreateClientAs("pmo-user");
+
+        var uploadId = await UploadWorkbookAsync(client);
+        await client.PostAsync($"/api/analyze/{uploadId}", content: null);
+
+        var view = await (await client.GetAsync("/api/projects/ALPHA")).Content.ReadFromJsonAsync<ProjectView>();
+
+        // Every analytic finding is self-describing: the read API exposes its health area + severity so the
+        // L2 view can group by area and render the decisions/milestones panels.
+        view!.Findings.Should().OnlyContain(f => f.Area != null && f.Severity != null);
+
+        // The overdue decision surfaces structured title/owner/deadline/consequence for the Decisions panel.
+        var decision = view.Findings.Should().ContainSingle(f => f.ProducingAgent == "Decision").Which;
+        decision.Severity.Should().Be("Red");
+        decision.MetricDetail.Should().NotBeNull();
+        decision.MetricDetail!["title"].Should().Be("Approve revised go-live date");
+        decision.MetricDetail["owner"].Should().Be("Steering Committee");
+        decision.MetricDetail["deadline"].Should().Be("2026-06-20");
+        decision.MetricDetail["consequence"].Should().Be("Cutover cannot be scheduled; team idle");
+    }
+
+    [Fact]
     public async Task Re_analysis_appends_a_new_run_and_the_read_shows_the_latest()
     {
         using var factory = new TestWebAppFactory();
@@ -154,6 +179,8 @@ public class FindingsFlowTests
         List<ReadFinding> Challenge, List<ReadFinding> Review);
     private sealed record ReadFinding(
         Guid Id, string ProjectKey, string Summary, string Kind, string Confidence,
-        string ProducingAgent, string? PromptVersion, Guid RunId, CitationResponse Citation);
+        string ProducingAgent, string? PromptVersion, Guid RunId, CitationResponse Citation,
+        string? Area, string? Severity, decimal? MetricValue, string? MetricUnit,
+        Dictionary<string, string>? MetricDetail);
     private sealed record CitationResponse(Guid UploadId, string Locator);
 }

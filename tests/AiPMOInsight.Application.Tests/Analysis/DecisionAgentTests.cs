@@ -75,4 +75,38 @@ public class DecisionAgentTests
         findings.Should().NotBeEmpty();
         findings.Should().OnlyContain(f => f.Area == HealthArea.Decision && f.Severity != null);
     }
+
+    [Fact]
+    public async Task Finding_carries_structured_owner_deadline_consequence_for_the_panel()
+    {
+        // The L2 "Decisions needed" panel renders columns, not a parsed summary string — so the finding
+        // must carry the decision's title/owner/deadline/consequence as structured MetricDetail.
+        var findings = await Run(Decision("Approve revised go-live date", status: "Pending", neededBy: "2026-06-20"));
+
+        var detail = findings.Should().ContainSingle().Which.MetricDetail;
+        detail.Should().NotBeNull();
+        detail!["title"].Should().Be("Approve revised go-live date");
+        detail["owner"].Should().Be("Steering Committee");
+        detail["deadline"].Should().Be("2026-06-20");
+        detail["consequence"].Should().Be("work blocked");
+    }
+
+    [Fact]
+    public async Task Unassigned_owner_and_missing_consequence_degrade_gracefully()
+    {
+        var decision = new DecisionRecord
+        {
+            ProjectKey = "ALPHA",
+            Title = "Pick a vendor",
+            Status = "Pending",
+            Owner = null,
+            NeededBy = DateTimeOffset.Parse("2026-06-20"),
+            Consequence = null,
+            Source = new SourceRef("Decisions!Pick a vendor"),
+        };
+
+        var detail = (await Run(decision)).Should().ContainSingle().Which.MetricDetail;
+        detail!["owner"].Should().Be("unassigned");
+        detail["consequence"].Should().BeEmpty();
+    }
 }

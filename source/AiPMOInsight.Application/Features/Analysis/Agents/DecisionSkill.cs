@@ -32,19 +32,24 @@ public sealed class DecisionSkill : IAgentSkill<AnalysisInput, IReadOnlyList<Fin
                 continue; // can't judge timing, or already decided.
             }
 
+            // Carry the decision's fields as structured data (not only in the prose) so the L2
+            // "Decisions needed" panel renders columns — title/owner/deadline/consequence — instead of
+            // parsing the summary string. Keys are a stable contract shared with the read API.
+            var detail = Detail(decision, neededBy);
+
             if (neededBy < asOf)
             {
                 var days = (int)(asOf - neededBy).TotalDays;
                 findings.Add(Finding(slice, confidence,
                     $"Decision '{decision.Title}' is overdue by {days} days (needed by {neededBy:yyyy-MM-dd}, owner {decision.Owner ?? "unassigned"}).",
-                    decision.Source, Severity.Red));
+                    decision.Source, Severity.Red, detail));
             }
             else if (neededBy <= asOf.AddDays(DueSoonWindowDays))
             {
                 var days = (int)(neededBy - asOf).TotalDays;
                 findings.Add(Finding(slice, confidence,
                     $"Decision '{decision.Title}' is due soon (in {days} days, owner {decision.Owner ?? "unassigned"}).",
-                    decision.Source, Severity.Amber));
+                    decision.Source, Severity.Amber, detail));
             }
         }
 
@@ -54,7 +59,18 @@ public sealed class DecisionSkill : IAgentSkill<AnalysisInput, IReadOnlyList<Fin
     private static bool IsApproved(string? status) =>
         string.Equals(status?.Trim(), "Approved", StringComparison.OrdinalIgnoreCase);
 
+    private static IReadOnlyDictionary<string, string> Detail(DecisionRecord decision, DateTimeOffset neededBy) =>
+        new Dictionary<string, string>
+        {
+            ["title"] = decision.Title,
+            ["owner"] = decision.Owner ?? "unassigned",
+            ["deadline"] = neededBy.ToString("yyyy-MM-dd"),
+            ["consequence"] = decision.Consequence ?? string.Empty,
+        };
+
     private static Finding Finding(
-        ProjectSlice slice, Confidence confidence, string summary, SourceRef source, Severity severity) =>
-        FindingFactory.Analysis(slice, "Decision", summary, source, confidence, HealthArea.Decision, severity);
+        ProjectSlice slice, Confidence confidence, string summary, SourceRef source, Severity severity,
+        IReadOnlyDictionary<string, string> detail) =>
+        FindingFactory.Analysis(
+            slice, "Decision", summary, source, confidence, HealthArea.Decision, severity, metricDetail: detail);
 }
