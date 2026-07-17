@@ -31,19 +31,22 @@ export function ProjectFindings() {
   const [projectKey, setProjectKey] = useState(searchParams.get('key') ?? 'ALPHA');
   const [view, setView] = useState(EMPTY_VIEW);
   const [health, setHealth] = useState(EMPTY_HEALTH);
+  const [progress, setProgress] = useState(null);
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(false);
 
-  // Reads both Level-2 surfaces for a key concurrently: the findings sections and the health score.
-  // The two are independent — a health 404/null-score never blanks the findings, and a findings error
-  // never blanks a resolved banner (each state is set from its own response).
+  // Reads the Level-2 surfaces for a key concurrently: the findings sections, the health score, and the
+  // this-period progress (run-over-run). Each is independent — a health or progress failure never blanks
+  // the findings, and a findings error never blanks a resolved banner (each state is set from its own response).
   async function loadFindings(key) {
     setLoading(true);
     setError(null);
     setHealth(EMPTY_HEALTH);
-    const [findingsResult, healthResult] = await Promise.allSettled([
+    setProgress(null);
+    const [findingsResult, healthResult, progressResult] = await Promise.allSettled([
       authFetch(`/api/projects/${encodeURIComponent(key)}`),
       authFetch(`/api/projects/${encodeURIComponent(key)}/health`),
+      authFetch(`/api/projects/${encodeURIComponent(key)}/progress`),
     ]);
 
     try {
@@ -64,6 +67,13 @@ export function ProjectFindings() {
       setHealth({ state: healthState(hres.status, body), score: body?.score ?? null });
     } else {
       setHealth(EMPTY_HEALTH);
+    }
+
+    // Progress is best-effort too: 200 → the run-over-run summary, anything else → no panel.
+    if (progressResult.status === 'fulfilled' && progressResult.value.status === 200) {
+      try { setProgress(await progressResult.value.json()); } catch { setProgress(null); }
+    } else {
+      setProgress(null);
     }
 
     setLoading(false);
@@ -118,6 +128,9 @@ export function ProjectFindings() {
           {/* Health headline + score audit (area breakdown, confidence, override trail, PM-review flag). */}
           <HealthBanner state={health.state} score={health.score} />
 
+          {/* This-period progress (panel 2): run-over-run movement, right under overall status. */}
+          <ThisPeriodProgressSection progress={progress} />
+
           {!hasAnything ? (
             <p><em>No analysis recorded for this project key yet.</em></p>
           ) : (
@@ -136,6 +149,94 @@ export function ProjectFindings() {
       )}
     </div>
   );
+}
+
+// This-period progress (Panel 2): run-over-run movement. Headline = health-score delta between the two
+// most recent runs; lists = what moved forward (cleared/improved) vs backward (new/worsened). Renders
+// nothing when there's no progress read; a "no prior run" note when only one run exists. The pace label
+// uses POC placeholder thresholds (flagged).
+function ThisPeriodProgressSection({ progress }) {
+  if (!progress) return null;
+
+  if (!progress.hasPrevious) {
+    return (
+      <section className="block">
+        <div className="sec-head">
+          <h2 className="sec-title">This-period progress</h2>
+          <span className="sec-kicker">run-over-run</span>
+        </div>
+        <p><em>No prior run yet — progress appears after the next analysis.</em></p>
+      </section>
+    );
+  }
+
+  const delta = progress.scoreDelta;
+  const arrow = delta > 0 ? '▲' : delta < 0 ? '▼' : '■';
+  const deltaColour = delta > 0 ? 'rag-green' : delta < 0 ? 'rag-red' : 'rag-none';
+  const hasScores = typeof progress.scoreBefore === 'number' && typeof progress.scoreAfter === 'number';
+
+  return (
+    <section className="block">
+      <div className="sec-head">
+        <h2 className="sec-title">This-period progress</h2>
+        <span className="sec-kicker">since {fmtDate(progress.previousRunAt)} · run-over-run</span>
+      </div>
+
+      <p className="progress-headline">
+        <span className={`sev ${deltaColour}`}>{arrow} {progress.pace}</span>
+        {hasScores && (
+          <span className="conf">
+            score {Math.round(progress.scoreBefore)} → {Math.round(progress.scoreAfter)}
+            {' '}({delta > 0 ? '+' : ''}{Math.round(delta)})
+          </span>
+        )}
+      </p>
+
+      <div className="area-group">
+        <h3 className="area-heading">Moved forward</h3>
+        {progress.movedForward.length === 0
+          ? <p><em>Nothing cleared or improved this period.</em></p>
+          : <ChangeTable rows={progress.movedForward} />}
+      </div>
+
+      <div className="area-group">
+        <h3 className="area-heading">Moved backward</h3>
+        {progress.movedBackward.length === 0
+          ? <p><em>No new or worsened items this period.</em></p>
+          : <ChangeTable rows={progress.movedBackward} />}
+      </div>
+
+      {progress.paceIsPlaceholder && (
+        <p className="flagged-note">The pace label uses <strong>POC placeholder thresholds</strong> on the
+          score delta — to be confirmed at kickoff.</p>
+      )}
+    </section>
+  );
+}
+
+function ChangeTable({ rows }) {
+  return (
+    <table className="records">
+      <thead>
+        <tr><th>Area</th><th>Change</th><th>Severity</th><th>Detail</th></tr>
+      </thead>
+      <tbody>
+        {rows.map((c, i) => (
+          <tr key={`${c.area}-${c.citationLocator}-${i}`}>
+            <td><strong>{c.area}</strong></td>
+            <td>{c.change}</td>
+            <td>{c.fromSeverity ? `${c.fromSeverity} → ` : ''}{c.toSeverity ?? '—'}</td>
+            <td>{renderFindingSummary(c.summary)}<br /><span className="cite">↳ {c.citationLocator}</span></td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  );
+}
+
+function fmtDate(iso) {
+  if (!iso) return '—';
+  try { return new Date(iso).toLocaleDateString(); } catch { return iso; }
 }
 
 // Decisions needed (Panel 6): the un-approved decisions the Decision agent flagged (overdue = Red,

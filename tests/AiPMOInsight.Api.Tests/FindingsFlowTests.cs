@@ -101,6 +101,30 @@ public class FindingsFlowTests
     }
 
     [Fact]
+    public async Task Progress_endpoint_compares_runs_guards_auth_and_unknown()
+    {
+        using var factory = new TestWebAppFactory();
+        using var client = factory.CreateClientAs("pmo-user");
+
+        // Unknown project → 404.
+        var unknown = await client.GetAsync($"/api/projects/nope-{Guid.NewGuid()}/progress");
+        unknown.StatusCode.Should().Be(HttpStatusCode.NotFound);
+
+        var uploadId = await UploadWorkbookAsync(client);
+        await client.PostAsync($"/api/analyze/{uploadId}", content: null);
+        await client.PostAsync($"/api/analyze/{uploadId}", content: null); // a second run to compare against
+
+        var res = await client.GetAsync("/api/projects/ALPHA/progress");
+        res.StatusCode.Should().Be(HttpStatusCode.OK);
+        var body = await res.Content.ReadFromJsonAsync<ProgressView>();
+        body!.HasPrevious.Should().BeTrue();
+
+        // Unauthenticated → 401.
+        using var anon = factory.CreateClient();
+        (await anon.GetAsync("/api/projects/ALPHA/progress")).StatusCode.Should().Be(HttpStatusCode.Unauthorized);
+    }
+
+    [Fact]
     public async Task Analyze_unknown_upload_returns_not_found()
     {
         using var factory = new TestWebAppFactory();
@@ -183,4 +207,5 @@ public class FindingsFlowTests
         string? Area, string? Severity, decimal? MetricValue, string? MetricUnit,
         Dictionary<string, string>? MetricDetail);
     private sealed record CitationResponse(Guid UploadId, string Locator);
+    private sealed record ProgressView(bool HasPrevious, double? ScoreDelta, string Pace);
 }

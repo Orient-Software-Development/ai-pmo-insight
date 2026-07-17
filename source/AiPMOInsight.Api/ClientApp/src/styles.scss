@@ -384,6 +384,14 @@ a.nav-tab {
   .sec-kicker { font-size: 0.78rem; color: var(--ink-mute); }
 }
 
+// Panel 2 this-period progress: score-move headline row.
+.progress-headline {
+  display: flex;
+  gap: 0.75rem;
+  align-items: center;
+  margin: 0.5rem 0 1rem;
+}
+
 // Panel 3 key-deviations: an area sub-group (Budget / Time / Resources) with its heading.
 .area-group + .area-group { margin-top: 1.25rem; }
 .area-heading {
