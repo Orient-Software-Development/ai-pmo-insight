@@ -122,6 +122,28 @@ public class HealthScoringOverrideTests
     }
 
     [Fact]
+    public void Scope_findings_are_display_only_and_never_move_the_score_or_confidence()
+    {
+        // Scope is display-only (POC): a Red Scope finding must not change the raw score, the final
+        // bucket, the confidence, or appear in the scored per-area breakdown.
+        var baseline = new[]
+        {
+            AnalysisFinding(HealthArea.Budget, Severity.Amber, Run),
+            AnalysisFinding(HealthArea.Schedule, Severity.Green, Run),
+        };
+        var withScope = baseline.Append(AnalysisFinding(HealthArea.Scope, Severity.Red, Run)).ToArray();
+
+        var scoring = new HealthScoringService(Options());
+        var without = scoring.Score("ALPHA", baseline)!;
+        var with = scoring.Score("ALPHA", withScope)!;
+
+        with.RawScore.Should().Be(without.RawScore);
+        with.FinalBucket.Should().Be(without.FinalBucket);
+        with.Confidence.Should().Be(without.Confidence);
+        with.Areas.Should().NotContain(a => a.Area == HealthArea.Scope);
+    }
+
+    [Fact]
     public void Result_is_auditable_and_shows_pre_and_post_override_buckets()
     {
         var schedule = AnalysisFinding(HealthArea.Schedule, Severity.Red, Run, locator: "Milestones!Design");

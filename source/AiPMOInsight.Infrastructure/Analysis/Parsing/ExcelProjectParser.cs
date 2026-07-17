@@ -25,6 +25,7 @@ internal static class ExcelProjectParser
             Assignments = ReadResources(workbook),
             RaidItems = ReadRaid(workbook),
             Decisions = ReadDecisions(workbook),
+            ScopeChanges = ReadScope(workbook),
             Minutes = [],
         };
     }
@@ -99,6 +100,19 @@ internal static class ExcelProjectParser
             Source = source,
         });
 
+    // POC scope-change sheet (placeholder shape until the Orbit export convention is agreed).
+    private static List<ScopeChangeRecord> ReadScope(XLWorkbook wb) =>
+        ReadSheet(wb, "Scope", (cell, source) => new ScopeChangeRecord
+        {
+            ProjectKey = cell("ProjectKey"),
+            Title = cell("Title"),
+            Type = NullIfBlank(cell("Type")),
+            Status = NullIfBlank(cell("Status")),
+            EffortImpactPct = ParseNullableDecimal(cell("EffortImpactPct")),
+            DateRaised = ParseDate(cell("DateRaised")),
+            Source = source,
+        });
+
     /// <summary>
     /// Reads every data row of a sheet (if present) via a header-name column accessor, building one
     /// record per row with a sheet!row source locator.
@@ -139,6 +153,9 @@ internal static class ExcelProjectParser
 
     private static decimal ParseDecimal(string value) =>
         decimal.TryParse(value, NumberStyles.Any, CultureInfo.InvariantCulture, out var d) ? d : 0m;
+
+    private static decimal? ParseNullableDecimal(string value) =>
+        decimal.TryParse(value, NumberStyles.Any, CultureInfo.InvariantCulture, out var d) ? d : null;
 
     private static DateTimeOffset? ParseDate(string value) =>
         DateTimeOffset.TryParse(value, CultureInfo.InvariantCulture, DateTimeStyles.AssumeUniversal, out var dt)

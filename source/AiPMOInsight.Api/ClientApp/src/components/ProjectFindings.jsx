@@ -184,6 +184,7 @@ function DecisionsSection({ findings }) {
 const KEY_DEVIATION_AREAS = [
   { area: 'Budget', heading: 'Budget' },
   { area: 'Schedule', heading: 'Time / schedule' },
+  { area: 'Scope', heading: 'Scope' },
   { area: 'Resource', heading: 'Resources' },
 ];
 
@@ -200,11 +201,13 @@ function KeyDeviationsSection({ findings }) {
 
   if (groups.length === 0) return null;
 
+  const hasScope = groups.some(g => g.area === 'Scope');
+
   return (
     <section className="block">
       <div className="sec-head">
         <h2 className="sec-title">Key deviations</h2>
-        <span className="sec-kicker">Budget · time · resources · by area (scope: follow-on)</span>
+        <span className="sec-kicker">Budget · time · scope · resources · by area</span>
       </div>
       {groups.map(g => (
         <div key={g.area} className="area-group">
@@ -212,6 +215,11 @@ function KeyDeviationsSection({ findings }) {
           <FindingsTable findings={g.items} />
         </div>
       ))}
+      {hasScope && (
+        <p className="flagged-note">Scope uses a <strong>POC “unapproved-creep” rule</strong> (Red = unapproved
+          scope increase, Amber = approved/open change) — not a client-agreed rule, and <strong>not yet scored</strong>
+          into the RAG health colour. To be confirmed at kickoff.</p>
+      )}
     </section>
   );
 }

@@ -45,6 +45,7 @@ public static class DependencyInjection
         services.AddScoped<FinancialSkill>();
         services.AddScoped<ResourceSkill>();
         services.AddScoped<DecisionSkill>();
+        services.AddScoped<ScopeSkill>();
         services.AddScoped<NarrativeSkill>();
         services.AddScoped<ChallengeSkill>();
         services.AddScoped<ReviewSkill>();
