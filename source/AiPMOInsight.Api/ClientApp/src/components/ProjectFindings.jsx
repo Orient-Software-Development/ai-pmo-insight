@@ -124,7 +124,9 @@ export function ProjectFindings() {
             <>
               <NarrativeSection items={view.narrative} />
               <DecisionsSection findings={view.findings} />
-              <FindingsSection findings={view.findings.filter(f => f.area !== 'Decision')} />
+              <KeyDeviationsSection findings={view.findings} />
+              <RisksSection findings={view.findings} />
+              <DataQualitySection findings={view.findings} />
               <ChallengeSection items={view.challenge} />
               <ReviewSection items={view.review} />
 
@@ -188,34 +190,89 @@ function DecisionsSection({ findings }) {
   );
 }
 
-// KPI findings table (analysis agents) — "Risks & Issues" in the wireframe.
-function FindingsSection({ findings }) {
+// Key deviations (Panel 3): the doc's cross-dimension deviation summary, grouped by health area under
+// its heading. Risks are deliberately NOT here — they get their own "Risks & issues" section (Panel 4),
+// matching the doc's two distinct panels. Scope is a follow-on (no Scope area in the finding shape yet).
+const KEY_DEVIATION_AREAS = [
+  { area: 'Budget', heading: 'Budget' },
+  { area: 'Schedule', heading: 'Time / schedule' },
+  { area: 'Resource', heading: 'Resources' },
+];
+
+function KeyDeviationsSection({ findings }) {
+  const groups = KEY_DEVIATION_AREAS
+    .map(g => ({ ...g, items: findings.filter(f => f.area === g.area) }))
+    .filter(g => g.items.length > 0);
+
+  if (groups.length === 0) return null;
+
   return (
     <section className="block">
       <div className="sec-head">
-        <h2 className="sec-title">Findings</h2>
-        <span className="sec-kicker">{findings.length} · each cites its source</span>
+        <h2 className="sec-title">Key deviations</h2>
+        <span className="sec-kicker">Budget · time · resources · by area (scope: follow-on)</span>
       </div>
-      <table className="records">
-        <thead>
-          <tr><th>Finding</th><th>Agent</th><th>Confidence</th><th>Cited source</th></tr>
-        </thead>
-        <tbody>
-          {findings.length === 0 ? (
-            <tr><td colSpan={4}><em>No analytic findings.</em></td></tr>
-          ) : (
-            findings.map(f => (
-              <tr key={f.id}>
-                <td>{renderFindingSummary(f.summary)}</td>
-                <td>{f.producingAgent}</td>
-                <td><ConfidenceChip value={f.confidence} /></td>
-                <td><span className="cite">{f.citation?.locator}<br />upload {f.citation?.uploadId}</span></td>
-              </tr>
-            ))
-          )}
-        </tbody>
-      </table>
+      {groups.map(g => (
+        <div key={g.area} className="area-group">
+          <h3 className="area-heading">{g.heading}</h3>
+          <FindingsTable findings={g.items} />
+        </div>
+      ))}
     </section>
+  );
+}
+
+// Risks & issues (Panel 4): the RAID-derived Risk-area findings — the doc's "top items needing attention".
+function RisksSection({ findings }) {
+  const risks = findings.filter(f => f.area === 'Risk');
+  if (risks.length === 0) return null;
+  return (
+    <section className="block">
+      <div className="sec-head">
+        <h2 className="sec-title">Risks &amp; issues</h2>
+        <span className="sec-kicker">{risks.length} · top items needing attention</span>
+      </div>
+      <FindingsTable findings={risks} />
+    </section>
+  );
+}
+
+// Data quality: DataQuality-area findings — not a key-deviation dimension, but kept visible here (they
+// drive the confidence level, panel 8) with an on-ramp to the L3 Data Quality dashboard.
+function DataQualitySection({ findings }) {
+  const dq = findings.filter(f => f.area === 'DataQuality');
+  if (dq.length === 0) return null;
+  return (
+    <section className="block">
+      <div className="sec-head">
+        <h2 className="sec-title">Data quality</h2>
+        <span className="sec-kicker">{dq.length} · affects confidence · full view on L3</span>
+      </div>
+      <FindingsTable findings={dq} />
+    </section>
+  );
+}
+
+// Shared cited-findings table, worst-severity first, with a RAG status chip. Used by the area groups
+// above; each row still cites its source (locator + upload).
+function FindingsTable({ findings }) {
+  const rows = [...findings].sort((a, b) => (SEV_RANK[b.severity] ?? 0) - (SEV_RANK[a.severity] ?? 0));
+  return (
+    <table className="records">
+      <thead>
+        <tr><th>Finding</th><th>Confidence</th><th>Cited source</th><th>Status</th></tr>
+      </thead>
+      <tbody>
+        {rows.map(f => (
+          <tr key={f.id} className={`severity ${bucketColour(f.severity)}`}>
+            <td>{renderFindingSummary(f.summary)}</td>
+            <td><ConfidenceChip value={f.confidence} /></td>
+            <td><span className="cite">{f.citation?.locator}<br />upload {f.citation?.uploadId}</span></td>
+            <td>{f.severity ? <span className={`sev ${bucketColour(f.severity)}`}>{f.severity}</span> : '—'}</td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
   );
 }
 

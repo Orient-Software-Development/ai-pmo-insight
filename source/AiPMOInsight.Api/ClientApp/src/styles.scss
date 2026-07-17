@@ -384,6 +384,18 @@ a.nav-tab {
   .sec-kicker { font-size: 0.78rem; color: var(--ink-mute); }
 }
 
+// Panel 3 key-deviations: an area sub-group (Budget / Time / Resources) with its heading.
+.area-group + .area-group { margin-top: 1.25rem; }
+.area-heading {
+  margin: 0 0 0.4rem;
+  font-family: var(--font-ui);
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--ink-mute);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
 // Records table (intervention list) with severity row accent + sev chip.
 .records {
   tr.severity { border-left: 4px solid transparent; }
