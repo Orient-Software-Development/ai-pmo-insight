@@ -9,7 +9,9 @@ namespace AiPMOInsight.Application.Tests.Analysis;
 
 public class StatusAgentTests
 {
-    private static MilestoneRecord Milestone(string name, string? due, string? completed, string? dependsOn = null, string? status = null) => new()
+    private static MilestoneRecord Milestone(
+        string name, string? due, string? completed, string? dependsOn = null, string? status = null,
+        string? baseline = null, bool isCritical = false) => new()
     {
         ProjectKey = "ALPHA",
         Name = name,
@@ -17,6 +19,8 @@ public class StatusAgentTests
         CompletedDate = completed is null ? null : DateTimeOffset.Parse(completed),
         Status = status,
         DependsOn = dependsOn,
+        BaselineDate = baseline is null ? null : DateTimeOffset.Parse(baseline),
+        IsCritical = isCritical,
         Source = new SourceRef($"Milestones!{name}"),
     };
 
@@ -161,6 +165,47 @@ public class StatusAgentTests
             .ContainSingle(f => f.MetricDetail != null && f.MetricDetail.GetValueOrDefault("kind") == "upcoming").Which;
         upcoming.MetricDetail!["milestone"].Should().Be("Pilot go-live");
         upcoming.MetricDetail["dueDate"].Should().Be("2026-07-18");
+    }
+
+    [Fact]
+    public async Task A_slipped_milestone_reports_the_slip_from_its_baseline()
+    {
+        // Baseline 2026-06-15, adjusted due 2026-07-30 → 45-day slip. Still upcoming (as-of 07-10),
+        // so the slip is surfaced as info on the finding (magnitude is display-only in v0).
+        var findings = await Run(
+            DataQualitySignal.Clean(),
+            Milestone("Pilot go-live", due: "2026-07-30", completed: null, baseline: "2026-06-15"));
+
+        var f = findings.Should().ContainSingle(x => x.MetricDetail != null && x.MetricDetail.ContainsKey("slipDays")).Which;
+        f.MetricDetail!["slipDays"].Should().Be("45");
+        f.MetricDetail["baselineDate"].Should().Be("2026-06-15");
+        f.Summary.Should().Contain("slipped");
+    }
+
+    [Fact]
+    public async Task A_critical_milestone_in_trouble_is_red_even_when_only_slightly_late()
+    {
+        // Overdue by only 5 days → normally the "minor" Green band; but a CRITICAL milestone in trouble
+        // must escalate to Red (and it carries the critical flag for the panel badge).
+        var findings = await Run(
+            DataQualitySignal.Clean(),
+            Milestone("Cutover", due: "2026-07-05", completed: null, isCritical: true));
+
+        var f = findings.Should().ContainSingle(x => x.Summary.Contains("overdue", StringComparison.OrdinalIgnoreCase)).Which;
+        f.Severity.Should().Be(Severity.Red);
+        f.MetricDetail!["critical"].Should().Be("true");
+    }
+
+    [Fact]
+    public async Task A_non_critical_slightly_late_milestone_stays_green()
+    {
+        // Same 5-day overdue but NOT critical → keeps the minor Green band (regression guard for the elevation).
+        var findings = await Run(
+            DataQualitySignal.Clean(),
+            Milestone("Minor task", due: "2026-07-05", completed: null, isCritical: false));
+
+        findings.Should().Contain(f => f.Summary.Contains("overdue", StringComparison.OrdinalIgnoreCase)
+                                       && f.Severity == Severity.Green);
     }
 
     [Fact]
