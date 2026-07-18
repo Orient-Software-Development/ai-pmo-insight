@@ -309,6 +309,49 @@ public class DataQualityAgentTests
         result.Findings.Should().NotContain(f => f.Summary.Contains("not been updated", StringComparison.OrdinalIgnoreCase));
     }
 
+    // ── L3 #3: resource-plan vs time-entries consistency (POC) ───────────────────────────────
+
+    private static AssignmentRecord Alloc(string person, double pct) => new()
+    {
+        ProjectKey = "ALPHA", Person = person, Role = "Engineer",
+        AllocationPercent = pct, CapacityPercent = 100, Source = AnalysisFixtures.Source,
+    };
+
+    private static TimeEntryRecord Time(string person, double hours) => new()
+    {
+        ProjectKey = "ALPHA", Person = person, HoursLogged = hours, Source = AnalysisFixtures.Source,
+    };
+
+    [Fact]
+    public async Task Allocation_without_time_and_time_without_allocation_are_both_flagged()
+    {
+        var data = AnalysisFixtures.Data(
+            projects: [AnalysisFixtures.Project(lastUpdated: AnalysisFixtures.RunTime.AddDays(-3))],
+            assignments: [Alloc("Anna Berg", 50)],
+            timeEntries: [Time("Sven Aalto", 40)]);
+        var slice = AnalysisFixtures.Slice(data: data);
+
+        var result = await Run(slice);
+
+        result.Findings.Should().Contain(f => f.Summary.Contains("Anna Berg") && f.Summary.Contains("logged no time", StringComparison.OrdinalIgnoreCase));
+        result.Findings.Should().Contain(f => f.Summary.Contains("Sven Aalto") && f.Summary.Contains("not on the resource plan", StringComparison.OrdinalIgnoreCase));
+    }
+
+    [Fact]
+    public async Task Allocation_matched_by_time_is_not_flagged()
+    {
+        var data = AnalysisFixtures.Data(
+            projects: [AnalysisFixtures.Project(lastUpdated: AnalysisFixtures.RunTime.AddDays(-3))],
+            assignments: [Alloc("Anna Berg", 50)],
+            timeEntries: [Time("Anna Berg", 40)]);
+        var slice = AnalysisFixtures.Slice(data: data);
+
+        var result = await Run(slice);
+
+        result.Findings.Should().NotContain(f => f.Summary.Contains("logged no time", StringComparison.OrdinalIgnoreCase));
+        result.Findings.Should().NotContain(f => f.Summary.Contains("not on the resource plan", StringComparison.OrdinalIgnoreCase));
+    }
+
     [Fact]
     public async Task Inconsistent_source_flag_is_red()
     {

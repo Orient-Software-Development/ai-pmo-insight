@@ -131,6 +131,18 @@ public sealed record ScopeChangeRecord
 }
 
 /// <summary>
+/// A time-entry record (POC placeholder shape). Used for the resource-plan vs time-entries consistency
+/// check (L3 #3): a person allocated to a project should have time logged, and vice-versa.
+/// </summary>
+public sealed record TimeEntryRecord
+{
+    public required string ProjectKey { get; init; }
+    public required string Person { get; init; }
+    public double HoursLogged { get; init; }
+    public required SourceRef Source { get; init; }
+}
+
+/// <summary>
 /// The Data Collector's output: the typed records parsed from one upload, grouped by category. This
 /// is the shared input the analysis agents (#2–#6) read; it is never persisted.
 /// </summary>
@@ -144,6 +156,7 @@ public sealed record CollectedData
     public required IReadOnlyList<RaidItemRecord> RaidItems { get; init; }
     public IReadOnlyList<DecisionRecord> Decisions { get; init; } = [];
     public IReadOnlyList<ScopeChangeRecord> ScopeChanges { get; init; } = [];
+    public IReadOnlyList<TimeEntryRecord> TimeEntries { get; init; } = [];
 
     public static CollectedData Empty { get; } = new()
     {
@@ -155,5 +168,6 @@ public sealed record CollectedData
         RaidItems = [],
         Decisions = [],
         ScopeChanges = [],
+        TimeEntries = [],
     };
 }

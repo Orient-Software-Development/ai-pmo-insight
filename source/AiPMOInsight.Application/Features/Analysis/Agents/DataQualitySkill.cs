@@ -92,6 +92,31 @@ public sealed class DataQualitySkill : IAgentSkill<ProjectSlice, DataQualityResu
             }
         }
 
+        // Resource-plan vs time-entries consistency (L3 #3, POC). Only when the project has time data: a
+        // person allocated but with no time logged — or time logged by someone off the plan — is a gap.
+        if (slice.Data.TimeEntries.Any(t => t.ProjectKey == slice.ProjectKey))
+        {
+            var planned = slice.Data.Assignments
+                .Where(a => a.ProjectKey == slice.ProjectKey && a.AllocationPercent > 0).ToList();
+            var logged = slice.Data.TimeEntries
+                .Where(t => t.ProjectKey == slice.ProjectKey && t.HoursLogged > 0).ToList();
+            var loggedPeople = logged.Select(t => t.Person).ToHashSet(StringComparer.OrdinalIgnoreCase);
+            var plannedPeople = planned.Select(a => a.Person).ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+            foreach (var a in planned.Where(a => !loggedPeople.Contains(a.Person)))
+            {
+                findings.Add(Flag(slice, $"{a.Person} is allocated ({a.AllocationPercent:F0}%) but has logged no time.",
+                    a.Source, Severity.Amber, "Confirm the allocation, or log time for this person."));
+            }
+
+            foreach (var person in loggedPeople.Where(p => !plannedPeople.Contains(p)))
+            {
+                var src = logged.First(t => string.Equals(t.Person, person, StringComparison.OrdinalIgnoreCase)).Source;
+                findings.Add(Flag(slice, $"{person} logged time but is not on the resource plan.",
+                    src, Severity.Amber, "Add the person to the plan, or correct the time entry."));
+            }
+        }
+
         // Consistency: any child record referencing a project key with no defining Project row.
         var knownKeys = slice.Data.Projects.Select(p => p.Key).ToHashSet(StringComparer.OrdinalIgnoreCase);
         var orphans = OrphanSources(slice.Data, knownKeys).ToList();
@@ -164,7 +189,7 @@ public sealed class DataQualitySkill : IAgentSkill<ProjectSlice, DataQualityResu
             ["Decisions"] = Pct(d.Decisions.Where(x => x.ProjectKey == key),
                 x => !string.IsNullOrWhiteSpace(x.Title) && x.Owner is not null && x.NeededBy is not null && x.Status is not null),
             ["Minutes"] = Pct(d.Minutes.Where(x => x.ProjectKey == key), x => !string.IsNullOrWhiteSpace(x.Text)),
-            ["Time"] = "n/a", // no time-entries data source yet (L3 #3)
+            ["Time"] = Pct(d.TimeEntries.Where(t => t.ProjectKey == key), t => t.HoursLogged > 0),
         };
 
         return FindingFactory.Analysis(slice, "DataQuality", $"Areas-completeness grid for '{key}'.",
