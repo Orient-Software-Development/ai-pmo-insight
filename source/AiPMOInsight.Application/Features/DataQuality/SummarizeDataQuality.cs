@@ -24,13 +24,23 @@ public static class SummarizeDataQuality
         ConfidenceView Confidence,
         IReadOnlyList<ItemView> Items,
         int TotalItems,
-        IReadOnlyList<ProjectCountView> PerProject);
+        IReadOnlyList<ProjectCountView> PerProject,
+        IReadOnlyList<DuplicateView> Duplicates);
+
+    /// <summary>A duplicate-identity candidate pair (L3 #4): the project, its likely twin, a POC similarity
+    /// score, and a cited source. The UI records Merge/Keep-separate — it NEVER auto-merges (US-2).</summary>
+    public sealed record DuplicateView(
+        string ProjectKey, string Candidate, string CandidateName, int Score, string CitationLocator);
 
     /// <summary>Portfolio confidence against the publish threshold: mean %, the threshold, and below-target.</summary>
     public sealed record ConfidenceView(double Mean, int Threshold, bool BelowTarget);
 
-    /// <summary>One missing/inconsistent item: its project, the issue text, severity, and a cited source.</summary>
-    public sealed record ItemView(string ProjectKey, string Issue, string Severity, string CitationLocator);
+    /// <summary>
+    /// One missing/inconsistent item: its project, the issue text, severity, a cited source, the staleness
+    /// age in days (L3 #8 — null unless the finding carries one), and a suggested remediation (L3 #2).
+    /// </summary>
+    public sealed record ItemView(
+        string ProjectKey, string Issue, string Severity, string CitationLocator, int? AgeDays, string? Remediation);
 
     /// <summary>How many data-quality items a project has (where the gaps cluster).</summary>
     public sealed record ProjectCountView(string ProjectKey, int Count);
@@ -48,6 +58,8 @@ public static class SummarizeDataQuality
             var scoredConfidences = new List<double>();
             // Keep the finding alongside its key so the projection can order by the real severity enum.
             var collected = new List<(string Key, Finding Finding)>();
+            // Duplicate-identity candidates (L3 #4) are surfaced separately from the missing/inconsistent items.
+            var duplicates = new List<(string Key, Finding Finding)>();
 
             foreach (var key in keys)
             {
@@ -73,7 +85,14 @@ public static class SummarizeDataQuality
                     && f.Kind == FindingKind.Analysis
                     && f.Area == HealthArea.DataQuality))
                 {
-                    collected.Add((key, f));
+                    if (f.MetricDetail?.GetValueOrDefault("kind") == "duplicate-candidate")
+                    {
+                        duplicates.Add((key, f));
+                    }
+                    else
+                    {
+                        collected.Add((key, f));
+                    }
                 }
             }
 
@@ -86,7 +105,9 @@ public static class SummarizeDataQuality
                 .ThenBy(x => x.Key, StringComparer.Ordinal)
                 .ThenBy(x => x.Finding.Citation.Locator, StringComparer.Ordinal)
                 .Select(x => new ItemView(
-                    x.Key, x.Finding.Summary, x.Finding.Severity!.Value.ToString(), x.Finding.Citation.Locator))
+                    x.Key, x.Finding.Summary, x.Finding.Severity!.Value.ToString(), x.Finding.Citation.Locator,
+                    x.Finding.MetricValue is { } age ? (int)age : null,
+                    x.Finding.MetricDetail?.GetValueOrDefault("remediation")))
                 .ToList();
 
             var perProject = items
@@ -94,7 +115,20 @@ public static class SummarizeDataQuality
                 .Select(g => new ProjectCountView(g.Key, g.Count()))
                 .ToList();
 
-            return new Result(confidence, items, items.Count, perProject);
+            // Duplicate candidates, worst (highest score) first, cited — a separate surface for the
+            // Merge/Keep-separate decision (which the UI only records; it never auto-merges, US-2).
+            var duplicateViews = duplicates
+                .OrderByDescending(x => x.Finding.MetricValue ?? 0)
+                .ThenBy(x => x.Key, StringComparer.Ordinal)
+                .Select(x => new DuplicateView(
+                    x.Key,
+                    x.Finding.MetricDetail!.GetValueOrDefault("candidate", ""),
+                    x.Finding.MetricDetail!.GetValueOrDefault("candidateName", ""),
+                    x.Finding.MetricValue is { } s ? (int)s : 0,
+                    x.Finding.Citation.Locator))
+                .ToList();
+
+            return new Result(confidence, items, items.Count, perProject, duplicateViews);
         }
     }
 }

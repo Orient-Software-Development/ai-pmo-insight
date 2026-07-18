@@ -141,6 +141,53 @@ public class SummarizeDataQualityTests
     }
 
     [Fact]
+    public async Task Item_surfaces_age_and_remediation_from_the_finding_metric()
+    {
+        // L3 #8 (Age) + #2 (Remediation): a stale finding carries the age (days) as a metric and a
+        // suggested remediation on MetricDetail — the slice exposes both on the item.
+        var stale = Finding.Create(
+            "ALPHA", "Project data is stale (last updated 45 days ago).",
+            Citation.Create(Guid.NewGuid(), "Projects!row2"), T0, Guid.NewGuid(), "DataQuality",
+            FindingKind.Analysis, Confidence.High, area: HealthArea.DataQuality, severity: Severity.Amber,
+            metricValue: 45m, metricUnit: "days",
+            metricDetail: new Dictionary<string, string> { ["remediation"] = "Refresh the project data." });
+
+        var result = await Run([stale]);
+
+        var item = result.Items.Single();
+        item.AgeDays.Should().Be(45);
+        item.Remediation.Should().Be("Refresh the project data.");
+    }
+
+    [Fact]
+    public async Task Duplicate_candidates_go_to_the_duplicates_list_not_the_items_list()
+    {
+        // L3 #4: a duplicate-candidate finding is surfaced in its own list (for Merge/Keep-separate),
+        // not mixed into the missing/inconsistent items.
+        var dup = Finding.Create(
+            "ORB-1", "Possible duplicate of 'ORB-1a' — similarity 80%.",
+            Citation.Create(Guid.NewGuid(), "Projects!row2"), T0, Guid.NewGuid(), "DataQuality",
+            FindingKind.Analysis, Confidence.Medium, area: HealthArea.DataQuality, severity: Severity.Amber,
+            metricValue: 80m, metricUnit: "percent",
+            metricDetail: new Dictionary<string, string>
+            {
+                ["kind"] = "duplicate-candidate",
+                ["candidate"] = "ORB-1a",
+                ["candidateName"] = "Customer Data Migration Phase 2",
+                ["score"] = "80",
+            });
+
+        var result = await Run([dup]);
+
+        result.Items.Should().BeEmpty(); // excluded from the missing/inconsistent list
+        var d = result.Duplicates.Should().ContainSingle().Which;
+        d.ProjectKey.Should().Be("ORB-1");
+        d.Candidate.Should().Be("ORB-1a");
+        d.CandidateName.Should().Be("Customer Data Migration Phase 2");
+        d.Score.Should().Be(80);
+    }
+
+    [Fact]
     public async Task Items_are_ordered_worst_first_by_severity()
     {
         var run = Guid.NewGuid();
