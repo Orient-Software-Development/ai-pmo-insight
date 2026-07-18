@@ -79,12 +79,14 @@ those five areas are present, total weight 90):
 
 | Area | Agent | Provisional rule |
 |------|-------|------------------|
-| **Schedule** | Status | overdue/late **≥ 30 days → Red**, **7–29 → Amber**, 1–6 → Green. Recorded status **Missed → Red**, **At Risk → Amber** (overrides the date). |
+| **Schedule** | Status | overdue/late **≥ 30 days → Red**, **7–29 → Amber**, 1–6 → Green. Recorded status **Missed → Red**, **At Risk → Amber** (overrides the date). A **critical** milestone (`IsCritical`) in trouble (overdue/missed/at-risk) is **escalated to Red** regardless of the day-band. **Slip** (adjusted due − baseline) is surfaced as info ("slipped N days") but does **not** by itself raise severity in v0. |
 | **Budget** | Financial | forecast overrun % = (Forecast−Budget)/Budget. **> 15% → Red**, any overrun **0–15% → Amber**. Also: spend running **> 10 pts** ahead of % complete → Amber. |
 | **Risk** | Risk & Issue | RAID label **critical/high/severe/major → Red**; **low/minor/info → Green**; unknown/blank/medium → **Amber** (never silently Green). |
 | **Resource** | Resource | allocation **> capacity → Amber** (severe over → Red); on-leave while heavily allocated (≥ 50%) → Red; spread over >1 assignment above capacity → Amber; no PM role on project → Amber. **Key-person concentration: ≥ 5 projects → Red, 3–4 → Amber, < 3 → not flagged.** |
 | **Data Quality** | Data Quality | missing name / %-complete / last-updated → Amber; milestone with no due date → Amber; data **stale > 30 days → Amber**; record referencing an unknown project id → Red. (All High confidence — directly observed.) |
 | **Decision** | Decision | not-approved & **past NeededBy → Red**; not-approved & **due within 14 days → Amber**; else nothing. |
+
+> **Open (kickoff):** should milestone **slip magnitude** raise severity on its own (e.g. slip > N weeks → Amber/Red)? Today slip is display-only; only `IsCritical`-in-trouble escalates. Also confirm the real export carries `BaselineDate` + `IsCritical` (see A2).
 
 ---
 

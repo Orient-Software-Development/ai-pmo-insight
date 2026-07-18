@@ -363,8 +363,14 @@ function UpcomingMilestonesSection({ findings }) {
         <tbody>
           {upcoming.map(f => (
             <tr key={f.id} className={`severity ${bucketColour(f.severity)}`}>
-              <td><strong>{f.metricDetail?.milestone ?? '—'}</strong></td>
-              <td>{f.metricDetail?.dueDate || '—'}</td>
+              <td>
+                <strong>{f.metricDetail?.milestone ?? '—'}</strong>
+                {f.metricDetail?.critical === 'true' && <span className="sev rag-red badge-inline">critical</span>}
+              </td>
+              <td>
+                {f.metricDetail?.dueDate || '—'}
+                {f.metricDetail?.slipDays && <span className="cite"><br />slipped {f.metricDetail.slipDays}d from baseline</span>}
+              </td>
               <td>{renderFindingSummary(f.summary)}</td>
               <td>{f.severity ? <span className={`sev ${bucketColour(f.severity)}`}>{f.severity}</span> : '—'}</td>
             </tr>

@@ -46,6 +46,10 @@ public sealed record MilestoneRecord
     public DateTimeOffset? CompletedDate { get; init; }
     public string? Status { get; init; }
     public string? DependsOn { get; init; }
+    /// <summary>Original planned date; slip = adjusted <see cref="DueDate"/> − baseline. Null when absent.</summary>
+    public DateTimeOffset? BaselineDate { get; init; }
+    /// <summary>Whether this is a critical-path milestone (a critical one in trouble is escalated).</summary>
+    public bool IsCritical { get; init; }
     public required SourceRef Source { get; init; }
 }
 
