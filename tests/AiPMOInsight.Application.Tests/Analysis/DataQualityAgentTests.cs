@@ -21,7 +21,9 @@ public class DataQualityAgentTests
 
         var result = await Run(slice);
 
-        result.Findings.Should().BeEmpty();
+        // Clean data raises no problem findings (the always-present informational completeness grid aside).
+        result.Findings.Where(f => f.MetricDetail?.GetValueOrDefault("kind") != "completeness-grid")
+            .Should().BeEmpty();
         result.Signal.MissingFieldCount.Should().Be(0);
         result.Signal.SourceConsistent.Should().BeTrue();
     }
@@ -203,6 +205,108 @@ public class DataQualityAgentTests
 
         result.Findings.Should().NotContain(f =>
             f.MetricDetail != null && f.MetricDetail.GetValueOrDefault("kind") == "duplicate-candidate");
+    }
+
+    // ── L3 #7: areas-completeness grid ───────────────────────────────────────────────────────
+
+    [Fact]
+    public async Task Emits_an_areas_completeness_grid_over_the_eight_input_categories()
+    {
+        var data = AnalysisFixtures.Data(
+            projects: [AnalysisFixtures.Project(lastUpdated: AnalysisFixtures.RunTime.AddDays(-3))],
+            milestones:
+            [
+                new MilestoneRecord { ProjectKey = "ALPHA", Name = "M1", DueDate = AnalysisFixtures.RunTime, Source = AnalysisFixtures.Source },
+            ]);
+        var slice = AnalysisFixtures.Slice(data: data);
+
+        var result = await Run(slice);
+
+        var grid = result.Findings
+            .Should().ContainSingle(f => f.MetricDetail != null && f.MetricDetail.GetValueOrDefault("kind") == "completeness-grid").Which;
+        grid.Severity.Should().Be(Severity.Green); // informational, not a gap
+        grid.MetricDetail!.Should().ContainKeys("Schedule", "Budget", "Scope", "Resources", "Risks", "Decisions", "Minutes", "Time");
+        grid.MetricDetail["Schedule"].Should().Be("100"); // 1 milestone with name + due date → 100%
+        grid.MetricDetail["Budget"].Should().Be("n/a");    // no budget records
+        grid.MetricDetail["Time"].Should().Be("n/a");      // no time-entries source yet
+    }
+
+    // ── L3 #6: budget-actuals-missing completeness ───────────────────────────────────────────
+
+    private static BudgetLineRecord Budget(string category, decimal? actual) => new()
+    {
+        ProjectKey = "ALPHA",
+        Category = category,
+        Budget = 100m,
+        Forecast = 110m,
+        Actual = actual,
+        Source = AnalysisFixtures.Source,
+    };
+
+    [Fact]
+    public async Task Budget_line_missing_actuals_is_flagged()
+    {
+        var data = AnalysisFixtures.Data(
+            projects: [AnalysisFixtures.Project(lastUpdated: AnalysisFixtures.RunTime.AddDays(-3))],
+            budgetLines: [Budget("Development", actual: null)]);
+        var slice = AnalysisFixtures.Slice(data: data);
+
+        var result = await Run(slice);
+
+        result.Findings.Should().Contain(f =>
+            f.Summary.Contains("missing actuals", StringComparison.OrdinalIgnoreCase) && f.Severity == Severity.Amber);
+    }
+
+    [Fact]
+    public async Task Budget_line_with_actuals_is_not_flagged_missing()
+    {
+        var data = AnalysisFixtures.Data(
+            projects: [AnalysisFixtures.Project(lastUpdated: AnalysisFixtures.RunTime.AddDays(-3))],
+            budgetLines: [Budget("Development", actual: 60m)]);
+        var slice = AnalysisFixtures.Slice(data: data);
+
+        var result = await Run(slice);
+
+        result.Findings.Should().NotContain(f => f.Summary.Contains("missing actuals", StringComparison.OrdinalIgnoreCase));
+    }
+
+    // ── L3 #1: per-risk/issue staleness (POC N=21 days, EXAMPLE) ─────────────────────────────
+
+    private static RaidItemRecord Raid(string description, int lastUpdatedDaysAgo) => new()
+    {
+        ProjectKey = "ALPHA",
+        Type = RaidType.Risk,
+        Description = description,
+        LastUpdated = AnalysisFixtures.RunTime.AddDays(-lastUpdatedDaysAgo),
+        Source = AnalysisFixtures.Source,
+    };
+
+    [Fact]
+    public async Task A_stale_raid_item_is_flagged_with_its_age()
+    {
+        var data = AnalysisFixtures.Data(
+            projects: [AnalysisFixtures.Project(lastUpdated: AnalysisFixtures.RunTime.AddDays(-3))],
+            raidItems: [Raid("Vendor API may slip", lastUpdatedDaysAgo: 30)]);
+        var slice = AnalysisFixtures.Slice(data: data);
+
+        var result = await Run(slice);
+
+        result.Findings.Should().Contain(f =>
+            f.Summary.Contains("not been updated", StringComparison.OrdinalIgnoreCase)
+            && f.MetricValue == 30m && f.MetricUnit == "days" && f.Severity == Severity.Amber);
+    }
+
+    [Fact]
+    public async Task A_recently_updated_raid_item_is_not_flagged_stale()
+    {
+        var data = AnalysisFixtures.Data(
+            projects: [AnalysisFixtures.Project(lastUpdated: AnalysisFixtures.RunTime.AddDays(-3))],
+            raidItems: [Raid("Vendor API may slip", lastUpdatedDaysAgo: 5)]);
+        var slice = AnalysisFixtures.Slice(data: data);
+
+        var result = await Run(slice);
+
+        result.Findings.Should().NotContain(f => f.Summary.Contains("not been updated", StringComparison.OrdinalIgnoreCase));
     }
 
     [Fact]

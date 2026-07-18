@@ -44,7 +44,9 @@ public sealed class HealthScoringService(HealthScoringOptions options)
                         // Scope is display-only (POC): its findings render in the L2 key-deviations view
                         // but must not move the score or the confidence average until the PMO agrees a
                         // real Scope weight + RAG rule at kickoff.
-                        && f.Area != HealthArea.Scope)
+                        && f.Area != HealthArea.Scope
+                        // The areas-completeness grid (L3 #7) is an informational summary, not a scored gap.
+                        && f.MetricDetail?.GetValueOrDefault("kind") != "completeness-grid")
             .ToList();
 
         if (scoreable.Count == 0)

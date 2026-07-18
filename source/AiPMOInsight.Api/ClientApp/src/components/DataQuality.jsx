@@ -3,6 +3,9 @@ import { authFetch } from '../AuthContext';
 import { bucketColour } from '../health';
 import { EMPTY_DQ, dqView } from '../dataQuality';
 
+// The 8 input categories for the areas-completeness grid (L3 #7) — NOT the 5 HealthArea buckets.
+const COMPLETENESS_CATEGORIES = ['Schedule', 'Budget', 'Scope', 'Resources', 'Risks', 'Decisions', 'Minutes', 'Time'];
+
 // Level-3 Data Quality view (add-data-quality-dashboard), built to the v2 wireframe
 // (docs/designs/phase5-wireframe-v2.html, data-page="l3"). Consumes GET /api/data-quality/summary.
 //
@@ -39,7 +42,7 @@ export function DataQuality() {
   if (loading) return <p aria-busy="true">Loading data quality…</p>;
   if (error) return <p style={{ color: 'var(--pico-del-color)' }}>{error}</p>;
 
-  const { confidence, items, duplicates } = data;
+  const { confidence, items, duplicates, completeness } = data;
   const mean = Math.round(confidence.mean);
   const below = confidence.belowTarget;
 
@@ -73,15 +76,15 @@ export function DataQuality() {
       <section className="block">
         <div className="sec-head">
           <h2 className="sec-title">Missing and inconsistent items</h2>
-          <span className="sec-kicker">Worst first · severity · {data.totalItems} item{data.totalItems === 1 ? '' : 's'}</span>
+          <span className="sec-kicker">Ranked by confidence lift · {data.totalItems} item{data.totalItems === 1 ? '' : 's'}</span>
         </div>
         <table className="records" aria-label="Data quality items">
           <thead>
-            <tr><th>Project</th><th>Issue</th><th>Age</th><th>Suggested remediation</th><th>Severity</th></tr>
+            <tr><th>Project</th><th>Issue</th><th>Age</th><th>Suggested remediation</th><th>Conf. lift</th><th>Severity</th></tr>
           </thead>
           <tbody>
             {items.length === 0 ? (
-              <tr><td colSpan={5}><em>No data-quality issues on record.</em></td></tr>
+              <tr><td colSpan={6}><em>No data-quality issues on record.</em></td></tr>
             ) : (
               items.map((i, idx) => (
                 <tr key={`${i.projectKey}-${idx}`} className={`severity ${bucketColour(i.severity)}`}>
@@ -89,6 +92,7 @@ export function DataQuality() {
                   <td>{i.issue}<br /><span className="cite">↳ cites {i.citationLocator}</span></td>
                   <td>{i.ageDays != null ? `${i.ageDays}d` : '—'}</td>
                   <td>{i.remediation ?? '—'}</td>
+                  <td>{i.lift > 0 ? `+${i.lift}` : '—'}</td>
                   <td><span className={`sev ${bucketColour(i.severity)}`}>{i.severity}</span></td>
                 </tr>
               ))
@@ -96,21 +100,43 @@ export function DataQuality() {
           </tbody>
         </table>
         <p className="flagged-note">
-          <strong>Age</strong> (staleness, in days) and <strong>suggested remediation</strong> are now
-          backed by the finding metric. The confidence-lift <em>ranking</em> of this table is still a
-          follow-on (items are ordered by severity). Nothing is fabricated.
+          <strong>Age</strong> (staleness, days), <strong>suggested remediation</strong>, and the
+          <strong> confidence-lift ranking</strong> (how many levels fixing each item would raise the
+          project's confidence — <strong>POC</strong>) are backed by the finding metric. Nothing is fabricated.
         </p>
       </section>
 
-      {/* ── FLAGGED sections: match v2 layout, no fabricated data ────────────────────────────── */}
+      {/* ── Areas-completeness grid (BACKED, POC field set) ──────────────────────────────────── */}
       <section className="block">
         <div className="sec-head">
           <h2 className="sec-title">Completeness by area</h2>
-          <span className="sec-kicker">Schedule · Budget · Scope · Resources · Risks · Decisions · Minutes · Time</span>
+          <span className="sec-kicker">% of mandatory fields present · POC field set</span>
         </div>
-        <div className="flagged-grid">
-          <FlaggedPanel title="Per-area completeness (8 categories)" wide />
-        </div>
+        {completeness.length === 0 ? (
+          <p><em>No completeness data.</em></p>
+        ) : (
+          <div style={{ overflowX: 'auto' }}>
+            <table className="records" aria-label="Areas completeness by category">
+              <thead>
+                <tr><th>Project</th>{COMPLETENESS_CATEGORIES.map(c => <th key={c}>{c}</th>)}</tr>
+              </thead>
+              <tbody>
+                {completeness.map(row => (
+                  <tr key={row.projectKey}>
+                    <td><strong>{row.projectKey}</strong></td>
+                    {COMPLETENESS_CATEGORIES.map(c => {
+                      const v = row.categories?.[c];
+                      return <td key={c}>{v == null || v === 'n/a' ? '—' : `${v}%`}</td>;
+                    })}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+        <p className="flagged-note">Completeness = % of each category's records that have all their
+          <strong> POC mandatory fields</strong> (kickoff-tunable). "—" = no records (Time has no data source
+          yet — L3 #3). Informational only — <strong>not scored</strong>.</p>
       </section>
 
       <section className="block">

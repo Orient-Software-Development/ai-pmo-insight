@@ -59,7 +59,8 @@ public sealed record BudgetLineRecord
     public required string Category { get; init; }
     public decimal Budget { get; init; }
     public decimal Forecast { get; init; }
-    public decimal Actual { get; init; }
+    /// <summary>Actual spend to date; null when the source omits it (a completeness gap, L3 #6).</summary>
+    public decimal? Actual { get; init; }
     /// <summary>ISO currency of the budget figures (e.g. "EUR"); null when the source omits it.</summary>
     public string? Currency { get; init; }
     public required SourceRef Source { get; init; }
@@ -93,6 +94,8 @@ public sealed record RaidItemRecord
     public required string Description { get; init; }
     public string? Severity { get; init; }
     public string? Status { get; init; }
+    /// <summary>When the RAID item was last reviewed/updated; null when the source omits it.</summary>
+    public DateTimeOffset? LastUpdated { get; init; }
     public required SourceRef Source { get; init; }
 }
 

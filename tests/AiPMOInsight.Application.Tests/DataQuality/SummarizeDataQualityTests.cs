@@ -187,6 +187,25 @@ public class SummarizeDataQualityTests
         d.Score.Should().Be(80);
     }
 
+    private static Finding DqTagged(Severity sev, string project, Guid run, string kind, string locator) =>
+        Finding.Create(project, $"{kind} issue", Citation.Create(Guid.NewGuid(), locator), T0, run, "DataQuality",
+            FindingKind.Analysis, Confidence.High, area: HealthArea.DataQuality, severity: sev,
+            metricDetail: new Dictionary<string, string> { ["signalKind"] = kind });
+
+    [Fact]
+    public async Task Items_are_ordered_by_confidence_lift_ahead_of_severity()
+    {
+        // L3 #5: fixing the inconsistency lifts confidence (Medium→High); the Red item has no signal
+        // impact (zero lift). So the lower-severity orphan ranks FIRST — lift beats severity.
+        var run = Guid.NewGuid();
+        var orphan = DqTagged(Severity.Green, "P", run, kind: "orphan", locator: "orphan!r1");
+        var noise = DqTagged(Severity.Red, "P", run, kind: "none", locator: "noise!r1");
+
+        var result = await Run([orphan, noise]);
+
+        result.Items.First().CitationLocator.Should().Be("orphan!r1");
+    }
+
     [Fact]
     public async Task Items_are_ordered_worst_first_by_severity()
     {
@@ -224,6 +243,27 @@ public class SummarizeDataQualityTests
         result.PerProject.Should().HaveCount(2);
         result.PerProject.Single(p => p.ProjectKey == "A").Count.Should().Be(3);
         result.PerProject.Single(p => p.ProjectKey == "B").Count.Should().Be(2);
+    }
+
+    [Fact]
+    public async Task Completeness_grid_is_surfaced_per_project_and_kept_off_the_items_list()
+    {
+        var grid = Finding.Create(
+            "ALPHA", "Areas-completeness grid.", Citation.Create(Guid.NewGuid(), "completeness:ALPHA"),
+            T0, Guid.NewGuid(), "DataQuality", FindingKind.Analysis, Confidence.High,
+            area: HealthArea.DataQuality, severity: Severity.Green,
+            metricDetail: new Dictionary<string, string>
+            {
+                ["kind"] = "completeness-grid", ["remediation"] = "fix", ["Schedule"] = "80", ["Time"] = "n/a",
+            });
+
+        var result = await Run([grid]);
+
+        result.Items.Should().BeEmpty(); // the grid is not a missing/inconsistent item
+        var c = result.Completeness.Should().ContainSingle().Which;
+        c.ProjectKey.Should().Be("ALPHA");
+        c.Categories["Schedule"].Should().Be("80");
+        c.Categories.Should().NotContainKey("kind"); // marker keys stripped
     }
 
     [Fact]

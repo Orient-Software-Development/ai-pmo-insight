@@ -62,7 +62,7 @@ internal static class ExcelProjectParser
             Category = cell("Category"),
             Budget = ParseDecimal(cell("Budget")),
             Forecast = ParseDecimal(cell("Forecast")),
-            Actual = ParseDecimal(cell("Actual")),
+            Actual = ParseNullableDecimal(cell("Actual")),
             Currency = NullIfBlank(cell("Currency")),
             Source = source,
         });
@@ -87,6 +87,7 @@ internal static class ExcelProjectParser
             Description = cell("Description"),
             Severity = NullIfBlank(cell("Severity")),
             Status = NullIfBlank(cell("Status")),
+            LastUpdated = ParseDate(cell("LastUpdated")),
             Source = source,
         });
 

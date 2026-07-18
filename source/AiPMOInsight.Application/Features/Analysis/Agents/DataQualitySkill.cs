@@ -13,6 +13,7 @@ namespace AiPMOInsight.Application.Features.Analysis.Agents;
 public sealed class DataQualitySkill : IAgentSkill<ProjectSlice, DataQualityResult>
 {
     private const double StaleThresholdDays = 30;
+    private const double RiskStaleThresholdDays = 21; // L3 #1 EXAMPLE placeholder — PMO tunes at kickoff.
 
     public string Name => "DataQuality";
 
@@ -31,21 +32,21 @@ public sealed class DataQualitySkill : IAgentSkill<ProjectSlice, DataQualityResu
             {
                 missing++;
                 findings.Add(Flag(slice, "Project name is missing.", project.Source, Severity.Amber,
-                    "Enter the project name in the source record."));
+                    "Enter the project name in the source record.", signalKind: "missing"));
             }
 
             if (project.PercentComplete is null)
             {
                 missing++;
                 findings.Add(Flag(slice, "Project percent-complete is missing.", project.Source, Severity.Amber,
-                    "Enter the project's % complete."));
+                    "Enter the project's % complete.", signalKind: "missing"));
             }
 
             if (project.LastUpdated is null)
             {
                 missing++;
                 findings.Add(Flag(slice, "Project has no last-updated date.", project.Source, Severity.Amber,
-                    "Set the project's last-updated date."));
+                    "Set the project's last-updated date.", signalKind: "missing"));
             }
         }
 
@@ -54,7 +55,15 @@ public sealed class DataQualitySkill : IAgentSkill<ProjectSlice, DataQualityResu
         {
             missing++;
             findings.Add(Flag(slice, $"Milestone '{milestone.Name}' has no due date.", milestone.Source, Severity.Amber,
-                "Add a due date to the milestone."));
+                "Add a due date to the milestone.", signalKind: "missing"));
+        }
+
+        // Budget lines missing actuals — a completeness gap (L3 #6).
+        foreach (var line in slice.Data.BudgetLines.Where(b => b.ProjectKey == slice.ProjectKey && b.Actual is null))
+        {
+            missing++;
+            findings.Add(Flag(slice, $"Budget category '{line.Category}' is missing actuals.", line.Source, Severity.Amber,
+                "Enter actual spend to date for this budget line.", signalKind: "missing"));
         }
 
         // Staleness. The age (days) is carried as a structured metric (L3 #8), not only in the summary.
@@ -66,7 +75,20 @@ public sealed class DataQualitySkill : IAgentSkill<ProjectSlice, DataQualityResu
             {
                 findings.Add(Flag(slice, $"Project data is stale (last updated {ageDays:F0} days ago).",
                     project.Source, Severity.Amber, "Re-export the latest project data from Orbit.",
-                    metricValue: (decimal)Math.Round(ageDays.Value), metricUnit: "days"));
+                    metricValue: (decimal)Math.Round(ageDays.Value), metricUnit: "days", signalKind: "stale"));
+            }
+        }
+
+        // Per-risk/issue staleness (L3 #1): a RAID item not reviewed within the window is a DQ gap. The
+        // window is a POC placeholder (N=21, EXAMPLE — PMO tunes at kickoff); the age is a structured metric.
+        foreach (var raid in slice.Data.RaidItems.Where(r => r.ProjectKey == slice.ProjectKey && r.LastUpdated is not null))
+        {
+            var raidAge = (slice.Run.StartedAt - raid.LastUpdated!.Value).TotalDays;
+            if (raidAge > RiskStaleThresholdDays)
+            {
+                findings.Add(Flag(slice, $"{raid.Type} '{raid.Description}' has not been updated in {raidAge:F0} days.",
+                    raid.Source, Severity.Amber, "Review and update the RAID item.",
+                    metricValue: (decimal)Math.Round(raidAge), metricUnit: "days"));
             }
         }
 
@@ -78,7 +100,7 @@ public sealed class DataQualitySkill : IAgentSkill<ProjectSlice, DataQualityResu
         {
             // An orphan reference means the data set is internally inconsistent — critical for DQ.
             findings.Add(Flag(slice, "Record references an unknown project id (inconsistent source).", orphan, Severity.Red,
-                "Correct the project-id reference, or add the missing project row."));
+                "Correct the project-id reference, or add the missing project row.", signalKind: "orphan"));
         }
 
         // Duplicate-identity candidates (L3 #4, POC heuristic — flagged). Compare this project against the
@@ -102,6 +124,14 @@ public sealed class DataQualitySkill : IAgentSkill<ProjectSlice, DataQualityResu
             }
         }
 
+        // Areas-completeness grid (L3 #7, POC — flagged): per input category, the % of that category's
+        // records that have all their EXAMPLE mandatory fields present. Surfaced as one informational grid
+        // finding (Green, excluded from scoring); the mandatory-field set is a placeholder (PMO tunes).
+        if (project is not null)
+        {
+            findings.Add(CompletenessGrid(slice));
+        }
+
         var signal = new DataQualitySignal
         {
             MissingFieldCount = missing,
@@ -110,6 +140,43 @@ public sealed class DataQualitySkill : IAgentSkill<ProjectSlice, DataQualityResu
         };
 
         return Task.FromResult(new DataQualityResult(findings, signal));
+    }
+
+    // The 8 input categories (NOT the 5 HealthArea buckets) and their EXAMPLE mandatory fields (POC).
+    private static Finding CompletenessGrid(ProjectSlice slice)
+    {
+        var key = slice.ProjectKey;
+        var d = slice.Data;
+        var grid = new Dictionary<string, string>
+        {
+            ["kind"] = "completeness-grid",
+            ["remediation"] = "Fill the missing mandatory fields per category (POC mandatory-field set).",
+            ["Schedule"] = Pct(d.Milestones.Where(m => m.ProjectKey == key),
+                m => !string.IsNullOrWhiteSpace(m.Name) && m.DueDate is not null),
+            ["Budget"] = Pct(d.BudgetLines.Where(b => b.ProjectKey == key),
+                b => b.Budget > 0 && b.Forecast > 0 && b.Actual is not null),
+            ["Scope"] = Pct(d.ScopeChanges.Where(s => s.ProjectKey == key),
+                s => !string.IsNullOrWhiteSpace(s.Title) && s.Type is not null && s.Status is not null),
+            ["Resources"] = Pct(d.Assignments.Where(a => a.ProjectKey == key),
+                a => !string.IsNullOrWhiteSpace(a.Person) && !string.IsNullOrWhiteSpace(a.Role) && a.AllocationPercent > 0),
+            ["Risks"] = Pct(d.RaidItems.Where(r => r.ProjectKey == key),
+                r => !string.IsNullOrWhiteSpace(r.Description) && r.Severity is not null && r.Status is not null),
+            ["Decisions"] = Pct(d.Decisions.Where(x => x.ProjectKey == key),
+                x => !string.IsNullOrWhiteSpace(x.Title) && x.Owner is not null && x.NeededBy is not null && x.Status is not null),
+            ["Minutes"] = Pct(d.Minutes.Where(x => x.ProjectKey == key), x => !string.IsNullOrWhiteSpace(x.Text)),
+            ["Time"] = "n/a", // no time-entries data source yet (L3 #3)
+        };
+
+        return FindingFactory.Analysis(slice, "DataQuality", $"Areas-completeness grid for '{key}'.",
+            new SourceRef($"completeness:{key}"), Confidence.High, HealthArea.DataQuality, Severity.Green,
+            metricDetail: grid);
+    }
+
+    // Percentage of records that satisfy the completeness predicate; "n/a" when the category has no records.
+    private static string Pct<T>(IEnumerable<T> records, Func<T, bool> complete)
+    {
+        var list = records.ToList();
+        return list.Count == 0 ? "n/a" : ((int)Math.Round(100.0 * list.Count(complete) / list.Count)).ToString();
     }
 
     // POC duplicate-similarity threshold (0–100 EXAMPLE placeholder — PMO tunes at kickoff).
@@ -182,10 +249,12 @@ public sealed class DataQualitySkill : IAgentSkill<ProjectSlice, DataQualityResu
     // Attaches a deterministic, per-check-type suggested remediation (static rule-map, no LLM) plus an
     // optional metric (e.g. the staleness age in days) so the L3 view can render Remediation + Age columns.
     private static Finding Flag(ProjectSlice slice, string summary, SourceRef source, Severity severity,
-        string remediation, decimal? metricValue = null, string? metricUnit = null) =>
+        string remediation, decimal? metricValue = null, string? metricUnit = null, string signalKind = "none") =>
         FindingFactory.Analysis(slice, "DataQuality", summary, source, Confidence.High, HealthArea.DataQuality,
             severity, metricValue: metricValue, metricUnit: metricUnit,
-            metricDetail: new Dictionary<string, string> { ["remediation"] = remediation });
+            // signalKind maps the finding to the DQ signal component it represents (missing/stale/orphan/none),
+            // so the L3 read can reconstruct the signal and compute each item's confidence lift (L3 #5).
+            metricDetail: new Dictionary<string, string> { ["remediation"] = remediation, ["signalKind"] = signalKind });
 
     private static IEnumerable<SourceRef> OrphanSources(CollectedData data, HashSet<string> knownKeys)
     {
