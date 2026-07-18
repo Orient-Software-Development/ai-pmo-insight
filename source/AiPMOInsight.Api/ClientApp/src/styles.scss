@@ -384,6 +384,9 @@ a.nav-tab {
   .sec-kicker { font-size: 0.78rem; color: var(--ink-mute); }
 }
 
+// Inline chip after a label (e.g. a "critical" badge next to a milestone name).
+.badge-inline { margin-left: 0.4rem; }
+
 // Panel 2 this-period progress: score-move headline row.
 .progress-headline {
   display: flex;

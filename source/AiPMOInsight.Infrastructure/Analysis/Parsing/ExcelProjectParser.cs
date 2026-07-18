@@ -50,6 +50,8 @@ internal static class ExcelProjectParser
             CompletedDate = ParseDate(cell("CompletedDate")),
             Status = NullIfBlank(cell("Status")),
             DependsOn = NullIfBlank(cell("DependsOn")),
+            BaselineDate = ParseDate(cell("BaselineDate")),
+            IsCritical = ParseBool(cell("IsCritical")),
             Source = source,
         });
 

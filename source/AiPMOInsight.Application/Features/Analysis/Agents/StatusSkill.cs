@@ -52,26 +52,33 @@ public sealed class StatusSkill : IAgentSkill<AnalysisInput, IReadOnlyList<Findi
                 continue;
             }
 
+            // Slip from the original baseline (magnitude is display-only in v0 — surfaced, not scored).
+            var slipNote = milestone.BaselineDate is { } baseline && due > baseline
+                ? $" — slipped {(int)(due - baseline).TotalDays} days from baseline"
+                : string.Empty;
+
             if (due < asOf)
             {
                 var days = (int)(asOf - due).TotalDays;
+                // A critical milestone in trouble escalates to Red regardless of the day-band.
+                var severity = CriticalFloor(milestone.IsCritical, Worst(Band(days), statusSeverity));
                 findings.Add(Finding(slice, confidence,
-                    $"Milestone '{milestone.Name}' is overdue by {days} days ({Severity(days)} delay).",
-                    milestone.Source, Worst(Band(days), statusSeverity), Detail(milestone, "overdue")));
+                    $"Milestone '{milestone.Name}' is overdue by {days} days ({Severity(days)} delay){slipNote}.",
+                    milestone.Source, severity, Detail(milestone, "overdue")));
             }
             else if (statusSeverity is { } adverse)
             {
                 // Not yet due, but recorded as missed/at-risk — an upcoming milestone flagged as a risk (so it
                 // still belongs in the Upcoming-milestones view, coloured by its status rather than green).
                 findings.Add(Finding(slice, confidence,
-                    $"Milestone '{milestone.Name}' is marked '{milestone.Status}' (schedule risk).",
-                    milestone.Source, adverse, Detail(milestone, "upcoming")));
+                    $"Milestone '{milestone.Name}' is marked '{milestone.Status}' (schedule risk){slipNote}.",
+                    milestone.Source, CriticalFloor(milestone.IsCritical, adverse), Detail(milestone, "upcoming")));
             }
             else if (due <= asOf.AddDays(UpcomingWindowDays))
             {
                 var days = (int)(due - asOf).TotalDays;
                 findings.Add(Finding(slice, confidence,
-                    $"Milestone '{milestone.Name}' is due soon (in {days} days).",
+                    $"Milestone '{milestone.Name}' is due soon (in {days} days){slipNote}.",
                     milestone.Source, Domain.Findings.Severity.Green, Detail(milestone, "upcoming"))); // heads-up, not yet a variance
             }
 
@@ -137,18 +144,34 @@ public sealed class StatusSkill : IAgentSkill<AnalysisInput, IReadOnlyList<Findi
     private static Severity Worst(Severity band, Severity? status) =>
         status is { } s && (int)s > (int)band ? s : band;
 
+    /// <summary>A critical-path milestone in trouble escalates to Red regardless of the day-band.</summary>
+    private static Severity CriticalFloor(bool isCritical, Severity severity) =>
+        isCritical ? Worst(severity, Domain.Findings.Severity.Red) : severity;
+
     /// <summary>
     /// Structured detail for the L2 milestone views: the milestone name, its (adjusted) due date, and a
     /// <paramref name="kind"/> tag — "upcoming" for forward-looking heads-ups (the Upcoming-milestones
     /// panel) vs "overdue"/"late"/"dependency" deviations (Key deviations &gt; Time). Columns, not prose.
     /// </summary>
-    private static IReadOnlyDictionary<string, string> Detail(MilestoneRecord milestone, string kind) =>
-        new Dictionary<string, string>
+    private static IReadOnlyDictionary<string, string> Detail(MilestoneRecord milestone, string kind)
+    {
+        var detail = new Dictionary<string, string>
         {
             ["milestone"] = milestone.Name,
             ["dueDate"] = milestone.DueDate?.ToString("yyyy-MM-dd") ?? string.Empty,
             ["kind"] = kind,
+            ["critical"] = milestone.IsCritical ? "true" : "false",
         };
+        if (milestone.BaselineDate is { } baseline)
+        {
+            detail["baselineDate"] = baseline.ToString("yyyy-MM-dd");
+            if (milestone.DueDate is { } due && due > baseline)
+            {
+                detail["slipDays"] = ((int)(due - baseline).TotalDays).ToString();
+            }
+        }
+        return detail;
+    }
 
     private static Finding Finding(
         ProjectSlice slice, Confidence confidence, string summary, SourceRef source, Severity severity,
