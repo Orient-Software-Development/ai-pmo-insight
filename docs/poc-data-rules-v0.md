@@ -13,13 +13,14 @@
 
 ## 1. Health scoring model
 
-### 1.1 Area weights (sum = 100) — *config, shipped*
+### 1.1 Area weights (sum = 100) — *config, shipped* (matches `appsettings.json → HealthScoring:Weights`)
 | Area | Weight | Note |
 |------|:--:|------|
 | Schedule | 20 | |
-| Budget | **30** | leaning heavier |
-| Risk | **30** | leaning heavier |
+| Budget | **25** | joint-highest |
+| Risk | **25** | joint-highest |
 | Resource | 15 | |
+| **Decision** | **10** | overdue / blocking decisions (added by #45) |
 | Data Quality | 5 | |
 | Scope | — | display-only, **not scored** |
 
@@ -64,12 +65,13 @@ rawScore = Σ(areaScore × weight) / Σ(weight)      # over areas that have find
 finalBucket = worst( bucket(rawScore), any tripped override floor )
 ```
 
-**Example A — floor bites.** Schedule Amber, Budget Red, Risk/Resource/DQ Green:
-`(70·20 + 30·30 + 100·30 + 100·15 + 100·5) / 100 = 73 → Amber`; but Budget Red trips
+**Example A — floor bites.** Schedule Amber, Budget Red, Risk/Resource/DQ Green (no Decision finding, so
+those five areas are present, total weight 90):
+`(70·20 + 30·25 + 100·25 + 100·15 + 100·5) / 90 ≈ 74 → Amber`; but Budget Red trips
 `forecast-overrun-critical` → **Red**.
 
-**Example B — no floor.** Schedule Green, Budget Amber, Risk Green (only these three present):
-`(100·20 + 70·30 + 100·30) / 80 = 76.25 → Amber`, no Red findings → stays **Amber**.
+**Example B — no floor.** Schedule / Budget / Risk all Amber (only these three present, total weight 70):
+`(70·20 + 70·25 + 70·25) / 70 = 70 → Amber`; no Red finding → no floor → stays **Amber**.
 
 ---
 
