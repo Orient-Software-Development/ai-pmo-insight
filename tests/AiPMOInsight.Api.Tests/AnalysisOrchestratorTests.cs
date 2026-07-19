@@ -69,7 +69,7 @@ public class AnalysisOrchestratorTests
         var prompts = PromptRegistry.FromEmbeddedResources();
         return new AnalysisOrchestrator(
             new DataCollectorSkill(new UploadParser()),
-            new DataQualitySkill(),
+            new DataQualitySkill(new DataQualityOptions()),
             new StatusSkill(),
             new RiskAndIssueSkill(llm, prompts),
             new FinancialSkill(),

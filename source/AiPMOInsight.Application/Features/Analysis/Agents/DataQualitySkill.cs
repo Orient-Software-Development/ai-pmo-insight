@@ -1,4 +1,5 @@
 using AiPMOInsight.Application.Features.Analysis.Model;
+using AiPMOInsight.Application.Features.DataQuality;
 using AiPMOInsight.Domain.Findings;
 
 namespace AiPMOInsight.Application.Features.Analysis.Agents;
@@ -10,10 +11,9 @@ namespace AiPMOInsight.Application.Features.Analysis.Agents;
 /// <see cref="DataQualitySignal"/> that downstream agents turn into their own findings' confidence
 /// via <see cref="ConfidencePolicy"/>.
 /// </summary>
-public sealed class DataQualitySkill : IAgentSkill<ProjectSlice, DataQualityResult>
+public sealed class DataQualitySkill(DataQualityOptions options) : IAgentSkill<ProjectSlice, DataQualityResult>
 {
     private const double StaleThresholdDays = 30;
-    private const double RiskStaleThresholdDays = 21; // L3 #1 EXAMPLE placeholder — PMO tunes at kickoff.
 
     public string Name => "DataQuality";
 
@@ -32,21 +32,21 @@ public sealed class DataQualitySkill : IAgentSkill<ProjectSlice, DataQualityResu
             {
                 missing++;
                 findings.Add(Flag(slice, "Project name is missing.", project.Source, Severity.Amber,
-                    "Enter the project name in the source record.", signalKind: "missing"));
+                    "Enter the project name in the source record.", signalKind: DataQualityFindingKeys.SignalKinds.Missing));
             }
 
             if (project.PercentComplete is null)
             {
                 missing++;
                 findings.Add(Flag(slice, "Project percent-complete is missing.", project.Source, Severity.Amber,
-                    "Enter the project's % complete.", signalKind: "missing"));
+                    "Enter the project's % complete.", signalKind: DataQualityFindingKeys.SignalKinds.Missing));
             }
 
             if (project.LastUpdated is null)
             {
                 missing++;
                 findings.Add(Flag(slice, "Project has no last-updated date.", project.Source, Severity.Amber,
-                    "Set the project's last-updated date.", signalKind: "missing"));
+                    "Set the project's last-updated date.", signalKind: DataQualityFindingKeys.SignalKinds.Missing));
             }
         }
 
@@ -80,11 +80,12 @@ public sealed class DataQualitySkill : IAgentSkill<ProjectSlice, DataQualityResu
         }
 
         // Per-risk/issue staleness (L3 #1): a RAID item not reviewed within the window is a DQ gap. The
-        // window is a POC placeholder (N=21, EXAMPLE — PMO tunes at kickoff); the age is a structured metric.
+        // window is configured (DataQuality:RiskStaleThresholdDays, EXAMPLE — PMO tunes at kickoff); the
+        // age is a structured metric.
         foreach (var raid in slice.Data.RaidItems.Where(r => r.ProjectKey == slice.ProjectKey && r.LastUpdated is not null))
         {
             var raidAge = (slice.Run.StartedAt - raid.LastUpdated!.Value).TotalDays;
-            if (raidAge > RiskStaleThresholdDays)
+            if (raidAge > options.RiskStaleThresholdDays)
             {
                 findings.Add(Flag(slice, $"{raid.Type} '{raid.Description}' has not been updated in {raidAge:F0} days.",
                     raid.Source, Severity.Amber, "Review and update the RAID item.",
@@ -142,7 +143,7 @@ public sealed class DataQualitySkill : IAgentSkill<ProjectSlice, DataQualityResu
                 }
 
                 var score = DuplicateScore(project, other, slice.Data);
-                if (score >= DuplicateScoreThreshold)
+                if (score >= options.DuplicateScoreThreshold)
                 {
                     findings.Add(DuplicateCandidate(slice, project, other, score));
                 }
@@ -204,21 +205,22 @@ public sealed class DataQualitySkill : IAgentSkill<ProjectSlice, DataQualityResu
         return list.Count == 0 ? "n/a" : ((int)Math.Round(100.0 * list.Count(complete) / list.Count)).ToString();
     }
 
-    // POC duplicate-similarity threshold (0–100 EXAMPLE placeholder — PMO tunes at kickoff).
-    private const int DuplicateScoreThreshold = 60;
-
     /// <summary>
-    /// POC duplicate score (0–100, EXAMPLE weights): name-token Jaccard ×50 + same customer ×30 +
-    /// any shared resource ×20. Name similarity is the discriminator — same-customer/shared-PM alone
-    /// can't cross the threshold.
+    /// POC duplicate score (0–100, configured weights — <see cref="DataQualityOptions.DuplicateWeights"/>):
+    /// name-token Jaccard × NameSimilarity + same customer × SameCustomer + any shared resource ×
+    /// SharedResource. Name similarity is the discriminator — same-customer/shared-PM alone can't cross
+    /// the threshold when the configured NameSimilarity weight dominates.
     /// </summary>
-    private static int DuplicateScore(ProjectRecord a, ProjectRecord b, CollectedData data)
+    private int DuplicateScore(ProjectRecord a, ProjectRecord b, CollectedData data)
     {
         var name = NameSimilarity(a.Name, b.Name);
         var sameCustomer = !string.IsNullOrWhiteSpace(a.Customer)
             && string.Equals(a.Customer, b.Customer, StringComparison.OrdinalIgnoreCase);
         var sharedResource = SharedResourceCount(a.Key, b.Key, data) > 0;
-        return (int)Math.Round(name * 50 + (sameCustomer ? 30 : 0) + (sharedResource ? 20 : 0));
+        var weights = options.DuplicateWeights;
+        return (int)Math.Round(name * weights.NameSimilarity
+            + (sameCustomer ? weights.SameCustomer : 0)
+            + (sharedResource ? weights.SharedResource : 0));
     }
 
     private static double NameSimilarity(string a, string b)

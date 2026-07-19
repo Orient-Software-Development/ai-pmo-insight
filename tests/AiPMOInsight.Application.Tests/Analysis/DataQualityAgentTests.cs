@@ -10,7 +10,7 @@ namespace AiPMOInsight.Application.Tests.Analysis;
 public class DataQualityAgentTests
 {
     private static Task<DataQualityResult> Run(ProjectSlice slice) =>
-        new DataQualitySkill().ExecuteAsync(slice, CancellationToken.None);
+        new DataQualitySkill(new DataQualityOptions()).ExecuteAsync(slice, CancellationToken.None);
 
     [Fact]
     public async Task Clean_recent_consistent_data_yields_no_findings_and_high_confidence()
