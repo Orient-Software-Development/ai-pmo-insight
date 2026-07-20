@@ -348,35 +348,37 @@ function UpcomingMilestonesSection({ findings }) {
     .filter(f => f.metricDetail?.kind === 'upcoming')
     .sort((a, b) => (a.metricDetail?.dueDate ?? '').localeCompare(b.metricDetail?.dueDate ?? ''));
 
-  if (upcoming.length === 0) return null;
-
   return (
     <section className="block">
       <div className="sec-head">
         <h2 className="sec-title">Upcoming milestones</h2>
         <span className="sec-kicker">{upcoming.length} · next 4 weeks · by due date</span>
       </div>
-      <table className="records">
-        <thead>
-          <tr><th>Milestone</th><th>Due</th><th>Note</th><th>Status</th></tr>
-        </thead>
-        <tbody>
-          {upcoming.map(f => (
-            <tr key={f.id} className={`severity ${bucketColour(f.severity)}`}>
-              <td>
-                <strong>{f.metricDetail?.milestone ?? '—'}</strong>
-                {f.metricDetail?.critical === 'true' && <span className="sev rag-red badge-inline">critical</span>}
-              </td>
-              <td>
-                {f.metricDetail?.dueDate || '—'}
-                {f.metricDetail?.slipDays && <span className="cite"><br />slipped {f.metricDetail.slipDays}d from baseline</span>}
-              </td>
-              <td>{renderFindingSummary(f.summary)}</td>
-              <td>{f.severity ? <span className={`sev ${bucketColour(f.severity)}`}>{f.severity}</span> : '—'}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+      {upcoming.length === 0 ? (
+        <p><em>No milestones due in the next 4 weeks.</em></p>
+      ) : (
+        <table className="records">
+          <thead>
+            <tr><th>Milestone</th><th>Due</th><th>Note</th><th>Status</th></tr>
+          </thead>
+          <tbody>
+            {upcoming.map(f => (
+              <tr key={f.id} className={`severity ${bucketColour(f.severity)}`}>
+                <td>
+                  <strong>{f.metricDetail?.milestone ?? '—'}</strong>
+                  {f.metricDetail?.critical === 'true' && <span className="sev rag-red badge-inline">critical</span>}
+                </td>
+                <td>
+                  {f.metricDetail?.dueDate || '—'}
+                  {f.metricDetail?.slipDays && <span className="cite"><br />slipped {f.metricDetail.slipDays}d from baseline</span>}
+                </td>
+                <td>{renderFindingSummary(f.summary)}</td>
+                <td>{f.severity ? <span className={`sev ${bucketColour(f.severity)}`}>{f.severity}</span> : '—'}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      )}
     </section>
   );
 }

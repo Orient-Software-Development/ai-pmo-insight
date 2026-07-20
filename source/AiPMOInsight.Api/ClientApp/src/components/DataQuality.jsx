@@ -50,9 +50,8 @@ export function DataQuality() {
     <div>
       <p className="eyebrow"><span className="num">L3</span> Data Quality</p>
       <h1>What the AI is missing.</h1>
-      <p>The specific inputs that would lift confidence — every item cited to its source. Ordered by
-        severity today; the confidence-lift ranking, remediation text, and duplicate detection are
-        follow-ons flagged below.</p>
+      <p>The specific inputs that would lift confidence — every item cited to its source. Ranked by
+        confidence lift; fixing the top items first raises the portfolio confidence number above.</p>
 
       {/* ── Confidence hero (BACKED: mean, threshold, below-target) ──────────────────────────── */}
       <div className="conf-hero">

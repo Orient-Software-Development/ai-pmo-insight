@@ -9,7 +9,9 @@ Describe how the system **is**. Long-lived, edited in place as the system change
 - [analysis-pipeline.md](analysis-pipeline.md) — 9-agent flow, LLM fan-out per project
 - [authentication.md](authentication.md) — JWT-cookie auth design
 - [database.md](database.md) — schema, EF migrations, persistence
-- [gap.md](gap.md)
+- [auth-gap.md](auth-gap.md) — auth implementation vs. `authentication.md` spec
+- [kickoff-questions.md](kickoff-questions.md) — POC → production: what's left for the client to
+  provide/decide, and what's still open engineering
 
 ## Artifact docs (subfoldered, named by ID)
 

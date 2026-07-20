@@ -44,10 +44,10 @@ WRITE-TIME — Analysis pipeline (runs on upload; persists findings)
    #2 Data Quality 🔢 ......... missing / stale / inconsistent  +  a confidence signal
         │
         ▼
-   ┌──────────────────── parallel ────────────────────┐
-   #3 Status 🔢   #4 Risk & Issue 🔀   #5 Financial 🔢   #6 Resource 🔢
-   (schedule)     (RAID + minutes-LLM) (budget)         (resourcing)
-   └───────────────────────┬───────────────────────────┘
+   ┌────────────────────────────── parallel ───────────────────────────────┐
+   #3 Status 🔢   #4 Risk & Issue 🔀   #5 Financial 🔢   #6 Resource 🔢   Decision 🔢   Scope 🔢
+   (schedule)     (RAID + minutes-LLM) (budget)         (resourcing)     (new)         (new, display-only)
+   └──────────────────────────────────┬──────────────────────────────────┘
         ▼
    #7 Narrative 🔀 ......... status + recommendation (template-first; LLM if complex)
         ▼
@@ -83,7 +83,9 @@ formula-produced**. Only the **prose** — narrative, challenge, review — is L
 | 3 | Status | 🔢 | Schedule findings (milestones) |
 | 4 | Risk & Issue | 🔀 | RAID findings (deterministic) + minute-extracted risks (LLM, only when minutes exist) |
 | 5 | Financial | 🔢 | Budget findings (overrun, burn, exposure) |
-| 6 | Resource | 🔢 | Resource findings (allocation, capacity, key-role) |
+| 6 | Resource | 🔢 | Resource findings (allocation, capacity, key-role, cross-project concentration) |
+| — | Decision *(new, `add-decisions-agent`)* | 🔢 | Decision findings (overdue / due-soon) |
+| — | Scope *(new, POC)* | 🔢 | Scope findings (unapproved-creep candidate) — display-only, excluded from scoring |
 | 7 | Narrative | 🔀 | One narrative + recommendation; template-first, LLM only for complex cases (≥3 signals or a minute-extracted signal) |
 | 8 | Challenge | 🤖 | Adversarial critique of the narrative |
 | 9 | Review | 🤖 | Reviewer questions per persona |
@@ -103,7 +105,7 @@ formula-produced**. Only the **prose** — narrative, challenge, review — is L
 | 4 | Resource / key-person | Table (person · count · band) | 🔢 | `ScorePortfolio` dedupes `ResourceSkill` concentration findings by person | ✅ (× absence follow-on) |
 | 5 | Decision backlog | Count | 🔢 | `ScorePortfolio` counts `DecisionSkill` findings (#45+#47) | ✅ |
 | 6 | Client / commercial risk | Grouped table (proxy) | 🔢 | at-risk projects grouped by customer (Narrative-finding channel), labelled | ✅ proxy (true signal 🔵 needs client) |
-| 7 | Recommended actions | Owner · deadline · action card | 🔀 | `NarrativeSkill.Recommendation` → `MetricDetail` (#48) | 🟡 structured; portfolio roll-up of recommendations pending |
+| 7 | Recommended actions | Owner · deadline · action card | 🔀 | `NarrativeSkill.Recommendation` → `MetricDetail` (#48); `ScorePortfolio.RecommendedActions` rolls up at-risk projects worst-first | ✅ |
 
 ## Level 2 — Individual Project Dashboard
 
@@ -112,11 +114,11 @@ formula-produced**. Only the **prose** — narrative, challenge, review — is L
 | 1 | Overall status (RAG + explanation) | RAG chip + HealthBanner (area breakdown, override audit) | 🔢 | `HealthScoringService` → `HealthScore` | ✅ |
 | 8 | Confidence level | `%` in header + High/Med/Low chips | 🔢 | `ConfidencePolicy` / `HealthScore.Confidence` | ✅ |
 | 4 | Risks & issues | Table rows; severity chip + citation | 🔀 | `RiskAndIssueSkill` (`RaidItemRecord` + minutes) | ✅ |
-| 3 | Key deviations (budget/time/scope/risks/resources) | Findings table | 🔢 | Financial + Status + Risk + Resource findings | 🟡 4/5 — Scope has no data/rule |
-| 5 | Upcoming milestones | Finding rows | 🔢 | `StatusSkill` over `MilestoneRecord.DueDate` | 🐞 ignores `Status`/baseline/`is_critical` |
-| 7 | AI recommendation | Owner/deadline/action + prose | 🔀 | `NarrativeSkill.Recommendation` → `MetricDetail` (#48, built) + summary | 🟡 structured; L2 panel rendering pending |
-| 2 | This-period progress | — | 🔢 | planned run-over-run delta + 🔷 "activity" threshold (client) | 🔷 planned |
-| 6 | Decisions needed (owner/deadline/consequence) | Findings rows | 🔢 | `DecisionSkill` (built, #47) — flows to the findings read | 🟡 findings produced; dedicated owner/deadline panel pending |
+| 3 | Key deviations (budget/time/scope/risks/resources) | Findings grouped by area heading | 🔢 | Financial + Status + Risk + Resource + `ScopeSkill` findings | ✅ (Scope is POC display-only — not scored, kept in its own section alongside Risks & DataQuality) |
+| 5 | Upcoming milestones | Dedicated dated table (nearest-first); critical badge + slip note | 🔢 | `StatusSkill` over `MilestoneRecord.DueDate`/`BaselineDate`/`IsCritical` | ✅ (widened to a 28-day window; a critical milestone in trouble escalates to Red; slip is display-only info) |
+| 7 | AI recommendation | Owner/deadline/action + prose | 🔀 | `NarrativeSkill.Recommendation` → `MetricDetail` (#48) + summary | ✅ structured (the Narrative prose stays L2's rendering surface — no separate owner/deadline card, unlike L1's roll-up) |
+| 2 | This-period progress | Pace headline (score Δ) + moved-forward/backward tables | 🔢 | `SummarizeProgress` — run-over-run diff of the two latest runs | ✅ (pace-band thresholds are a POC placeholder — see `poc-data-rules-v0.md` §6) |
+| 6 | Decisions needed (owner/deadline/consequence) | Dedicated worst-first table | 🔢 | `DecisionSkill` (#45+#47) stamps structured detail on `MetricDetail` | ✅ |
 | — | Challenge (US-9) | Prose critique list | 🤖 | `ChallengeSkill` | ✅ |
 | — | Review (US-9) | Per-persona question list | 🤖 | `ReviewSkill` | ✅ |
 
@@ -125,12 +127,12 @@ formula-produced**. Only the **prose** — narrative, challenge, review — is L
 | Panel | Rendered as | Generated By | Source | State |
 |-------|-------------|:---:|--------|:---:|
 | Confidence hero | Big `%` + threshold + below-target chip | 🔢 | mean `HealthScore.Confidence` vs `ConfidenceFloor` | ✅ |
-| Missing / inconsistent items | Table; severity chip + citation | 🔢 | `DataQualitySkill` (`Area == DataQuality`) | ✅ |
-| Age column | Days number | 🔢 | `DataQualitySignal.LastUpdateAgeDays` — in `Finding.Summary` | 🔷 planned |
-| Suggested remediation | Text per row | 🔢 | planned static rule-map (check-type → fix) | 🔷 planned |
-| Confidence-lift ordering | Ordered rows / delta | 🔢 | planned counterfactual over `ConfidencePolicy` | 🔷 planned |
-| Areas completeness grid (8 cat) | Grid of `%` | 🔢 | planned present / expected per category | 🔷 planned |
-| Duplicate identity candidates | Table + Merge / Keep-separate | 🔢 | planned similarity heuristic — never auto-merges (US-2) | 🔷 planned |
+| Missing / inconsistent items | Table; severity chip + citation | 🔢 | `DataQualitySkill` (`Area == DataQuality`) — missing fields, project + per-risk staleness, orphan references, budget-actuals-missing, resource-vs-time-entries | ✅ |
+| Age column | Days number | 🔢 | `Finding.MetricValue`/`MetricUnit` on the stale finding (#46) | ✅ |
+| Suggested remediation | Text per row | 🔢 | static rule-map (check-type → fix), no LLM, on `MetricDetail` | ✅ |
+| Confidence-lift ordering | Rows ordered by lift | 🔢 | `SummarizeDataQuality` reconstructs each project's `DataQualitySignal` and re-runs `ConfidencePolicy` counterfactually; ranked **globally** across the portfolio (a design decision, not a client input — see `poc-data-rules-v0.md` §8.5) | ✅ |
+| Areas completeness grid (8 cat) | Grid of `%` (or "—") | 🔢 | present/expected per input category (Schedule/Budget/Scope/Resources/Risks/Decisions/Minutes/Time — **not** the 5 `HealthArea` buckets), POC mandatory-field set, excluded from scoring | ✅ |
+| Duplicate identity candidates | Table + Merge / Keep-separate | 🔢 | POC similarity heuristic (name + customer + shared resource, `DataQualityOptions`) — the control only **records** the choice (client-side, this POC) and **never auto-merges** (US-2) | ✅ |
 
 **All L3 outputs are formula-produced** (no LLM) — L3 is pure deterministic data-quality checking.
 
@@ -147,25 +149,20 @@ or structural gap (no falsehood) · **Low** = a threshold/tuning choice differin
 - **Formula:** per area, take the worst severity → map to a number (Green 100 · Amber 70 · Red 30);
   weight-normalised average over the areas present → bucket; then apply override floors (worst-case).
 - **Thresholds — actual shipped placeholder** (`appsettings.json` → `HealthScoring`, `IsPlaceholder: true`):
-  weights **Schedule 20 · Budget 25 · Risk 25 · Resource 15 · Decision 10 · DataQuality 5** (total 100;
-  Decision added + Budget/Risk rebalanced 30→25 in `add-decisions-agent`). Buckets: ≥80 Green · ≥60 Amber ·
-  else Red. Confidence: Low 30 / Medium 70 / High 100; **`ConfidenceFloor = 50`** → aggregate confidence
-  below 50 flags "Needs PM Review" (a **separate** check, *not* an override).
-- **Overrides — actual (4 wired), generic `{ Area, WhenSeverityAtLeast, Floor }`:**
-  Budget ≥Red → floor **Red** · Schedule ≥Red → floor **Amber** · Risk ≥Red → floor **Red** ·
-  Decision ≥Red → floor **Amber** (`key-decision-overdue`, added in `add-decisions-agent`).
+  weights, severity scores, RAG bands, confidence floor, and the 4 wired override rules — current numbers
+  live in `poc-data-rules-v0.md` §1–§2 (kept there so client-facing numbers aren't duplicated in two docs).
 - **Plan Reference:** the plan doc's "Project Health Scoring — EXAMPLE!" table: weights
   20/20/15/15/15/10/5 over **7** areas; 5 named overrides incl. "key decision overdue+blocking" and
   "data confidence very low".
 - **Implementation:** `HealthScoringService.cs`; numbers bound from `HealthScoringOptions`.
-- **Known Divergence (Medium):** the shipped weights now cover **6 areas** (Decision added); only **Scope
-  (15%) remains absent** from the plan-doc's 7 (blocked on a client Scope-RAG rule). "Data confidence very
-  low" is still handled by the `ConfidenceFloor` check, not the override list (by design).
-- **Known Divergence (High, cross-refs Schedule):** the `critical-milestone-missed` override (Schedule
-  ≥Red → Amber) **is** wired, but the Status agent bug renders a missed critical milestone as a Green
-  "due soon" finding — so the Schedule area never reaches Red for that case, and **the override never fires
-  for the exact situation it is named for.** Fixing the Status agent (read `Status`/`is_critical`) is what
-  activates this override.
+- **Known Divergence (Medium):** the shipped weights cover **6** of the plan-doc's 7 areas (Decision
+  added, `add-decisions-agent`); only **Scope (15%)** remains unscored — it renders as a display-only POC
+  signal (`ScopeSkill`, see below) until the client agrees a real Scope RAG rule + weight. "Data confidence
+  very low" is handled by the separate `ConfidenceFloor` check, not the override list (by design).
+- **Fixed (was High):** the `critical-milestone-missed` override (Schedule ≥Red → Amber) previously never
+  fired because the Status agent rendered a missed critical milestone as a Green "due soon" finding (see
+  Schedule below). The Status agent bug is fixed (L2 register #68 item 1) — the override now fires
+  correctly for a missed critical milestone.
 
 ### Confidence — `ConfidencePolicy.cs`
 - **Purpose:** how much to trust a finding, from the data-quality signal.
@@ -177,55 +174,73 @@ or structural gap (no falsehood) · **Low** = a threshold/tuning choice differin
 
 ### Schedule — `StatusSkill.cs` (HealthArea.Schedule)
 - **Purpose:** milestone health (variance, delay, upcoming).
-- **Formula:** band by days late/overdue; flag milestones due within a window as informational.
-- **Thresholds:** late/overdue days ≥30 → Red · ≥7 → Amber · else Green. Upcoming window = 14 days → Green
-  "due soon". Dependency-on-incomplete → Amber.
+- **Formula:** band by days late/overdue; a recorded adverse `Status` (Missed/At Risk) floors the
+  date-derived severity; a **critical** milestone (`IsCritical`) still in trouble additionally escalates
+  to Red regardless of the day-band; flag milestones due within a window as informational (dated, in the
+  Upcoming-milestones panel); flag dependency-on-incomplete; surface **slip** (adjusted due − baseline) as
+  display-only info (it does not itself raise severity).
+- **Thresholds:** see `poc-data-rules-v0.md` §4 (day-bands) and §7 (the 28-day upcoming window).
 - **Plan Reference:** milestone adherence, schedule variance, delay severity, upcoming-milestone risk
-  (next 2–4 weeks).
-- **Implementation:** reads `MilestoneRecord.DueDate` (the adjusted date) only.
-- **Known Divergence (High):** ignores `MilestoneRecord.Status` (e.g. "Missed"), and `baseline_date` /
-  `is_critical` (dropped by the parser). Result: a **critical, missed milestone renders as a benign green
-  "due soon"** — the worst schedule signal on the worst project is inverted. (L2 register §#5a/#5b.)
+  (next 2–4 weeks), "critical milestone missed → minimum Amber" override.
+- **Implementation:** reads `MilestoneRecord.DueDate`, `Status`, `BaselineDate`, `IsCritical`.
+- **Fixed (was High):** the agent used to ignore `Status`/`BaselineDate`/`IsCritical` (dropped by the
+  parser), so a critical, missed milestone rendered as a benign green "due soon" — the worst schedule
+  signal on the worst project was inverted. Fixed in L2 register #68 items 1 + 2. **Open (kickoff):**
+  should slip *magnitude* raise severity on its own, not just display as info? See `poc-data-rules-v0.md`
+  §4's open note.
 
 ### Budget — `FinancialSkill.cs` (HealthArea.Budget)
 - **Purpose:** forecast overrun, spend-vs-progress, total exposure.
-- **Formula:** band the forecast overrun %; flag spend running ahead of progress; sum the exposure.
-- **Thresholds:** forecast overrun >15% → Red · else Amber. Spend-ahead: `spend% − progress% > 10` → Amber.
-  Exposure = Σ(forecast − budget) where forecast > budget → Amber.
+- **Formula:** band the forecast overrun %; flag spend running ahead of progress (only when `Actual` is
+  present — a missing actual is a Data Quality gap, not a Financial signal); sum the exposure.
+- **Thresholds:** see `poc-data-rules-v0.md` §4.
 - **Plan Reference:** Green ≤+5% · Amber >5–15% · Red >15%; "40% done / 70% burned = high risk";
   financial exposure = overrun amount.
 - **Implementation:** `FinancialSkill.ExecuteAsync`; a finding fires whenever forecast > budget.
 - **Known Divergence (Low):** no 5% Green tolerance — any overrun >0 emits at least an Amber finding,
-  where the plan-doc example allows ≤5% as Green. The exposure amount + currency live only in
-  `Finding.Summary` (no numeric field). (L1 register §#3.)
+  where the plan-doc example allows ≤5% as Green. (L1 register §#3.) The exposure amount + currency are
+  now on `MetricValue`/`MetricUnit` (#46) — no longer summary-only.
 
 ### Resource — `ResourceSkill.cs` (HealthArea.Resource)
 - **Purpose:** over-allocation, capacity pressure, key-role gaps, concentration.
 - **Formula:** band over-allocation; flag heavy-allocation-while-absent; flag capacity pressure; flag a
-  missing project-manager role.
-- **Thresholds:** `allocation − capacity > 20` points → Red · else Amber. On-leave + allocation ≥50% → Red.
-  >1 assignment and total > capacity → Amber.
+  missing project-manager role; band cross-project concentration (a person spread thin).
+- **Thresholds:** see `poc-data-rules-v0.md` §4 (over-allocation bands, concentration 5+/3–4/<3).
 - **Plan Reference:** concentration 5+ projects → Red, 3–4 → Amber, <3 → Green; no allocation → Red;
   absence "clarify if possible".
-- **Implementation:** filters assignments to the current project for most checks; detects the PM role by
-  checking whether the role name **contains "Manager"**.
-- **Known Divergence (High):** the current PM check looks for a role name containing "Manager", which does
-  **not** match the data value **"Project Management"** — so it emits a **false "No Project Manager is
-  assigned"** on projects that clearly have one (e.g. Anna Berg, PMP). *(Separately, Medium:* the plan-doc's
-  headline 5+/3–4/<3 concentration rule is not implemented — the cross-project data is available in
-  `slice.Data.Assignments` but not yet used. L1 register §#4.)
+- **Implementation:** most checks filter assignments to the current project; concentration reads
+  `slice.Data.Assignments` **unfiltered** (the full portfolio) since every slice already carries it
+  (`ProjectSlice.Data` is the whole `CollectedData`, filtered inline per check — no new architecture was
+  needed to add this). The PM-role match (`IsProjectManagerRole`) checks "Manager", "Project Management",
+  a bare "Manager", or "PM".
+- **Fixed (both were prior divergences):** the PM-role check used to look only for a role name containing
+  "Manager", which didn't match the data value "Project Management" — producing a **false** "No Project
+  Manager is assigned" on projects that clearly had one. And the plan-doc's 5+/3–4/<3 concentration rule
+  wasn't implemented at all. Both landed (L1 register §#4) — concentration is rolled up portfolio-wide by
+  `ScorePortfolio.KeyPersons` and shown per-project in L2's key-deviations.
 
 ### Data Quality — `DataQualitySkill.cs` (HealthArea.DataQuality)
-- **Purpose:** missing fields, staleness, inconsistent references.
-- **Formula:** flag each missing mandatory field; flag stale project data; flag orphan references.
-- **Thresholds:** missing field → Amber; milestone missing due date → Amber; project staleness >30 days →
-  Amber; orphan reference (unknown project id) → Red. All emitted at High confidence (directly observed).
+- **Purpose:** missing fields, staleness (project- and item-level), inconsistent references, cross-source
+  consistency, duplicate-identity candidates, and an informational completeness grid.
+- **Formula:** flag each missing mandatory field (incl. missing budget actuals); flag stale project data;
+  flag a stale RAID item (per-risk/issue staleness); flag orphan references; flag a resource allocated
+  with no time logged (or vice-versa, only when time data exists); score duplicate-identity candidate
+  pairs; emit one informational areas-completeness grid finding per project.
+- **Thresholds:** project staleness >30 days → Amber; per-risk staleness, duplicate-candidate score, and
+  duplicate-signal weights are all `DataQualityOptions` (config-bound, `Validate()`d at startup, same
+  pattern as `HealthScoringOptions`) — current numbers in `poc-data-rules-v0.md` §8. All checks emit at
+  High confidence (directly observed) except duplicate candidates (Medium — a heuristic, not an
+  observation).
 - **Plan Reference:** "no risk update in **21 days**", budget actuals missing, milestone dates not updated,
   resource plan ≠ time entries.
-- **Implementation:** `DataQualitySkill.ExecuteAsync`; staleness measured on the project's `LastUpdated`.
-- **Known Divergence (Medium):** staleness is **project-level at 30 days**, not **per-risk at 21 days** (the
-  plan-doc's first example); consistency is **orphan-only** — no budget/time/resource cross-agreement, and
-  no duplicate detection yet. (L3 register.)
+- **Implementation:** `DataQualitySkill.ExecuteAsync`; project staleness measured on `LastUpdated`, per-risk
+  on `RaidItemRecord.LastUpdated`; consistency now covers orphan references **and**
+  resource-vs-time-entries (`TimeEntryRecord`, a POC data source — no real Orbit time-entries convention
+  agreed yet); duplicate candidates are emitted once per pair, never auto-merge (US-2).
+- **Known Divergence (Low):** the mandatory-field set for the completeness grid and the duplicate-score
+  weights are our own POC defaults (`poc-data-rules-v0.md` §8.2/§8.4) — not client-agreed. Whether
+  duplication is a real problem in Orbit data at all is a kickoff question (`kickoff-questions.md` §I),
+  not a build blocker.
 
 ### Decision — `DecisionSkill` (HealthArea.Decision) — ✅ built (`add-decisions-agent`, #45+#47)
 - **Purpose:** overdue / due-soon decisions.
@@ -236,7 +251,34 @@ or structural gap (no falsehood) · **Low** = a threshold/tuning choice differin
 - **Plan Reference:** the Decision KPI table + the "key decision overdue and blocking" override.
 - **Implementation:** `DecisionSkill` (parallel stage); `DecisionRecord` parsed from a `Decisions` sheet by
   `ExcelProjectParser`; `HealthArea.Decision` scored at weight 10 (EXAMPLE). Recovers the missed D-1002-1
-  OVERDUE signal. The L1 decision-backlog **count** roll-up is still slice E of `add-l1-portfolio-signals`.
+  OVERDUE signal. The L1 decision-backlog **count** roll-up (`ScorePortfolio.DecisionBacklog`) and the L2
+  dedicated Decisions-needed panel (owner/deadline/consequence on `MetricDetail`) are both built.
+
+### Scope — `ScopeSkill.cs` (HealthArea.Scope) — display-only POC
+- **Purpose:** scope-change control / creep, as a key deviation on L2.
+- **Formula:** unapproved scope increase → Red creep; approved change → Amber (moved, controlled); an
+  open non-increase (e.g. a removal) awaiting decision → Amber; rejected / none → nothing.
+- **Thresholds:** see `poc-data-rules-v0.md` §5.
+- **Plan Reference:** the plan doc weights Scope at 15% but gives no RAG rule and no scope-*change* data
+  (`scope-wbs.csv` is a WBS/task tree, not a change log) — the single most underspecified L1/L2 area.
+- **Implementation:** `ScopeSkill` (parallel stage); `ScopeChangeRecord` parsed from a POC "Scope" sheet
+  (placeholder shape — the real Orbit scope-change export convention isn't agreed). Rendered in L2's key
+  deviations under its own heading.
+- **Known Divergence (by design, not a bug):** Scope is **excluded from the health score and the
+  confidence average** (`HealthScoringService` filters it out explicitly) until the client agrees a real
+  rule and weight — see `kickoff-questions.md` §D.
+
+### This-period progress — `SummarizeProgress.cs`
+- **Purpose:** "what moved forward" — a run-over-run comparison for L2 panel #2.
+- **Formula:** resolve a project's two most recent runs; score each via the same pure
+  `HealthScoringService` (no re-analysis, no LLM); the health-score delta drives a qualitative pace label;
+  diff each run's analytic findings (matched by producing agent + citation locator, reduced to worst
+  severity per key) into **moved forward** (cleared/improved) and **moved backward** (new/worsened) lists.
+- **Thresholds:** pace-label bands on the score delta — see `poc-data-rules-v0.md` §6.
+- **Plan Reference:** "what moved forward this period… no moving forward / very slow / medium / okay?" —
+  the doc gives no thresholds (a kickoff question, `kickoff-questions.md` §E).
+- **Implementation:** `Application/Features/Progress/SummarizeProgress`; `GET /api/projects/{key}/progress`.
+  A project with only one run reports `HasPrevious: false` ("no prior run yet"), never a fabricated delta.
 
 ---
 
@@ -249,10 +291,10 @@ were formerly trapped in the `Summary` string:
 |--------|-------------|--------|
 | Financial exposure (€) | Financial agent | ✅ on `MetricValue`/`MetricUnit` (#46) |
 | Recommendation owner/deadline/action | Narrative agent | ✅ on `MetricDetail` (#48) |
-| Staleness age (days) | Data Quality agent | 🔷 still in the summary — L3 follow-on to stamp `MetricValue` |
+| Staleness age (days) | Data Quality agent | ✅ on `MetricValue`/`MetricUnit` (L3 register #69) |
 
-**The one `Finding`-shape change (#46)** unlocked all three; two now carry structured data, the L3 Age is a
-small remaining follow-on.
+**The one `Finding`-shape change (#46)** unlocked all three — every value listed above now carries
+structured data, not just prose.
 
 ---
 
@@ -272,5 +314,8 @@ small remaining follow-on.
 | Review questions | LLM |
 
 Everything a stakeholder would call a "number" is deterministic and auditable; the LLM only writes the words.
-The three known correctness issues are all in **formula** components — the milestone `Status` bug and the
-"no PM" match (both High), plus the missing concentration rule (Medium) — not in the LLM outputs.
+No known High/Medium correctness issues remain in the formula layer — the milestone `Status` bug, the
+"no PM" role match, and the missing concentration rule (all found by an earlier audit pass) are fixed.
+The one open design question left in the formula layer is genuinely a client input, not a bug: whether
+Scope should be scored (`kickoff-questions.md` §D) and whether milestone slip magnitude should raise
+severity on its own (`poc-data-rules-v0.md` §4).

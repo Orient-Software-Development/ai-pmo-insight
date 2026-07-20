@@ -58,7 +58,8 @@ The current slice. Proves the *architecture* end-to-end; the *intelligence* is d
 > pipeline, built against the **dummy Orbit-shaped fixtures** in `add-analysis-agent-pipeline`.
 > That covers CSV/Excel/XML/`.docx` → typed records with source locators. **Hardened real-Orbit
 > parsing** (full XSD, anonymized real exports, parse-status reporting) stays a later change
-> (gap `docs/gap-project.md` §1.2). So this phase is partly delivered via agent #1, partly deferred.
+> blocked on the client confirming the real export shape (`docs/kickoff-questions.md` §A1). So this
+> phase is partly delivered via agent #1, partly deferred.
 
 Turn the opaque-bytes stub into a real parser written against Orbit's export shape.
 
@@ -206,7 +207,7 @@ These block *decisions*, not the current build:
   workbook per category? And what exact sheet/tab names (or naming rule) does the parser map to
   each category? Names may be localized / PM-free-typed, so exact-match is brittle. Shapes the
   Data Collector / parser contract and the `add-multi-file-analyze` merge model. See
-  `docs/gap-project.md` §2.12 (design) + §3.11 (client decision).
+  `docs/kickoff-questions.md` §A1.
 - LLM runtime choice (Claude Agent SDK vs. Semantic Kernel)
 - Health-scoring weights & override rules (client PMO sign-off)
 - Raw-upload retention policy / storage-split posture

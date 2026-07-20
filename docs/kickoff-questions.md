@@ -7,7 +7,11 @@
 >
 > Related: L1/L2/L3 dashboard follow-on registers #67/#68/#69 (all buildable items shipped; this
 > document is what's left — client input), #45 (`HealthArea` enum incl. Scope), multi-file on hold
-> pending the export convention. Current shipped POC numbers/formulas: `poc-data-rules-v0.md`.
+> pending the export convention. Current shipped POC numbers/formulas: `poc-data-rules-v0.md`. This
+> document absorbed the still-open client/product questions from the retired `gap-project.md` POC
+> gap register (§J, plus items folded into §A/§C/§E) — the genuinely-open **engineering** items from
+> that register (partial-ingest semantics, evaluation harness, LLM cost budget, audit log, retention
+> storage-split) are tracked as GitHub issues instead.
 
 ---
 
@@ -26,7 +30,7 @@ must be re-pointed and several features unblock.
 
 | # | Question | Why we need it | Blocks |
 |---|----------|----------------|--------|
-| A1 | Export **format**: one workbook/many tabs, or multiple files? Exact **tab + column names**? | Parser currently guesses the schema | Multi-file analyze, all parsing |
+| A1 | Export **format**: one workbook/many tabs, or one workbook per category (multiple files)? Exact **tab + column names** (or a stable naming rule — sheet name, position, or header inspection)? Are sheet/tab names **localized or PM-free-typed** (exact-name matching would be brittle)? | Parser currently guesses the schema; the `add-multi-file-analyze` merge model depends on which shape it is | Multi-file analyze, all parsing |
 | A2 | Do milestones carry a **BaselineDate** + a **critical/IsCritical** flag? | Needed to compute schedule **slip** ("7-week slip") and flag critical milestones | #68 item 2 (slip) |
 | A3 | Is there a **scope-change log**? What columns (type / status / effort impact)? | Scope panel currently runs on invented data | Scope (real) |
 | A4 | Do **decisions** carry Owner / NeededBy / Consequence? | The "Decisions needed" panel renders these columns | Panel 6 fidelity |
@@ -151,11 +155,32 @@ commercial risk.
 
 ---
 
+## J. Product / strategy (not data rules — scope & positioning decisions)
+
+- **J1.** **PMO roles seed** — the PRD names `pmoAdmin` / `pmoUser` / `executive`; today it's a flat
+  `admin`/`user` RBAC. Confirm the real audience/role set before seeding richer roles.
+- **J2.** **Audience "Other?"** — the plan doc lists *"Executive, Project Management, Other?"* — who's
+  the third audience, if any?
+- **J3.** **Analysis triggering** — on-demand only (current), scheduled (nightly/weekly portfolio
+  runs), or both? The plan doc's "portfolio cycle" implies scheduled; affects whether a job
+  runner (Hangfire / cron) is needed.
+- **J4.** **Raw-upload retention policy** — how long do we keep the original uploaded file after
+  parsing? (A storage-split + TTL is designed but the retention window itself is a client policy call.)
+- **J5.** **Hosting region / data residency** — meeting minutes name individuals; affects encryption
+  and access-log posture.
+- **J6.** **AI Skills catalogue** — the plan doc's item #9 is a bare *"What to do?"* Which of the
+  agents map to real client-recognisable "skills," and is the current 10-agent set the right shape?
+- **J7.** **Differentiator vs. Orbit-native AI / Power BI** — worth pinning down NextWave's specific
+  value-add so L1/L2/L3 don't just re-derive what Orbit's own tooling already shows.
+
+---
+
 ## Priority
 
 1. **A1** (export format) — unblocks the most.
 2. **B1–B4** (scoring model) — the numbers that decide every RAG colour.
 3. **A2 / A3** (baseline+critical, scope data) — unblock slip and real Scope.
 4. **H1** (commercial-risk data) — the one L1 panel with zero formula today.
-5. Everything else (I1/I2, per-agent thresholds, time windows) can default to the POC placeholder
-   until confirmed.
+5. **J3 / J4 / J5** (scheduling, retention, hosting) — gate infra/ops decisions, worth raising early.
+6. Everything else (I1/I2, J1/J2/J6/J7, per-agent thresholds, time windows) can default to the POC
+   placeholder until confirmed.
