@@ -207,6 +207,34 @@ public class SummarizeDataQualityTests
     }
 
     [Fact]
+    public async Task Items_are_ordered_by_lift_globally_across_projects()
+    {
+        // The doc flags portfolio-wide lift ranking as needing "a small aggregation decision"
+        // (docs/l3-data-quality-followups.md); the decision made in SummarizeDataQuality is a flat
+        // global ranking by raw lift, not grouped/normalised per project first. Prove it here with two
+        // projects: a very-stale finding (fixing it jumps Low→High, lift 2) must outrank a single
+        // missing-field finding in a different project (fixing it jumps Medium→High, lift 1) — even
+        // though the lower-lift item has the worse (Red) severity, which would win any severity-first
+        // ordering.
+        var bigLift = Finding.Create(
+            "BIGLIFT", "Project data is stale (last updated 120 days ago).",
+            Citation.Create(Guid.NewGuid(), "big!r1"), T0, Guid.NewGuid(), "DataQuality",
+            FindingKind.Analysis, Confidence.High, area: HealthArea.DataQuality, severity: Severity.Green,
+            metricValue: 120m, metricUnit: "days",
+            metricDetail: new Dictionary<string, string> { ["signalKind"] = "stale" });
+
+        var smallLift = Finding.Create(
+            "SMALLLIFT", "Project percent-complete is missing.",
+            Citation.Create(Guid.NewGuid(), "small!r1"), T0, Guid.NewGuid(), "DataQuality",
+            FindingKind.Analysis, Confidence.High, area: HealthArea.DataQuality, severity: Severity.Red,
+            metricDetail: new Dictionary<string, string> { ["signalKind"] = "missing" });
+
+        var result = await Run([bigLift, smallLift]);
+
+        result.Items.Select(i => i.CitationLocator).Should().ContainInOrder("big!r1", "small!r1");
+    }
+
+    [Fact]
     public async Task Items_are_ordered_worst_first_by_severity()
     {
         var run = Guid.NewGuid();

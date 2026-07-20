@@ -55,7 +55,7 @@ public sealed class DataQualitySkill(DataQualityOptions options) : IAgentSkill<P
         {
             missing++;
             findings.Add(Flag(slice, $"Milestone '{milestone.Name}' has no due date.", milestone.Source, Severity.Amber,
-                "Add a due date to the milestone.", signalKind: "missing"));
+                "Add a due date to the milestone.", signalKind: DataQualityFindingKeys.SignalKinds.Missing));
         }
 
         // Budget lines missing actuals — a completeness gap (L3 #6).
@@ -63,7 +63,7 @@ public sealed class DataQualitySkill(DataQualityOptions options) : IAgentSkill<P
         {
             missing++;
             findings.Add(Flag(slice, $"Budget category '{line.Category}' is missing actuals.", line.Source, Severity.Amber,
-                "Enter actual spend to date for this budget line.", signalKind: "missing"));
+                "Enter actual spend to date for this budget line.", signalKind: DataQualityFindingKeys.SignalKinds.Missing));
         }
 
         // Staleness. The age (days) is carried as a structured metric (L3 #8), not only in the summary.
@@ -75,7 +75,7 @@ public sealed class DataQualitySkill(DataQualityOptions options) : IAgentSkill<P
             {
                 findings.Add(Flag(slice, $"Project data is stale (last updated {ageDays:F0} days ago).",
                     project.Source, Severity.Amber, "Re-export the latest project data from Orbit.",
-                    metricValue: (decimal)Math.Round(ageDays.Value), metricUnit: "days", signalKind: "stale"));
+                    metricValue: (decimal)Math.Round(ageDays.Value), metricUnit: "days", signalKind: DataQualityFindingKeys.SignalKinds.Stale));
             }
         }
 
@@ -126,7 +126,7 @@ public sealed class DataQualitySkill(DataQualityOptions options) : IAgentSkill<P
         {
             // An orphan reference means the data set is internally inconsistent — critical for DQ.
             findings.Add(Flag(slice, "Record references an unknown project id (inconsistent source).", orphan, Severity.Red,
-                "Correct the project-id reference, or add the missing project row.", signalKind: "orphan"));
+                "Correct the project-id reference, or add the missing project row.", signalKind: DataQualityFindingKeys.SignalKinds.Orphan));
         }
 
         // Duplicate-identity candidates (L3 #4, POC heuristic — flagged). Compare this project against the
@@ -175,8 +175,8 @@ public sealed class DataQualitySkill(DataQualityOptions options) : IAgentSkill<P
         var d = slice.Data;
         var grid = new Dictionary<string, string>
         {
-            ["kind"] = "completeness-grid",
-            ["remediation"] = "Fill the missing mandatory fields per category (POC mandatory-field set).",
+            [DataQualityFindingKeys.Kind] = DataQualityFindingKeys.Kinds.CompletenessGrid,
+            [DataQualityFindingKeys.Remediation] = "Fill the missing mandatory fields per category (POC mandatory-field set).",
             ["Schedule"] = Pct(d.Milestones.Where(m => m.ProjectKey == key),
                 m => !string.IsNullOrWhiteSpace(m.Name) && m.DueDate is not null),
             ["Budget"] = Pct(d.BudgetLines.Where(b => b.ProjectKey == key),
@@ -259,11 +259,11 @@ public sealed class DataQualitySkill(DataQualityOptions options) : IAgentSkill<P
     {
         var detail = new Dictionary<string, string>
         {
-            ["kind"] = "duplicate-candidate",
-            ["candidate"] = b.Key,
-            ["candidateName"] = b.Name,
-            ["score"] = score.ToString(),
-            ["remediation"] = "Review the pair and record Merge or Keep-separate — the system never merges automatically.",
+            [DataQualityFindingKeys.Kind] = DataQualityFindingKeys.Kinds.DuplicateCandidate,
+            [DataQualityFindingKeys.Candidate] = b.Key,
+            [DataQualityFindingKeys.CandidateName] = b.Name,
+            [DataQualityFindingKeys.Score] = score.ToString(),
+            [DataQualityFindingKeys.Remediation] = "Review the pair and record Merge or Keep-separate — the system never merges automatically.",
         };
 
         return FindingFactory.Analysis(
@@ -276,12 +276,17 @@ public sealed class DataQualitySkill(DataQualityOptions options) : IAgentSkill<P
     // Attaches a deterministic, per-check-type suggested remediation (static rule-map, no LLM) plus an
     // optional metric (e.g. the staleness age in days) so the L3 view can render Remediation + Age columns.
     private static Finding Flag(ProjectSlice slice, string summary, SourceRef source, Severity severity,
-        string remediation, decimal? metricValue = null, string? metricUnit = null, string signalKind = "none") =>
+        string remediation, decimal? metricValue = null, string? metricUnit = null,
+        string signalKind = DataQualityFindingKeys.SignalKinds.None) =>
         FindingFactory.Analysis(slice, "DataQuality", summary, source, Confidence.High, HealthArea.DataQuality,
             severity, metricValue: metricValue, metricUnit: metricUnit,
             // signalKind maps the finding to the DQ signal component it represents (missing/stale/orphan/none),
             // so the L3 read can reconstruct the signal and compute each item's confidence lift (L3 #5).
-            metricDetail: new Dictionary<string, string> { ["remediation"] = remediation, ["signalKind"] = signalKind });
+            metricDetail: new Dictionary<string, string>
+            {
+                [DataQualityFindingKeys.Remediation] = remediation,
+                [DataQualityFindingKeys.SignalKind] = signalKind,
+            });
 
     private static IEnumerable<SourceRef> OrphanSources(CollectedData data, HashSet<string> knownKeys)
     {

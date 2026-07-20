@@ -94,10 +94,10 @@ public static class SummarizeDataQuality
                     && f.Kind == FindingKind.Analysis
                     && f.Area == HealthArea.DataQuality))
                 {
-                    switch (f.MetricDetail?.GetValueOrDefault("kind"))
+                    switch (f.MetricDetail?.GetValueOrDefault(DataQualityFindingKeys.Kind))
                     {
-                        case "duplicate-candidate": duplicates.Add((key, f)); break;
-                        case "completeness-grid": completeness.Add((key, f)); break;
+                        case DataQualityFindingKeys.Kinds.DuplicateCandidate: duplicates.Add((key, f)); break;
+                        case DataQualityFindingKeys.Kinds.CompletenessGrid: completeness.Add((key, f)); break;
                         default: collected.Add((key, f)); break;
                     }
                 }
@@ -109,6 +109,13 @@ public static class SummarizeDataQuality
             // Ordered by confidence lift (L3 #5) — fixing the highest-lift item helps confidence most — then
             // worst severity, then a deterministic key/locator tiebreak. Lift is computed per project by
             // reconstructing its DQ signal from the findings' signalKind tags and re-running ConfidencePolicy.
+            //
+            // The doc flags lift as "per-project... a portfolio-wide lift ranking needs a small aggregation
+            // decision" (docs/l3-data-quality-followups.md). The decision made here: rank globally across all
+            // projects by the raw lift number, not grouped/normalised per project first — a lift of 2 on
+            // project A outranks a lift of 1 on project B, regardless of each project's starting confidence.
+            // This surfaces the single highest-leverage fix across the whole portfolio first, at the cost of
+            // a project with many small-lift items never bubbling above one project's single big-lift item.
             var items = collected
                 .GroupBy(x => x.Key, StringComparer.Ordinal)
                 .SelectMany(g =>
@@ -121,8 +128,8 @@ public static class SummarizeDataQuality
                         x.Finding.Severity!.Value.ToString(),
                         x.Finding.Citation.Locator,
                         x.Finding.MetricValue is { } age ? (int)age : null,
-                        x.Finding.MetricDetail?.GetValueOrDefault("remediation"),
-                        ConfidenceLift(signal, currentConf, x.Finding.MetricDetail?.GetValueOrDefault("signalKind"))));
+                        x.Finding.MetricDetail?.GetValueOrDefault(DataQualityFindingKeys.Remediation),
+                        ConfidenceLift(signal, currentConf, x.Finding.MetricDetail?.GetValueOrDefault(DataQualityFindingKeys.SignalKind))));
                 })
                 .OrderByDescending(i => i.Lift)
                 .ThenByDescending(i => SeverityRank(i.Severity))
@@ -142,8 +149,8 @@ public static class SummarizeDataQuality
                 .ThenBy(x => x.Key, StringComparer.Ordinal)
                 .Select(x => new DuplicateView(
                     x.Key,
-                    x.Finding.MetricDetail!.GetValueOrDefault("candidate", ""),
-                    x.Finding.MetricDetail!.GetValueOrDefault("candidateName", ""),
+                    x.Finding.MetricDetail!.GetValueOrDefault(DataQualityFindingKeys.Candidate, ""),
+                    x.Finding.MetricDetail!.GetValueOrDefault(DataQualityFindingKeys.CandidateName, ""),
                     x.Finding.MetricValue is { } s ? (int)s : 0,
                     x.Finding.Citation.Locator))
                 .ToList();
@@ -154,7 +161,7 @@ public static class SummarizeDataQuality
                 .Select(x => new CompletenessView(
                     x.Key,
                     x.Finding.MetricDetail!
-                        .Where(kv => kv.Key is not ("kind" or "remediation"))
+                        .Where(kv => kv.Key is not (DataQualityFindingKeys.Kind or DataQualityFindingKeys.Remediation))
                         .ToDictionary(kv => kv.Key, kv => kv.Value)))
                 .ToList();
 
@@ -166,12 +173,12 @@ public static class SummarizeDataQuality
         private static DataQualitySignal ReconstructSignal(IEnumerable<Finding> projectFindings)
         {
             var list = projectFindings.ToList();
-            var stale = list.FirstOrDefault(f => Kind(f) == "stale");
+            var stale = list.FirstOrDefault(f => SignalKindOf(f) == DataQualityFindingKeys.SignalKinds.Stale);
             return new DataQualitySignal
             {
-                MissingFieldCount = list.Count(f => Kind(f) == "missing"),
+                MissingFieldCount = list.Count(f => SignalKindOf(f) == DataQualityFindingKeys.SignalKinds.Missing),
                 LastUpdateAgeDays = stale?.MetricValue is { } a ? (double)a : 0,
-                SourceConsistent = list.All(f => Kind(f) != "orphan"),
+                SourceConsistent = list.All(f => SignalKindOf(f) != DataQualityFindingKeys.SignalKinds.Orphan),
             };
         }
 
@@ -180,15 +187,16 @@ public static class SummarizeDataQuality
         {
             var fixedSignal = signalKind switch
             {
-                "missing" => current with { MissingFieldCount = Math.Max(0, current.MissingFieldCount - 1) },
-                "stale" => current with { LastUpdateAgeDays = 0 },
-                "orphan" => current with { SourceConsistent = true },
+                DataQualityFindingKeys.SignalKinds.Missing =>
+                    current with { MissingFieldCount = Math.Max(0, current.MissingFieldCount - 1) },
+                DataQualityFindingKeys.SignalKinds.Stale => current with { LastUpdateAgeDays = 0 },
+                DataQualityFindingKeys.SignalKinds.Orphan => current with { SourceConsistent = true },
                 _ => current,
             };
             return (int)ConfidencePolicy.FromSignals(fixedSignal) - currentConf;
         }
 
-        private static string? Kind(Finding f) => f.MetricDetail?.GetValueOrDefault("signalKind");
+        private static string? SignalKindOf(Finding f) => f.MetricDetail?.GetValueOrDefault(DataQualityFindingKeys.SignalKind);
 
         private static int SeverityRank(string severity) => severity switch
         {

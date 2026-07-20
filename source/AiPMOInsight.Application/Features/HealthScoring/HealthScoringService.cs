@@ -1,3 +1,4 @@
+using AiPMOInsight.Application.Features.DataQuality;
 using AiPMOInsight.Domain.Findings;
 
 namespace AiPMOInsight.Application.Features.HealthScoring;
@@ -46,7 +47,7 @@ public sealed class HealthScoringService(HealthScoringOptions options)
                         // real Scope weight + RAG rule at kickoff.
                         && f.Area != HealthArea.Scope
                         // The areas-completeness grid (L3 #7) is an informational summary, not a scored gap.
-                        && f.MetricDetail?.GetValueOrDefault("kind") != "completeness-grid")
+                        && f.MetricDetail?.GetValueOrDefault(DataQualityFindingKeys.Kind) != DataQualityFindingKeys.Kinds.CompletenessGrid)
             .ToList();
 
         if (scoreable.Count == 0)

@@ -124,7 +124,66 @@ Metric = **raw-score delta** between a project's two most recent runs.
 
 ---
 
+## 8. L3 Data Quality checks — *config (`DataQualityOptions`), shipped*
+
+Mirrors the `HealthScoringOptions` pattern: bound from `appsettings.json → DataQuality`, `Validate()`d
+at startup, `IsPlaceholder: true`.
+
+### 8.1 Per-risk staleness
+A RAID item not updated within **21 days** (`RiskStaleThresholdDays`) → an Amber DQ finding citing the
+row, carrying the age in days.
+
+### 8.2 Duplicate-identity candidate score (0–100)
+A project pair at or above **60** (`DuplicateScoreThreshold`) is flagged a duplicate candidate (Amber,
+never auto-merged — the human records Merge / Keep-separate). Score = weighted sum, must total 100:
+
+| Signal | Weight (`DuplicateWeights`) |
+|--------|:--:|
+| Name-token similarity (Jaccard) | 50 |
+| Same customer | 30 |
+| Shared resource (any person on both projects) | 20 |
+
+*(WBS overlap, in the original register, isn't a signal yet — no WBS data parsed.)*
+
+### 8.3 Suggested remediation — static rule-map, *code, shipped* (no LLM, not a numeric setting)
+| Check | Remediation |
+|-------|-------------|
+| Missing name / % complete / last-updated | "Enter the project name / % complete / last-updated date." |
+| Milestone missing a due date | "Add a due date to the milestone." |
+| Budget line missing actuals | "Enter actual spend to date for this budget line." |
+| Stale project data (> 30 days) | "Re-export the latest project data from Orbit." |
+| Stale RAID item (> 21 days) | "Review and update the RAID item." |
+| Orphan project-id reference | "Correct the project-id reference, or add the missing project row." |
+| Resource allocated, no time logged / time logged, not on plan | "Confirm the allocation, or log time for this person." / "Add the person to the plan, or correct the time entry." |
+
+### 8.4 Areas-completeness grid (8 input categories, *not* the 5 `HealthArea` buckets)
+Per project, % of that category's records with all **POC mandatory fields** present:
+
+| Category | Mandatory fields (POC) |
+|----------|------------------------|
+| Schedule | name, due date |
+| Budget | budget, forecast, actual |
+| Scope | title, type, status |
+| Resources | person, role, allocation > 0 |
+| Risks | description, severity, status |
+| Decisions | title, owner, needed-by, status |
+| Minutes | text |
+| Time | hours logged > 0 |
+
+Rendered informationally (Green, **excluded from scoring**); "—" when a category has zero records.
+
+### 8.5 Confidence-lift ranking — design decision (not a client number)
+Items are ranked by **global lift** across the whole portfolio (not normalised per project first) — a
+lift of 2 on one project outranks a lift of 1 on another, regardless of that project's starting
+confidence. Surfaces the single highest-leverage fix first; a project with several small-lift items
+never out-ranks one project's single big-lift item. Flagged as a design choice, not a client input.
+
+---
+
 ## Change map (where each number lives)
 - **§1, §2** → `appsettings.json → HealthScoring` (edit + restart; validated at startup). No code change.
 - **§4, §5, §6, §7** → constants in the named agent / slice (`*Skill.cs`, `SummarizeProgress.cs`). Small code change + test.
+- **§8.1, §8.2** → `appsettings.json → DataQuality` (edit + restart; validated at startup). No code change.
+- **§8.3, §8.4** (the remediation text and the mandatory-field set) are code, not config — changing them
+  needs a small code change + test, same as §4–§7.
 - Everything is flagged `IsPlaceholder` / "to be confirmed at kickoff" in the UI until the PMO signs off.

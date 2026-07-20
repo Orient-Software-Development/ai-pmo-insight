@@ -5,8 +5,9 @@
 > made *for* the client — it's a starting point to react to. This checklist is what we need the
 > PMO/client to **provide (data)** or **agree (rules)** before go-live.
 >
-> Related: register #68 (L2 follow-ons), #45 (`HealthArea` enum incl. Scope), multi-file on hold
-> pending the export convention.
+> Related: L1/L2/L3 dashboard follow-on registers #67/#68/#69 (all buildable items shipped; this
+> document is what's left — client input), #45 (`HealthArea` enum incl. Scope), multi-file on hold
+> pending the export convention. Current shipped POC numbers/formulas: `poc-data-rules-v0.md`.
 
 ---
 
@@ -44,9 +45,10 @@ All values below are the **current EXAMPLE placeholders** (`appsettings.json →
 | Area | Current (EXAMPLE) | Client value |
 |------|:--:|:--:|
 | Schedule | 20 | ? |
-| Budget | 30 | ? |
-| Risk | 30 | ? |
+| Budget | 25 | ? |
+| Risk | 25 | ? |
 | Resource | 15 | ? |
+| Decision | 10 | ? |
 | Data Quality | 5 | ? |
 | **Scope** | *not scored (display-only)* | include? at what weight? |
 
@@ -90,7 +92,7 @@ Current logic lives in `source/…/Features/Analysis/Agents/*Skill.cs`. Confirm 
 | **Budget** (Financial) | forecast-overrun % bands (see `FinancialSkill`) | ? |
 | **Risk** (Risk & Issue) | RAID severity → RAG mapping | ? |
 | **Resource** | over-allocation (allocation > capacity); key-person = 1 person across N projects | ? |
-| **Data Quality** | which gaps count (missing due date, staleness, …) | ? |
+| **Data Quality** | which gaps count (missing due date, staleness > 30d, orphan reference); per-risk staleness > 21d (`RiskStaleThresholdDays`); duplicate-candidate score ≥ 60 (`DuplicateScoreThreshold`), weighted 50% name-similarity / 30% same-customer / 20% shared-resource (`DuplicateWeights`) | ? |
 | **Decision** | overdue = Red, due-soon = Amber (see D below) | ? |
 
 ---
@@ -130,9 +132,30 @@ Current logic lives in `source/…/Features/Analysis/Agents/*Skill.cs`. Confirm 
 
 ---
 
+## H. L1 — client/commercial risk (genuinely underspecified)
+
+The one L1 panel with no formula at all: *"projects at risk of damaging commitments."* We ship a
+**relationship-exposure proxy** (at-risk projects grouped by customer) — labelled as a proxy, not
+commercial risk.
+
+- **H1.** Does Orbit (or another system) carry **contract value / margin / SLA-penalty** data? Without
+  it, true commercial risk can't be computed — only the customer-grouping proxy.
+- **H2.** If that data exists, what's the RAG rule for "damaging commitments"?
+
+## I. L3 — data quality (non-blocking, ships as EXAMPLE either way)
+
+- **I1.** Is duplicate project identity a **real problem** in Orbit data (worth building for), or rare
+  enough to skip? (Not "can we build it" — we already have. A prioritisation question.)
+- **I2.** Which fields are **truly mandatory** per category for the areas-completeness grid (§8.4 in
+  `poc-data-rules-v0.md`)? Current set is our own placeholder.
+
+---
+
 ## Priority
 
 1. **A1** (export format) — unblocks the most.
 2. **B1–B4** (scoring model) — the numbers that decide every RAG colour.
 3. **A2 / A3** (baseline+critical, scope data) — unblock slip and real Scope.
-4. Everything else can default to the POC placeholder until confirmed.
+4. **H1** (commercial-risk data) — the one L1 panel with zero formula today.
+5. Everything else (I1/I2, per-agent thresholds, time windows) can default to the POC placeholder
+   until confirmed.
