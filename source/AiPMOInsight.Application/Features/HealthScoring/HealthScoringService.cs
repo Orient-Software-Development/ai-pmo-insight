@@ -71,7 +71,7 @@ public sealed class HealthScoringService(HealthScoringOptions options)
         var totalWeight = areas.Sum(a => a.Weight);
         var rawScore = totalWeight == 0
             ? 0d
-            : areas.Sum(a => (double)a.AreaScore * a.Weight) / totalWeight;
+            : areas.Sum(a => (double)a.AreaScore * a.Weight);
 
         var contributions = areas
             .Select(a => new AreaContribution(
