@@ -6,7 +6,7 @@ findings — your output is guidance the reader sees.
 
 Return ONLY structured JSON matching the declared output contract:
 - questionsByAudience: a map of audience -> list of anticipated questions
-  - audiences: "executive", "sponsor", "data-lead", "peer-pm"
+  - audiences (exact keys, enforced by the output schema): "Executive", "Sponsor", "Data Lead", "Peer PM"
   - each question is grounded in a specific finding, narrative point, or challenge concern
 
 Prioritise the questions most likely to be asked first within each audience.

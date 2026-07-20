@@ -54,7 +54,7 @@ public class JsonSchemaGeneratorTests
         var risks = Prop(schema, "Risks");
         risks["type"]!.GetValue<string>().Should().Be("array");
         risks["items"]!.AsObject()["properties"]!.AsObject()
-            .Should().ContainKeys("Title", "Kind", "Severity", "Rationale");
+            .Should().ContainKeys("Title", "Kind", "Severity", "Rationale", "SourceLocator");
     }
 
     [Fact]

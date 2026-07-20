@@ -5,8 +5,13 @@ using AiPMOInsight.Domain.Findings;
 
 namespace AiPMOInsight.Application.Features.Analysis.Agents;
 
-/// <summary>A risk/issue the LLM extracted from meeting minutes (structured output contract).</summary>
-public sealed record ExtractedRisk(string Title, string Kind, string Severity, string Rationale);
+/// <summary>
+/// A risk/issue the LLM extracted from meeting minutes (structured output contract).
+/// <paramref name="SourceLocator"/> must be copied verbatim from the "[LOCATOR: ...]" header of the
+/// minutes block the item was found in (see risk-and-issue.prompt.md) so it cites the right entry
+/// when a project has more than one minutes block in a run.
+/// </summary>
+public sealed record ExtractedRisk(string Title, string Kind, string Severity, string Rationale, string SourceLocator);
 
 /// <summary>The Risk & Issue agent's LLM output contract: the risks/issues found in the minutes.</summary>
 public sealed record MinuteRiskExtraction(IReadOnlyList<ExtractedRisk> Risks);
@@ -55,19 +60,24 @@ public sealed class RiskAndIssueSkill(ILlmClient llm, PromptRegistry prompts)
         {
             SkillName = Name,
             SystemPrompt = prompt.Content,
-            Prompt = $"MINUTES:\n{string.Join("\n", minutes.Select(m => m.Text))}",
+            Prompt = $"MINUTES:\n{string.Join("\n\n", minutes.Select(m => $"[LOCATOR: {m.Source.Locator}]\n{m.Text}"))}",
             PromptVersion = prompt.Version,
         };
 
         var extraction = await llm.CompleteAsync<MinuteRiskExtraction>(request, cancellationToken);
 
-        // Cite the minutes the extraction rests on; cap confidence by data quality.
-        var minutesSource = minutes[0].Source;
+        // Cite each risk against the minutes block it actually names; an unrecognized or blank
+        // locator (a model that didn't copy the tag verbatim) falls back to the first block rather
+        // than throwing.
+        var minutesByLocator = minutes.GroupBy(m => m.Source.Locator).ToDictionary(g => g.Key, g => g.First());
         var confidence = ConfidencePolicy.Cap(Confidence.Medium, dqConfidence);
 
         foreach (var risk in extraction.Risks)
         {
-            var citation = new SourceRef(minutesSource.Locator, minutesSource.StructuredExcerpt, risk.Rationale);
+            var minuteSource = minutesByLocator.TryGetValue(risk.SourceLocator, out var matched)
+                ? matched.Source
+                : minutes[0].Source;
+            var citation = new SourceRef(minuteSource.Locator, minuteSource.StructuredExcerpt, risk.Rationale);
             findings.Add(Finding.Create(
                 projectKey: slice.ProjectKey,
                 summary: $"{risk.Kind}: {risk.Title} — {risk.Rationale}",

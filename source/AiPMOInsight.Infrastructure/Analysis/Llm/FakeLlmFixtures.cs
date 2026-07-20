@@ -22,7 +22,8 @@ public static class FakeLlmFixtures
                     Title: "Vendor delivery slip",
                     Kind: "risk",
                     Severity: "high",
-                    Rationale: "Minutes note a possible two-week slip on the API integration."),
+                    Rationale: "Minutes note a possible two-week slip on the API integration.",
+                    SourceLocator: string.Empty),
             ]),
 
             // #7 Narrative — LLM fallback for complex, multi-signal cases.
