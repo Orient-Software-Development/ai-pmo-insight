@@ -203,3 +203,4 @@ OpenTelemetry (traces + metrics) is wired up in `Program.cs` and exported over O
 - [`openspec/specs/`](openspec/specs) — live capability specs (analysis pipeline, project findings, orbit ingest, LLM routing when Phase 3.9 archives)
 - [`openspec/changes/`](openspec/changes) — in-flight proposals
 - [`CLAUDE.md`](CLAUDE.md) — architecture notes and conventions
+
