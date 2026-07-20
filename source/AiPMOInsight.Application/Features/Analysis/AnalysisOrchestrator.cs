@@ -9,10 +9,11 @@ namespace AiPMOInsight.Application.Features.Analysis;
 public sealed record AnalysisResult(Guid RunId, IReadOnlyList<Finding> Findings);
 
 /// <summary>
-/// Drives the 9-agent pipeline over one upload with the agreed data flow:
+/// Drives the 11-agent pipeline over one upload with the agreed data flow:
 /// <c>#1 Data Collector → #2 Data Quality → parallel(#3 Status, #4 Risk &amp; Issue, #5 Financial,
-/// #6 Resource) → merge → #7 Narrative → #8 Challenge → #9 Review → persist</c>. Sequential where a
-/// dependency exists (#7→#8→#9), parallel where independent (#3–#6). Each run gets a fresh
+/// #6 Resource, Decision, Scope) → merge → #7 Narrative → #8 Challenge → #9 Review → persist</c>.
+/// Sequential where a dependency exists (#7→#8→#9), parallel where independent (#3–#6, Decision,
+/// Scope). Each run gets a fresh
 /// <see cref="AnalysisRun"/> id; re-analysis appends under a new id. Findings group under a
 /// <c>projectKey</c> derived from the parsed source, falling back to <c>upload:{id}</c>. Every
 /// finding is rejected before persist if it lacks a citation (defence-in-depth atop
