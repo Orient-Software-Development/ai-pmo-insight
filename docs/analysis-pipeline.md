@@ -4,10 +4,13 @@ How one upload is turned into findings. Describes the runtime shape of
 [`AnalysisOrchestrator`](../source/AiPMOInsight.Application/Features/Analysis/AnalysisOrchestrator.cs);
 edit in place as the pipeline changes.
 
-## The 9 agents
+## The 11 agents
 
-Every run walks the same nine agents. The `#` numbering is the canonical order used across
-CLAUDE.md, the code, and the OpenSpec changes.
+The PRD's original suggestion was nine agents; **Decision** and **Scope** were added later (both
+deterministic — a decisions-overdue check and a POC scope-creep heuristic), bringing the total to
+eleven. The `#` numbering below is the canonical order for the original nine, used across CLAUDE.md,
+the code, and the OpenSpec changes; Decision and Scope have no PRD number (added beyond the original
+suggestion) but run in the same parallel stage as #3–#6.
 
 | # | Agent | Kind | Reads | Writes |
 |---|---|---|---|---|
@@ -17,11 +20,13 @@ CLAUDE.md, the code, and the OpenSpec changes.
 | 4 | Risk & Issue | **LLM** | Slice + quality | Findings |
 | 5 | Financial | deterministic | Slice + quality | Findings |
 | 6 | Resource | deterministic | Slice + quality | Findings |
+| — | Decision *(new)* | deterministic | Slice + quality | Findings |
+| — | Scope *(new, POC)* | deterministic | Slice + quality | Findings (display-only, excluded from scoring) |
 | 7 | Narrative | **LLM** | Slice + quality + merged findings | Narrative finding |
 | 8 | Challenge | **LLM** | Slice + quality + findings + narrative | Challenge finding |
 | 9 | Review | **LLM** | Slice + findings + narrative + challenge | Review finding |
 
-Four of the nine call `ILlmClient` (#4, #7, #8, #9). The other five are pure code — no tokens
+Four of the eleven call `ILlmClient` (#4, #7, #8, #9). The other seven are pure code — no tokens
 consumed, no vendor call.
 
 ## Flow
@@ -39,7 +44,9 @@ consumed, no vendor call.
                  │   parallel(#3 Status,          │
                  │            #4 Risk & Issue,   ← LLM
                  │            #5 Financial,       │
-                 │            #6 Resource)        │
+                 │            #6 Resource,        │
+                 │            Decision,           │
+                 │            Scope)              │
                  │        │                        │
                  │        ▼                        │
                  │   merge findings                │
@@ -63,10 +70,11 @@ consumed, no vendor call.
 **Ceiling: `4 × (number of projects)`. Real number is usually lower** — every LLM agent has a
 skip-the-LLM path when its input is trivial.
 
-The orchestrator loops over `projectKeys` (see
-[AnalysisOrchestrator.cs:54](../source/AiPMOInsight.Application/Features/Analysis/AnalysisOrchestrator.cs#L54))
-and runs the full #2–#9 pipeline once per project. Data Collector (#1) is the exception — it runs
-once per upload, before the loop, and its output is sliced per project.
+The orchestrator fans out over `projectKeys` (see
+[AnalysisOrchestrator.cs:59-72](../source/AiPMOInsight.Application/Features/Analysis/AnalysisOrchestrator.cs#L59-L72)
+— bounded-concurrency, not sequential; see "Parallelism model" below) and runs the full #2–#9
+pipeline (plus Decision and Scope) once per project. Data Collector (#1) is the exception — it runs
+once per upload, before the fan-out, and its output is sliced per project.
 
 ### Per-agent skip rules
 
@@ -95,22 +103,25 @@ References:
 
 Fallback: if the parser finds zero project keys, a single synthetic key `upload:{id}` is used so
 the pipeline still fires once
-([AnalysisOrchestrator.cs:48-51](../source/AiPMOInsight.Application/Features/Analysis/AnalysisOrchestrator.cs#L48-L51)).
+([AnalysisOrchestrator.cs:50-53](../source/AiPMOInsight.Application/Features/Analysis/AnalysisOrchestrator.cs#L50-L53)).
 
 ## Parallelism model
 
-- **Inside one project** — `Task.WhenAll(#3, #4, #5, #6)`
-  ([lines 79-83](../source/AiPMOInsight.Application/Features/Analysis/AnalysisOrchestrator.cs#L79-L83)).
-  The Risk & Issue LLM call (#4) runs at the same wall-clock as the three deterministic agents.
+- **Inside one project** — `Task.WhenAll(#3, #4, #5, #6, Decision, Scope)`
+  ([lines 99-106](../source/AiPMOInsight.Application/Features/Analysis/AnalysisOrchestrator.cs#L99-L106)).
+  The Risk & Issue LLM call (#4) runs at the same wall-clock as the five deterministic agents.
 - **Between #7 → #8 → #9** — sequential. Each depends on the previous, so no overlap possible.
-- **Across projects** — sequential `foreach`
-  ([line 54](../source/AiPMOInsight.Application/Features/Analysis/AnalysisOrchestrator.cs#L54)).
-  Project 2 waits for project 1 to finish end-to-end.
+- **Across projects** — **bounded-concurrency**, not sequential:
+  `Task.WhenAll` over all project keys, gated by a `SemaphoreSlim(maxProjectConcurrency: 2)`
+  ([lines 55-72](../source/AiPMOInsight.Application/Features/Analysis/AnalysisOrchestrator.cs#L55-L72)).
+  Up to 2 projects run their full pipeline concurrently; a 3rd project starts as soon as either
+  slot frees up. The cap of 2 is a deliberate ceiling on vendor rate-limit / cost burst pressure,
+  not a correctness requirement (projects are fully independent).
 
-Wall-clock time for an upload therefore scales roughly linearly with project count. For a
-6-project file, wall-clock ≈ 6 × (single-project time). Parallelising the top-level `foreach` is
-safe for correctness (projects are independent) but multiplies vendor rate-limit and cost pressure
-by the same factor — not the default.
+Wall-clock time for an upload therefore scales roughly with `project count ÷ 2` (the concurrency
+cap), not linearly. For a 6-project file, wall-clock ≈ 3 × (single-project time) — half of what a
+fully sequential loop would take. Raising `maxProjectConcurrency` trades more concurrent
+vendor/API pressure for lower wall-clock; the cap is a single constant in `AnalysisOrchestrator.cs`.
 
 ## Cost implications
 
@@ -130,23 +141,25 @@ dominates the per-project cost. To keep costs bounded on multi-project files:
 
 See [../CLAUDE.md](../CLAUDE.md) "LLM routing" for how per-agent overrides are resolved.
 
-## Improvements considered (not yet implemented)
+## Improvements considered (#1 shipped; #2–#4 not yet implemented)
 
 Documented opportunities, not commitments. Weigh each against the current defaults before pulling
 the trigger.
 
-### 1. Parallelise across projects
+### 1. Parallelise across projects — ✅ shipped
 
-The top-level project loop
-([AnalysisOrchestrator.cs:54](../source/AiPMOInsight.Application/Features/Analysis/AnalysisOrchestrator.cs#L54))
-is a serial `foreach`. Projects are independent — swapping it for `Parallel.ForEachAsync` with a
-bounded `MaxDegreeOfParallelism` (2 or 3) would roughly halve wall-clock on multi-project uploads.
+The top-level project loop is no longer a serial `foreach`. It runs `Task.WhenAll` over all
+project keys, gated by a `SemaphoreSlim(maxProjectConcurrency: 2)`
+([AnalysisOrchestrator.cs:55-72](../source/AiPMOInsight.Application/Features/Analysis/AnalysisOrchestrator.cs#L55-L72)) —
+exactly the trade-off analyzed below, landed with a cap of 2 (the "safe start" this section
+originally proposed). See "Parallelism model" above for the current wall-clock math.
 
-Trade-offs:
+Trade-offs (as shipped):
 - **Cost:** unchanged (same number of calls, just concurrent).
-- **Rate limits:** 6 projects × 4 concurrent calls = up to 24 in flight instead of 4. OpenAI
-  gpt-4o-mini's per-minute limits absorb this easily; Anthropic tier-1 limits (~40–50 RPM on
-  Sonnet, more on Haiku) may briefly 429 on bursts. `MaxDegreeOfParallelism = 2` is a safe start.
+- **Rate limits:** with the cap at 2, at most 2 projects' worth of calls are ever in flight
+  together (up to 8 with all 4 LLM agents firing) — not the 24 an uncapped 6-project burst would
+  produce. OpenAI gpt-4o-mini's per-minute limits absorb this easily; Anthropic tier-1 limits
+  (~40–50 RPM on Sonnet, more on Haiku) stay comfortably under pressure at this cap.
 - **Debugging:** interleaved log output — the [OTel wiring](../CLAUDE.md) already stamps each log
   with the current trace/span id, so correlation survives.
 
@@ -194,7 +207,7 @@ Trade-offs — **not recommended:**
 
 - **Citations required.** Any finding produced by any agent must carry a citation. The orchestrator
   rejects the whole run before persist if it finds even one uncited finding
-  ([lines 60-63](../source/AiPMOInsight.Application/Features/Analysis/AnalysisOrchestrator.cs#L60-L63)) —
+  ([lines 80-84](../source/AiPMOInsight.Application/Features/Analysis/AnalysisOrchestrator.cs#L80-L84)) —
   defence-in-depth atop the invariant already enforced by `Finding.Create`.
 - **Run identity.** Every run gets a fresh `AnalysisRun` id. Re-analysing the same upload appends
   under a new id; findings from prior runs are never overwritten.
