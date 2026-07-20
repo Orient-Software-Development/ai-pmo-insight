@@ -195,8 +195,10 @@ OpenTelemetry (traces + metrics) is wired up in `Program.cs` and exported over O
 
 - [`docs/prds/poc-ai-pmo-insight.md`](docs/prds/poc-ai-pmo-insight.md) — POC PRD (source of truth)
 - [`docs/roadmap.md`](docs/roadmap.md) — phase status (Phase 3 in flight; per-agent LLM routing = 3.9/3.10/3.11)
-- [`docs/gap-project.md`](docs/gap-project.md) — decisions still open / deferred to kick-off
+- [`docs/kickoff-questions.md`](docs/kickoff-questions.md) — POC → production: data/decisions still
+  open, deferred to kick-off
 - [`docs/authentication.md`](docs/authentication.md) — auth design
+- [`docs/auth-gap.md`](docs/auth-gap.md) — auth implementation vs. the design spec
 - [`docs/database.md`](docs/database.md) — persistence design
 - [`openspec/specs/`](openspec/specs) — live capability specs (analysis pipeline, project findings, orbit ingest, LLM routing when Phase 3.9 archives)
 - [`openspec/changes/`](openspec/changes) — in-flight proposals

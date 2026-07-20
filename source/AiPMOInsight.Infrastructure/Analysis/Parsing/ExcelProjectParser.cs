@@ -26,9 +26,20 @@ internal static class ExcelProjectParser
             RaidItems = ReadRaid(workbook),
             Decisions = ReadDecisions(workbook),
             ScopeChanges = ReadScope(workbook),
+            TimeEntries = ReadTime(workbook),
             Minutes = [],
         };
     }
+
+    // POC time-entries sheet (placeholder shape until the Orbit export convention is agreed).
+    private static List<TimeEntryRecord> ReadTime(XLWorkbook wb) =>
+        ReadSheet(wb, "Time", (cell, source) => new TimeEntryRecord
+        {
+            ProjectKey = cell("ProjectKey"),
+            Person = cell("Person"),
+            HoursLogged = ParseDouble(cell("HoursLogged")) ?? 0,
+            Source = source,
+        });
 
     private static List<ProjectRecord> ReadProjects(XLWorkbook wb) =>
         ReadSheet(wb, "Projects", (cell, source) => new ProjectRecord
@@ -62,7 +73,7 @@ internal static class ExcelProjectParser
             Category = cell("Category"),
             Budget = ParseDecimal(cell("Budget")),
             Forecast = ParseDecimal(cell("Forecast")),
-            Actual = ParseDecimal(cell("Actual")),
+            Actual = ParseNullableDecimal(cell("Actual")),
             Currency = NullIfBlank(cell("Currency")),
             Source = source,
         });
@@ -87,6 +98,7 @@ internal static class ExcelProjectParser
             Description = cell("Description"),
             Severity = NullIfBlank(cell("Severity")),
             Status = NullIfBlank(cell("Status")),
+            LastUpdated = ParseDate(cell("LastUpdated")),
             Source = source,
         });
 

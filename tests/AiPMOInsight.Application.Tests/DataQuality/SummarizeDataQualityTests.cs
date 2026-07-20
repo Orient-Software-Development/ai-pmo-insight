@@ -141,6 +141,100 @@ public class SummarizeDataQualityTests
     }
 
     [Fact]
+    public async Task Item_surfaces_age_and_remediation_from_the_finding_metric()
+    {
+        // L3 #8 (Age) + #2 (Remediation): a stale finding carries the age (days) as a metric and a
+        // suggested remediation on MetricDetail — the slice exposes both on the item.
+        var stale = Finding.Create(
+            "ALPHA", "Project data is stale (last updated 45 days ago).",
+            Citation.Create(Guid.NewGuid(), "Projects!row2"), T0, Guid.NewGuid(), "DataQuality",
+            FindingKind.Analysis, Confidence.High, area: HealthArea.DataQuality, severity: Severity.Amber,
+            metricValue: 45m, metricUnit: "days",
+            metricDetail: new Dictionary<string, string> { ["remediation"] = "Refresh the project data." });
+
+        var result = await Run([stale]);
+
+        var item = result.Items.Single();
+        item.AgeDays.Should().Be(45);
+        item.Remediation.Should().Be("Refresh the project data.");
+    }
+
+    [Fact]
+    public async Task Duplicate_candidates_go_to_the_duplicates_list_not_the_items_list()
+    {
+        // L3 #4: a duplicate-candidate finding is surfaced in its own list (for Merge/Keep-separate),
+        // not mixed into the missing/inconsistent items.
+        var dup = Finding.Create(
+            "ORB-1", "Possible duplicate of 'ORB-1a' — similarity 80%.",
+            Citation.Create(Guid.NewGuid(), "Projects!row2"), T0, Guid.NewGuid(), "DataQuality",
+            FindingKind.Analysis, Confidence.Medium, area: HealthArea.DataQuality, severity: Severity.Amber,
+            metricValue: 80m, metricUnit: "percent",
+            metricDetail: new Dictionary<string, string>
+            {
+                ["kind"] = "duplicate-candidate",
+                ["candidate"] = "ORB-1a",
+                ["candidateName"] = "Customer Data Migration Phase 2",
+                ["score"] = "80",
+            });
+
+        var result = await Run([dup]);
+
+        result.Items.Should().BeEmpty(); // excluded from the missing/inconsistent list
+        var d = result.Duplicates.Should().ContainSingle().Which;
+        d.ProjectKey.Should().Be("ORB-1");
+        d.Candidate.Should().Be("ORB-1a");
+        d.CandidateName.Should().Be("Customer Data Migration Phase 2");
+        d.Score.Should().Be(80);
+    }
+
+    private static Finding DqTagged(Severity sev, string project, Guid run, string kind, string locator) =>
+        Finding.Create(project, $"{kind} issue", Citation.Create(Guid.NewGuid(), locator), T0, run, "DataQuality",
+            FindingKind.Analysis, Confidence.High, area: HealthArea.DataQuality, severity: sev,
+            metricDetail: new Dictionary<string, string> { ["signalKind"] = kind });
+
+    [Fact]
+    public async Task Items_are_ordered_by_confidence_lift_ahead_of_severity()
+    {
+        // L3 #5: fixing the inconsistency lifts confidence (Medium→High); the Red item has no signal
+        // impact (zero lift). So the lower-severity orphan ranks FIRST — lift beats severity.
+        var run = Guid.NewGuid();
+        var orphan = DqTagged(Severity.Green, "P", run, kind: "orphan", locator: "orphan!r1");
+        var noise = DqTagged(Severity.Red, "P", run, kind: "none", locator: "noise!r1");
+
+        var result = await Run([orphan, noise]);
+
+        result.Items.First().CitationLocator.Should().Be("orphan!r1");
+    }
+
+    [Fact]
+    public async Task Items_are_ordered_by_lift_globally_across_projects()
+    {
+        // The doc flags portfolio-wide lift ranking as needing "a small aggregation decision"
+        // (docs/l3-data-quality-followups.md); the decision made in SummarizeDataQuality is a flat
+        // global ranking by raw lift, not grouped/normalised per project first. Prove it here with two
+        // projects: a very-stale finding (fixing it jumps Low→High, lift 2) must outrank a single
+        // missing-field finding in a different project (fixing it jumps Medium→High, lift 1) — even
+        // though the lower-lift item has the worse (Red) severity, which would win any severity-first
+        // ordering.
+        var bigLift = Finding.Create(
+            "BIGLIFT", "Project data is stale (last updated 120 days ago).",
+            Citation.Create(Guid.NewGuid(), "big!r1"), T0, Guid.NewGuid(), "DataQuality",
+            FindingKind.Analysis, Confidence.High, area: HealthArea.DataQuality, severity: Severity.Green,
+            metricValue: 120m, metricUnit: "days",
+            metricDetail: new Dictionary<string, string> { ["signalKind"] = "stale" });
+
+        var smallLift = Finding.Create(
+            "SMALLLIFT", "Project percent-complete is missing.",
+            Citation.Create(Guid.NewGuid(), "small!r1"), T0, Guid.NewGuid(), "DataQuality",
+            FindingKind.Analysis, Confidence.High, area: HealthArea.DataQuality, severity: Severity.Red,
+            metricDetail: new Dictionary<string, string> { ["signalKind"] = "missing" });
+
+        var result = await Run([bigLift, smallLift]);
+
+        result.Items.Select(i => i.CitationLocator).Should().ContainInOrder("big!r1", "small!r1");
+    }
+
+    [Fact]
     public async Task Items_are_ordered_worst_first_by_severity()
     {
         var run = Guid.NewGuid();
@@ -177,6 +271,27 @@ public class SummarizeDataQualityTests
         result.PerProject.Should().HaveCount(2);
         result.PerProject.Single(p => p.ProjectKey == "A").Count.Should().Be(3);
         result.PerProject.Single(p => p.ProjectKey == "B").Count.Should().Be(2);
+    }
+
+    [Fact]
+    public async Task Completeness_grid_is_surfaced_per_project_and_kept_off_the_items_list()
+    {
+        var grid = Finding.Create(
+            "ALPHA", "Areas-completeness grid.", Citation.Create(Guid.NewGuid(), "completeness:ALPHA"),
+            T0, Guid.NewGuid(), "DataQuality", FindingKind.Analysis, Confidence.High,
+            area: HealthArea.DataQuality, severity: Severity.Green,
+            metricDetail: new Dictionary<string, string>
+            {
+                ["kind"] = "completeness-grid", ["remediation"] = "fix", ["Schedule"] = "80", ["Time"] = "n/a",
+            });
+
+        var result = await Run([grid]);
+
+        result.Items.Should().BeEmpty(); // the grid is not a missing/inconsistent item
+        var c = result.Completeness.Should().ContainSingle().Which;
+        c.ProjectKey.Should().Be("ALPHA");
+        c.Categories["Schedule"].Should().Be("80");
+        c.Categories.Should().NotContainKey("kind"); // marker keys stripped
     }
 
     [Fact]

@@ -1,4 +1,5 @@
 using AiPMOInsight.Application.Abstractions;
+using AiPMOInsight.Application.Features.Analysis;
 using AiPMOInsight.Application.Features.HealthScoring;
 using AiPMOInsight.Application.Messaging;
 using AiPMOInsight.Domain.Findings;
@@ -24,13 +25,29 @@ public static class SummarizeDataQuality
         ConfidenceView Confidence,
         IReadOnlyList<ItemView> Items,
         int TotalItems,
-        IReadOnlyList<ProjectCountView> PerProject);
+        IReadOnlyList<ProjectCountView> PerProject,
+        IReadOnlyList<DuplicateView> Duplicates,
+        IReadOnlyList<CompletenessView> Completeness);
+
+    /// <summary>One project's areas-completeness row (L3 #7): category name → % complete (or "n/a"), for the
+    /// 8 input categories. POC mandatory-field set — flagged, not scored.</summary>
+    public sealed record CompletenessView(string ProjectKey, IReadOnlyDictionary<string, string> Categories);
+
+    /// <summary>A duplicate-identity candidate pair (L3 #4): the project, its likely twin, a POC similarity
+    /// score, and a cited source. The UI records Merge/Keep-separate — it NEVER auto-merges (US-2).</summary>
+    public sealed record DuplicateView(
+        string ProjectKey, string Candidate, string CandidateName, int Score, string CitationLocator);
 
     /// <summary>Portfolio confidence against the publish threshold: mean %, the threshold, and below-target.</summary>
     public sealed record ConfidenceView(double Mean, int Threshold, bool BelowTarget);
 
-    /// <summary>One missing/inconsistent item: its project, the issue text, severity, and a cited source.</summary>
-    public sealed record ItemView(string ProjectKey, string Issue, string Severity, string CitationLocator);
+    /// <summary>
+    /// One missing/inconsistent item: its project, the issue text, severity, a cited source, the staleness
+    /// age in days (L3 #8 — null unless the finding carries one), and a suggested remediation (L3 #2).
+    /// </summary>
+    public sealed record ItemView(
+        string ProjectKey, string Issue, string Severity, string CitationLocator, int? AgeDays, string? Remediation,
+        int Lift);
 
     /// <summary>How many data-quality items a project has (where the gaps cluster).</summary>
     public sealed record ProjectCountView(string ProjectKey, int Count);
@@ -48,6 +65,10 @@ public static class SummarizeDataQuality
             var scoredConfidences = new List<double>();
             // Keep the finding alongside its key so the projection can order by the real severity enum.
             var collected = new List<(string Key, Finding Finding)>();
+            // Duplicate-identity candidates (L3 #4) are surfaced separately from the missing/inconsistent items.
+            var duplicates = new List<(string Key, Finding Finding)>();
+            // Areas-completeness grid rows (L3 #7) — one per project, kept off the items list.
+            var completeness = new List<(string Key, Finding Finding)>();
 
             foreach (var key in keys)
             {
@@ -73,20 +94,47 @@ public static class SummarizeDataQuality
                     && f.Kind == FindingKind.Analysis
                     && f.Area == HealthArea.DataQuality))
                 {
-                    collected.Add((key, f));
+                    switch (f.MetricDetail?.GetValueOrDefault(DataQualityFindingKeys.Kind))
+                    {
+                        case DataQualityFindingKeys.Kinds.DuplicateCandidate: duplicates.Add((key, f)); break;
+                        case DataQualityFindingKeys.Kinds.CompletenessGrid: completeness.Add((key, f)); break;
+                        default: collected.Add((key, f)); break;
+                    }
                 }
             }
 
             var mean = scoredConfidences.Count == 0 ? 0d : scoredConfidences.Average();
             var confidence = new ConfidenceView(mean, options.ConfidenceFloor, mean < options.ConfidenceFloor);
 
-            // Worst-first by severity (Red > Amber > Green), then key + locator as a deterministic tiebreak.
+            // Ordered by confidence lift (L3 #5) — fixing the highest-lift item helps confidence most — then
+            // worst severity, then a deterministic key/locator tiebreak. Lift is computed per project by
+            // reconstructing its DQ signal from the findings' signalKind tags and re-running ConfidencePolicy.
+            //
+            // The doc flags lift as "per-project... a portfolio-wide lift ranking needs a small aggregation
+            // decision" (docs/l3-data-quality-followups.md). The decision made here: rank globally across all
+            // projects by the raw lift number, not grouped/normalised per project first — a lift of 2 on
+            // project A outranks a lift of 1 on project B, regardless of each project's starting confidence.
+            // This surfaces the single highest-leverage fix across the whole portfolio first, at the cost of
+            // a project with many small-lift items never bubbling above one project's single big-lift item.
             var items = collected
-                .OrderByDescending(x => (int)x.Finding.Severity!.Value)
-                .ThenBy(x => x.Key, StringComparer.Ordinal)
-                .ThenBy(x => x.Finding.Citation.Locator, StringComparer.Ordinal)
-                .Select(x => new ItemView(
-                    x.Key, x.Finding.Summary, x.Finding.Severity!.Value.ToString(), x.Finding.Citation.Locator))
+                .GroupBy(x => x.Key, StringComparer.Ordinal)
+                .SelectMany(g =>
+                {
+                    var signal = ReconstructSignal(g.Select(x => x.Finding));
+                    var currentConf = (int)ConfidencePolicy.FromSignals(signal);
+                    return g.Select(x => new ItemView(
+                        x.Key,
+                        x.Finding.Summary,
+                        x.Finding.Severity!.Value.ToString(),
+                        x.Finding.Citation.Locator,
+                        x.Finding.MetricValue is { } age ? (int)age : null,
+                        x.Finding.MetricDetail?.GetValueOrDefault(DataQualityFindingKeys.Remediation),
+                        ConfidenceLift(signal, currentConf, x.Finding.MetricDetail?.GetValueOrDefault(DataQualityFindingKeys.SignalKind))));
+                })
+                .OrderByDescending(i => i.Lift)
+                .ThenByDescending(i => SeverityRank(i.Severity))
+                .ThenBy(i => i.ProjectKey, StringComparer.Ordinal)
+                .ThenBy(i => i.CitationLocator, StringComparer.Ordinal)
                 .ToList();
 
             var perProject = items
@@ -94,7 +142,68 @@ public static class SummarizeDataQuality
                 .Select(g => new ProjectCountView(g.Key, g.Count()))
                 .ToList();
 
-            return new Result(confidence, items, items.Count, perProject);
+            // Duplicate candidates, worst (highest score) first, cited — a separate surface for the
+            // Merge/Keep-separate decision (which the UI only records; it never auto-merges, US-2).
+            var duplicateViews = duplicates
+                .OrderByDescending(x => x.Finding.MetricValue ?? 0)
+                .ThenBy(x => x.Key, StringComparer.Ordinal)
+                .Select(x => new DuplicateView(
+                    x.Key,
+                    x.Finding.MetricDetail!.GetValueOrDefault(DataQualityFindingKeys.Candidate, ""),
+                    x.Finding.MetricDetail!.GetValueOrDefault(DataQualityFindingKeys.CandidateName, ""),
+                    x.Finding.MetricValue is { } s ? (int)s : 0,
+                    x.Finding.Citation.Locator))
+                .ToList();
+
+            // Areas-completeness grid rows (L3 #7): one per project, the category → % map (minus the marker keys).
+            var completenessViews = completeness
+                .OrderBy(x => x.Key, StringComparer.Ordinal)
+                .Select(x => new CompletenessView(
+                    x.Key,
+                    x.Finding.MetricDetail!
+                        .Where(kv => kv.Key is not (DataQualityFindingKeys.Kind or DataQualityFindingKeys.Remediation))
+                        .ToDictionary(kv => kv.Key, kv => kv.Value)))
+                .ToList();
+
+            return new Result(confidence, items, items.Count, perProject, duplicateViews, completenessViews);
         }
+
+        // Reconstructs a project's DQ signal from its findings' signalKind tags (the live signal isn't
+        // persisted) so the confidence lift can be computed at read time (L3 #5).
+        private static DataQualitySignal ReconstructSignal(IEnumerable<Finding> projectFindings)
+        {
+            var list = projectFindings.ToList();
+            var stale = list.FirstOrDefault(f => SignalKindOf(f) == DataQualityFindingKeys.SignalKinds.Stale);
+            return new DataQualitySignal
+            {
+                MissingFieldCount = list.Count(f => SignalKindOf(f) == DataQualityFindingKeys.SignalKinds.Missing),
+                LastUpdateAgeDays = stale?.MetricValue is { } a ? (double)a : 0,
+                SourceConsistent = list.All(f => SignalKindOf(f) != DataQualityFindingKeys.SignalKinds.Orphan),
+            };
+        }
+
+        // Confidence a project would gain by fixing one item (its signal component decremented). Always ≥ 0.
+        private static int ConfidenceLift(DataQualitySignal current, int currentConf, string? signalKind)
+        {
+            var fixedSignal = signalKind switch
+            {
+                DataQualityFindingKeys.SignalKinds.Missing =>
+                    current with { MissingFieldCount = Math.Max(0, current.MissingFieldCount - 1) },
+                DataQualityFindingKeys.SignalKinds.Stale => current with { LastUpdateAgeDays = 0 },
+                DataQualityFindingKeys.SignalKinds.Orphan => current with { SourceConsistent = true },
+                _ => current,
+            };
+            return (int)ConfidencePolicy.FromSignals(fixedSignal) - currentConf;
+        }
+
+        private static string? SignalKindOf(Finding f) => f.MetricDetail?.GetValueOrDefault(DataQualityFindingKeys.SignalKind);
+
+        private static int SeverityRank(string severity) => severity switch
+        {
+            "Red" => 3,
+            "Amber" => 2,
+            "Green" => 1,
+            _ => 0,
+        };
     }
 }

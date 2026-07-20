@@ -200,6 +200,5 @@ exactly.
   into "split one file's tabs into categories," and the batch-upload UX changes (one file, not six). Also
   unresolved: how the parser maps a sheet/tab to a category — exact sheet name, position, or header
   inspection — given names may be localized (Nordic client) and free-typed by PMs. Tracked as
-  `docs/gap-project.md` §2.12 (design) and §3.11 (client kick-off decision); depends on the real Orbit
-  export shape (gap §1.2, §3.7). **Confirm the convention before implementing §2 (the merge) and §5.3
+  `docs/kickoff-questions.md` §A1. **Confirm the convention before implementing §2 (the merge) and §5.3
   (the Absenteeism parser),** or the parser may silently read the wrong sheet and drop categories.

@@ -5,8 +5,13 @@
 > made *for* the client — it's a starting point to react to. This checklist is what we need the
 > PMO/client to **provide (data)** or **agree (rules)** before go-live.
 >
-> Related: register #68 (L2 follow-ons), #45 (`HealthArea` enum incl. Scope), multi-file on hold
-> pending the export convention.
+> Related: L1/L2/L3 dashboard follow-on registers #67/#68/#69 (all buildable items shipped; this
+> document is what's left — client input), #45 (`HealthArea` enum incl. Scope), multi-file on hold
+> pending the export convention. Current shipped POC numbers/formulas: `poc-data-rules-v0.md`. This
+> document absorbed the still-open client/product questions from the retired `gap-project.md` POC
+> gap register (§J, plus items folded into §A/§C/§E) — the genuinely-open **engineering** items from
+> that register (partial-ingest semantics, evaluation harness, LLM cost budget, audit log, retention
+> storage-split) are tracked as GitHub issues instead.
 
 ---
 
@@ -25,7 +30,7 @@ must be re-pointed and several features unblock.
 
 | # | Question | Why we need it | Blocks |
 |---|----------|----------------|--------|
-| A1 | Export **format**: one workbook/many tabs, or multiple files? Exact **tab + column names**? | Parser currently guesses the schema | Multi-file analyze, all parsing |
+| A1 | Export **format**: one workbook/many tabs, or one workbook per category (multiple files)? Exact **tab + column names** (or a stable naming rule — sheet name, position, or header inspection)? Are sheet/tab names **localized or PM-free-typed** (exact-name matching would be brittle)? | Parser currently guesses the schema; the `add-multi-file-analyze` merge model depends on which shape it is | Multi-file analyze, all parsing |
 | A2 | Do milestones carry a **BaselineDate** + a **critical/IsCritical** flag? | Needed to compute schedule **slip** ("7-week slip") and flag critical milestones | #68 item 2 (slip) |
 | A3 | Is there a **scope-change log**? What columns (type / status / effort impact)? | Scope panel currently runs on invented data | Scope (real) |
 | A4 | Do **decisions** carry Owner / NeededBy / Consequence? | The "Decisions needed" panel renders these columns | Panel 6 fidelity |
@@ -44,9 +49,10 @@ All values below are the **current EXAMPLE placeholders** (`appsettings.json →
 | Area | Current (EXAMPLE) | Client value |
 |------|:--:|:--:|
 | Schedule | 20 | ? |
-| Budget | 30 | ? |
-| Risk | 30 | ? |
+| Budget | 25 | ? |
+| Risk | 25 | ? |
 | Resource | 15 | ? |
+| Decision | 10 | ? |
 | Data Quality | 5 | ? |
 | **Scope** | *not scored (display-only)* | include? at what weight? |
 
@@ -90,7 +96,7 @@ Current logic lives in `source/…/Features/Analysis/Agents/*Skill.cs`. Confirm 
 | **Budget** (Financial) | forecast-overrun % bands (see `FinancialSkill`) | ? |
 | **Risk** (Risk & Issue) | RAID severity → RAG mapping | ? |
 | **Resource** | over-allocation (allocation > capacity); key-person = 1 person across N projects | ? |
-| **Data Quality** | which gaps count (missing due date, staleness, …) | ? |
+| **Data Quality** | which gaps count (missing due date, staleness > 30d, orphan reference); per-risk staleness > 21d (`RiskStaleThresholdDays`); duplicate-candidate score ≥ 60 (`DuplicateScoreThreshold`), weighted 50% name-similarity / 30% same-customer / 20% shared-resource (`DuplicateWeights`) | ? |
 | **Decision** | overdue = Red, due-soon = Amber (see D below) | ? |
 
 ---
@@ -130,9 +136,51 @@ Current logic lives in `source/…/Features/Analysis/Agents/*Skill.cs`. Confirm 
 
 ---
 
+## H. L1 — client/commercial risk (genuinely underspecified)
+
+The one L1 panel with no formula at all: *"projects at risk of damaging commitments."* We ship a
+**relationship-exposure proxy** (at-risk projects grouped by customer) — labelled as a proxy, not
+commercial risk.
+
+- **H1.** Does Orbit (or another system) carry **contract value / margin / SLA-penalty** data? Without
+  it, true commercial risk can't be computed — only the customer-grouping proxy.
+- **H2.** If that data exists, what's the RAG rule for "damaging commitments"?
+
+## I. L3 — data quality (non-blocking, ships as EXAMPLE either way)
+
+- **I1.** Is duplicate project identity a **real problem** in Orbit data (worth building for), or rare
+  enough to skip? (Not "can we build it" — we already have. A prioritisation question.)
+- **I2.** Which fields are **truly mandatory** per category for the areas-completeness grid (§8.4 in
+  `poc-data-rules-v0.md`)? Current set is our own placeholder.
+
+---
+
+## J. Product / strategy (not data rules — scope & positioning decisions)
+
+- **J1.** **PMO roles seed** — the PRD names `pmoAdmin` / `pmoUser` / `executive`; today it's a flat
+  `admin`/`user` RBAC. Confirm the real audience/role set before seeding richer roles.
+- **J2.** **Audience "Other?"** — the plan doc lists *"Executive, Project Management, Other?"* — who's
+  the third audience, if any?
+- **J3.** **Analysis triggering** — on-demand only (current), scheduled (nightly/weekly portfolio
+  runs), or both? The plan doc's "portfolio cycle" implies scheduled; affects whether a job
+  runner (Hangfire / cron) is needed.
+- **J4.** **Raw-upload retention policy** — how long do we keep the original uploaded file after
+  parsing? (A storage-split + TTL is designed but the retention window itself is a client policy call.)
+- **J5.** **Hosting region / data residency** — meeting minutes name individuals; affects encryption
+  and access-log posture.
+- **J6.** **AI Skills catalogue** — the plan doc's item #9 is a bare *"What to do?"* Which of the
+  agents map to real client-recognisable "skills," and is the current 10-agent set the right shape?
+- **J7.** **Differentiator vs. Orbit-native AI / Power BI** — worth pinning down NextWave's specific
+  value-add so L1/L2/L3 don't just re-derive what Orbit's own tooling already shows.
+
+---
+
 ## Priority
 
 1. **A1** (export format) — unblocks the most.
 2. **B1–B4** (scoring model) — the numbers that decide every RAG colour.
 3. **A2 / A3** (baseline+critical, scope data) — unblock slip and real Scope.
-4. Everything else can default to the POC placeholder until confirmed.
+4. **H1** (commercial-risk data) — the one L1 panel with zero formula today.
+5. **J3 / J4 / J5** (scheduling, retention, hosting) — gate infra/ops decisions, worth raising early.
+6. Everything else (I1/I2, J1/J2/J6/J7, per-agent thresholds, time windows) can default to the POC
+   placeholder until confirmed.

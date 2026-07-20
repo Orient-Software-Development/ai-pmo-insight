@@ -135,12 +135,14 @@ with GitHub Actions CI and Claude skills.
 > (network/5xx/401, surfaced via the page error line, never a banner); the two surfaces are independent so
 > one failing never blanks the other. RAG colours are theme-aware CSS custom properties in `styles.scss`
 > and always paired with a text label + score (colour-blind safe). Status never conveyed by colour alone.
-> Where the PRD's L2 wishlist exceeds the finding shape (dated milestones, per-decision owner/deadline,
-> explicit AI recommendation) the view renders what exists and flags the gap as a follow-on. **L1
-> (Executive Portfolio) and L3 (Data Quality) remain unbuilt** — they need a portfolio-enumeration query
-> (`DistinctProjectKeys` + a `ScorePortfolio` fan-out over the pure `HealthScoringService`), deferred to
-> later Phase 5 changes. The repo has **no JS test harness**; the L2 data path is locked by the backend
-> integration test `ProjectStatusDashboardDataTests` and the render logic verified via the running app.
+> Where the PRD's L2 wishlist exceeded the finding shape at the time this change shipped (dated
+> milestones, per-decision owner/deadline, explicit AI recommendation), the view rendered what existed
+> and flagged the gap as a follow-on — since closed (see the L2 register-closure entry below). **L1
+> (Executive Portfolio) and L3 (Data Quality)**, unbuilt when this change shipped, followed in later
+> Phase 5 changes (below) using the same shape: a portfolio-enumeration query (`DistinctProjectKeys` +
+> a `ScorePortfolio`/`SummarizeDataQuality` fan-out over the pure `HealthScoringService`). The repo has
+> **no JS test harness**; the L2 data path is locked by the backend integration test
+> `ProjectStatusDashboardDataTests` and the render logic verified via the running app.
 
 > **Dashboards (Phase 5, Level 1 — `add-executive-portfolio-dashboard`):** the **executive portfolio
 > roll-up** (React, route `/portfolio`, `ExecutivePortfolio.jsx`). Unlike L2 (presentation-only), this
@@ -177,9 +179,10 @@ with GitHub Actions CI and Claude skills.
 > unchanged** — the `Promise.allSettled` findings+health read and the `healthState` mapping are preserved,
 > and `?key=` auto-loads on mount; the change is styling/layout only, so **`ProjectStatusDashboardDataTests`
 > stays green** (the repo has no JS harness — the render is `/verify`-checked in the running app).
-> **Presentation-only boundary holds** (dashed placeholders, never fabricated): per-file parse status,
-> **duplicate-identity merge (US-2)**, **live per-agent progress (US-9)** on `/upload`; **dated milestones**
-> and **per-decision owner/deadline** on L2 (the Narrative stays the closest recommendation surface).
+> **Presentation-only boundary holds** (dashed placeholders, never fabricated): per-file parse status and
+> **live per-agent progress (US-9)** on `/upload` remain follow-ons. **Duplicate-identity merge (US-2)**
+> and **dated milestones / per-decision owner-deadline** on L2, flagged here at the time, have since
+> landed — see the L3 and L2 register-closure entries below.
 
 > **Auth UI rebuild + token-base retrofit (Phase 5, `add-phase5-auth-ui`, #33):** the three auth surfaces
 > rebuilt to the wireframe, **presentation-only — no `/api/auth/*` / cookie / JWT / Identity change.**
@@ -240,15 +243,60 @@ with GitHub Actions CI and Claude skills.
 > shared-workspace, view-only); empty store → **zeroed 200, never 404**; unauthenticated → 401. Enums
 > surface as strings. The L3 view is built to the v2 wireframe (`data-page="l3"`) on the shared Phase 5
 > design system (`--rag-*`, `records`, `sev`, `eyebrow`, `flagged-panel`, plus a small `.conf-hero` block);
-> render mapping in a pure `dataQuality.js` helper (mirrors L2's `health.js`). **Presentation-only boundary
-> holds** (dashed placeholders, never fabricated): the current DataQuality finding carries only
-> `Summary`+`Severity`+`Citation`+`Confidence`, so per-item **age**, **suggested remediation**, quantified
-> confidence-**lift** ordering, the eight-category **areas-completeness grid**, and the **duplicate-identity
-> candidates** table are flagged follow-ons — and **no merge/keep-separate control is shipped** while no
-> duplicate signal exists (**US-2 never-silently-merge**). Backend is TDD-covered (`SummarizeDataQualityTests`,
+> render mapping in a pure `dataQuality.js` helper (mirrors L2's `health.js`). At the time this change
+> shipped, the DataQuality finding carried only `Summary`+`Severity`+`Citation`+`Confidence`, so per-item
+> **age**, **suggested remediation**, confidence-**lift** ordering, the **areas-completeness grid**, and
+> **duplicate-identity candidates** were flagged follow-ons — all since closed (see the L3
+> register-closure entry below). Backend is TDD-covered (`SummarizeDataQualityTests`,
 > `DataQualityEndpointsTests`; the shared `Workbook` fixture yields no DQ findings, so a dedicated
 > `OrbitFixtureBuilder.WorkbookWithDataQualityGap` seeds a deterministic milestone-no-due-date item). This
 > **completes the three-level Phase 5 dashboard set** (L1 + L2 + L3).
+
+> **L2 follow-on register closed (Phase 5, register #68, PRs #72 + #73):** the buildable L2 panels
+> from the plan doc's 8-panel spec. `FindingView` (`GetProjectFindings`) now exposes each finding's
+> `Area`/`Severity`/`MetricValue`/`MetricUnit`/`MetricDetail` — the shared read-API enabler every panel
+> below consumes. **Decisions needed** (panel 6): `DecisionSkill` stamps structured
+> `title`/`owner`/`deadline`/`consequence` on `MetricDetail` (emission unchanged — overdue=Red,
+> due-soon=Amber, urgent-only scope); a dedicated worst-first table replaces the placeholder. **Key
+> deviations** (panel 3): the flat findings table is grouped by area — Budget / Time / **Scope** /
+> Resources — with **Risks & issues** (panel 4) and **Data quality** kept as their own sections (a
+> product decision: risks stay separate from key deviations). **Scope** is `HealthArea.Scope` +
+> `ScopeSkill` (a POC "unapproved-creep" rule: unapproved increase=Red, approved/open=Amber) —
+> **display-only**, excluded from the health score/confidence (`HealthScoringService` filters it out;
+> proven by a dedicated test) until the PMO agrees a real rule + weight. **Upcoming milestones** (panel
+> 5): the Status agent's due-soon window widened 14→28 days (the doc's "next 2–4 weeks"); milestones
+> carry `BaselineDate`/`IsCritical` — a **critical** milestone in trouble (overdue/missed/at-risk)
+> escalates to Red regardless of its day-band, and **slip** (adjusted due − baseline) is surfaced as info
+> only (does not itself raise severity in this version). **This-period progress** (panel 2): a new
+> `SummarizeProgress` slice (`Application/Features/Progress`) + `GET /api/projects/{key}/progress`
+> compares a project's two most recent runs — the health-score delta, a qualitative pace label (POC
+> placeholder thresholds), and worst-first moved-forward/moved-backward lists (findings that
+> cleared/improved vs. are new/worsened, matched by agent + citation locator). All of it TDD-covered;
+> everything invented (Scope's rule, the pace thresholds, the milestone-critical escalation) is flagged
+> `IsPlaceholder`/"POC" in code and the UI, per `docs/poc-data-rules-v0.md`.
+
+> **L3 follow-on register closed (Phase 5, register #69):** the remaining L3 Data Quality items.
+> `DataQualityOptions` (config-bound, `Validate()`d at startup — the same pattern as
+> `HealthScoringOptions`) externalises the new POC thresholds. **Age** + **suggested remediation**: the
+> DQ agent stamps the staleness age as a real `MetricValue`/`MetricUnit` (not only in the summary text)
+> and attaches a deterministic remediation string per check type (a static rule-map, no LLM) via
+> `MetricDetail`. **Duplicate-identity candidates (US-2)**: a POC heuristic (name-token Jaccard ×50% +
+> same-customer ×30% + shared-resource ×20%, threshold ≥60) flags project pairs once per pair; the L3
+> view's Merge/Keep-separate control only **records** the choice (client-side, this POC) and **never
+> auto-merges**. **Per-risk staleness**: a RAID item not updated within 21 days is an Amber DQ finding.
+> **Budget-actuals-missing**: `BudgetLineRecord.Actual` is now nullable; a missing actual is a DQ gap
+> (`FinancialSkill` guards the null). **Confidence-lift ordering**: `SummarizeDataQuality` reconstructs
+> each project's `DataQualitySignal` from a `signalKind` tag on every finding and re-runs
+> `ConfidencePolicy` counterfactually, ranking items by **global** lift across the whole portfolio (a
+> lift of 2 on one project outranks a lift of 1 on another — a design decision, not a client input).
+> **Areas-completeness grid**: an 8-input-category (Schedule/Budget/Scope/Resources/Risks/Decisions/
+> Minutes/Time — **not** the 5 `HealthArea` buckets) present/expected metric against a POC
+> mandatory-field set, emitted as one informational Green finding per project, excluded from scoring.
+> **Resource-plan vs. time-entries**: a new POC `TimeEntryRecord` + parser "Time" sheet backs a
+> cross-source check (allocated-no-time / time-logged-unplanned). This closes all 8 items of the L3
+> register; TDD-covered throughout. The one-time **`DEMO-TREND`** seed used earlier to demo the progress
+> panel without two uploads has been removed from `DbInitializer` — a fresh database now starts at zero
+> projects until something is actually uploaded and analyzed.
 
 > **Client framework:** template param `--client-framework` (`-cf`) = `react` (default) or
 > `none` (API only). Driven by `ClientFramework` symbol → computed `UseReact` / `UseApiOnly`,

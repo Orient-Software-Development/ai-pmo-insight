@@ -42,12 +42,17 @@ public sealed class FinancialSkill : IAgentSkill<AnalysisInput, IReadOnlyList<Fi
                     line.Source, OverrunBand(overPercent)));
             }
 
-            var spendPercent = (double)(line.Actual / line.Budget) * 100;
-            if (percentComplete is { } progress && spendPercent - progress > SpendAheadOfProgressPoints)
+            // Spend-ahead-of-progress cross-signal — only when actuals are present (missing actuals are a
+            // data-quality gap the DQ agent flags, not a financial signal here).
+            if (line.Actual is { } actual && percentComplete is { } progress)
             {
-                findings.Add(Finding(slice, confidence,
-                    $"'{line.Category}' spend is running ahead of progress ({spendPercent:F0}% of budget spent at {progress:F0}% complete).",
-                    line.Source, Severity.Amber));
+                var spendPercent = (double)(actual / line.Budget) * 100;
+                if (spendPercent - progress > SpendAheadOfProgressPoints)
+                {
+                    findings.Add(Finding(slice, confidence,
+                        $"'{line.Category}' spend is running ahead of progress ({spendPercent:F0}% of budget spent at {progress:F0}% complete).",
+                        line.Source, Severity.Amber));
+                }
             }
         }
 

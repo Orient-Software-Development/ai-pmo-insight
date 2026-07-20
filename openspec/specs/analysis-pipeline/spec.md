@@ -40,6 +40,24 @@ The Data Collector (agent #1) SHALL be pure deterministic code (no LLM) that par
 - **WHEN** an analysis run completes
 - **THEN** only findings (and narrative/challenge/review outputs) are persisted; the intermediate typed records are not
 
+### Requirement: Decisions are parsed into typed records
+
+The Data Collector SHALL parse a `Decisions` sheet into typed decision records (project key, title, status,
+owner, needed-by date, consequence), each with a source locator, and expose them on the collected data so
+the Decision agent can read them. A workbook without a Decisions sheet SHALL yield no decision records
+(not an error), consistent with the other optional sheets.
+
+#### Scenario: A Decisions sheet parses into records
+
+- **WHEN** an uploaded workbook contains a Decisions sheet with the expected columns
+- **THEN** each row becomes a typed decision record with its status, needed-by date, owner, and a
+  `Decisions!row` source locator
+
+#### Scenario: A workbook with no Decisions sheet yields no decision records
+
+- **WHEN** an uploaded workbook has no Decisions sheet
+- **THEN** the collected data carries an empty set of decision records and analysis proceeds normally
+
 ### Requirement: Deterministic data-quality and analysis agents
 
 Agents #2 Data Quality, #3 Status, #5 Financial, and #6 Resource SHALL be pure deterministic code (no LLM). Data Quality SHALL detect missing fields, stale updates, and inconsistent IDs, emit DQ findings, and produce a confidence signal consumed by downstream agents. Status SHALL compute milestone adherence, schedule variance, delay severity, and upcoming/dependency risk. Financial SHALL compute budget/forecast variance, burn rate, budget-vs-progress cross-signal, and financial exposure. Resource SHALL compute allocation variance, capacity pressure, missing roles, and concentration × absence.
@@ -113,6 +131,83 @@ The Risk & Issue agent (#4) SHALL be hybrid: it SHALL filter the deterministic R
 - **WHEN** the upload contains no meeting-minute content
 - **THEN** the Risk & Issue agent produces only its deterministic RAID findings and makes no LLM call
 
+### Requirement: Decision agent emits decision-backlog findings
+
+The pipeline SHALL include a deterministic Decision agent (no LLM) that reads the parsed decision records
+for the project and emits an `Area == Decision` finding for each decision that is **overdue** (its
+needed-by date has passed and its status is not "Approved") or **due soon** (needed-by within the near
+window and not approved). Each finding SHALL be cited to its decision record and carry a severity by band —
+overdue at Red, due-soon at Amber. An approved decision, or one with no needed-by date, SHALL produce no
+finding. The agent SHALL run in the pipeline's parallel analysis stage alongside the other deterministic
+agents.
+
+#### Scenario: An overdue, unapproved decision is a cited Red finding
+
+- **WHEN** a decision's needed-by date has passed and its status is not "Approved"
+- **THEN** the Decision agent emits an `Area == Decision` finding at Red severity, cited to that decision record
+
+#### Scenario: A due-soon decision is an Amber finding
+
+- **WHEN** a decision's needed-by date is within the upcoming window and its status is not "Approved"
+- **THEN** the Decision agent emits an `Area == Decision` finding at Amber severity, cited to that decision record
+
+#### Scenario: An approved decision produces no finding
+
+- **WHEN** a decision's status is "Approved"
+- **THEN** the Decision agent emits no overdue/due-soon finding for it
+
+### Requirement: Resource agent detects the project-manager role robustly
+
+The Resource agent SHALL determine whether a project has a project manager by matching the assignment's
+role against the manager concept in a way that recognises real data values (e.g. "Project Management",
+"Project Manager", "PM"), not a brittle substring test that a valid value can fail. It SHALL emit a
+"missing project manager" finding only when no assignment on the project fills the PM role.
+
+#### Scenario: A "Project Management" role counts as a project manager
+
+- **WHEN** a project has an assignment whose role is "Project Management"
+- **THEN** the Resource agent does NOT emit a "no project manager" finding for that project
+
+#### Scenario: A genuinely PM-less project is flagged
+
+- **WHEN** a project has assignments but none fills a project-manager role
+- **THEN** the Resource agent emits a "missing project manager" finding cited to the project's assignments
+
+### Requirement: Resource agent flags cross-project key-person concentration
+
+The Resource agent SHALL compute key-person concentration from the full set of assignments available to it
+(all projects), counting the distinct projects each person is allocated to, and SHALL emit a concentration
+finding for a person meeting the configured band (per the plan doc: 5+ projects Red, 3–4 Amber, fewer than 3
+not flagged). The finding SHALL be attached to the project slice being analysed and cited to that project's
+assignment for the person.
+
+#### Scenario: A person on five projects is a Red concentration risk
+
+- **WHEN** a person is allocated across five distinct projects in the portfolio
+- **THEN** the Resource agent emits a key-person concentration finding at Red severity for that person, cited to the assignment
+
+#### Scenario: A person on two projects is not flagged
+
+- **WHEN** a person is allocated across only two projects
+- **THEN** no key-person concentration finding is emitted for that person
+
+### Requirement: Status agent reflects a milestone's recorded status
+
+The Status agent SHALL take a milestone's recorded status into account: a milestone whose status indicates it
+was missed or is at risk SHALL NOT be emitted as a Green informational "due soon" finding. A missed milestone
+SHALL carry a Red-level Schedule severity and an at-risk milestone at least Amber, so the health Schedule area
+can reflect it and the critical-milestone override can fire.
+
+#### Scenario: A missed milestone is not rendered green
+
+- **WHEN** a milestone's recorded status is "Missed"
+- **THEN** the Status agent emits a Schedule finding at Red severity (not a Green "due soon"), cited to the milestone
+
+#### Scenario: A normal upcoming milestone is still informational
+
+- **WHEN** a milestone has no adverse status and its due date falls within the upcoming window
+- **THEN** the Status agent emits the existing informational "due soon" finding
+
 ### Requirement: Narrative synthesis (hybrid: template-first, LLM fallback)
 
 The Narrative agent (#7) SHALL synthesize the merged findings into prose describing overall status and a recommendation that names an owner, a deadline, and a rationale. It SHALL be hybrid: recurring narrative shapes (single-signal RED, two-signal RED with a clear primary/secondary, data-quality-driven "Needs PM Review", routine GREEN) SHALL be rendered deterministically from templates, and only cases that do not fit a template (multi-signal cross-referencing, minute-extracted signals) SHALL fall back to the `ILlmClient`. The narrative SHALL be persisted and returned with the project's findings regardless of which path produced it.
@@ -126,6 +221,26 @@ The Narrative agent (#7) SHALL synthesize the merged findings into prose describ
 
 - **WHEN** the merged findings do not fit a template (e.g. multiple cross-referencing signals or a minute-extracted signal)
 - **THEN** the Narrative agent produces the prose and recommendation via the `ILlmClient`, persisted for the project
+
+### Requirement: Narrative recommendation is carried as structured data
+
+The Narrative agent's finding SHALL carry its recommendation as structured detail — `owner`, `deadline`,
+`action`, and `rationale` — on the finding's metric detail, in addition to the existing prose summary, so a
+consumer can read the fields as data rather than parsing the summary string. The prose summary SHALL be
+preserved for back-compat. This SHALL apply to both the template-produced and LLM-produced narrative paths,
+and SHALL require no change to the narrative prompt or the LLM output contract.
+
+#### Scenario: The narrative finding exposes the recommendation fields
+
+- **WHEN** the Narrative agent produces a recommendation (via either the template or the LLM path)
+- **THEN** the finding carries `owner`, `deadline`, `action`, and `rationale` as structured detail, and
+  still carries the human-readable summary
+
+#### Scenario: Structured detail matches the recommendation the summary describes
+
+- **WHEN** the narrative finding is produced
+- **THEN** the `owner` / `deadline` / `action` / `rationale` in the structured detail are the same values
+  rendered in the summary prose (not a separate or fabricated set)
 
 ### Requirement: Adversarial Challenge critique
 

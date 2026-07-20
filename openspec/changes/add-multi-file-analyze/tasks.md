@@ -10,7 +10,7 @@
 
 > ⚠️ **Open decision blocks §2 and §5.3** — the spreadsheet shape (one workbook per category vs. one
 > workbook with multiple named tabs) and the sheet→category mapping rule are **not yet decided**. See
-> design.md Open Questions + `docs/gap-project.md` §2.12 / §3.11. Confirm the convention with the client
+> design.md Open Questions + `docs/kickoff-questions.md` §A1. Confirm the convention with the client
 > before implementing the merge (§2) and the Absenteeism parser (§5.3).
 
 ## 2. Data Collector merge (TDD)

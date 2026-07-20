@@ -3,6 +3,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using AiPMOInsight.Application.Abstractions;
+using AiPMOInsight.Application.Features.Analysis.Agents;
 using AiPMOInsight.Application.Features.HealthScoring;
 using AiPMOInsight.Infrastructure.Analysis.Llm;
 using AiPMOInsight.Infrastructure.Analysis.Parsing;
@@ -39,6 +40,14 @@ public static class DependencyInjection
         configuration.GetSection(HealthScoringOptions.SectionName).Bind(healthScoringOptions);
         healthScoringOptions.Validate();
         services.AddSingleton(healthScoringOptions);
+
+        // Data Quality agent configuration (L3 gaps): the per-risk staleness window and the
+        // duplicate-identity score threshold/weights are POC EXAMPLE values (see appsettings) until
+        // the PMO agrees real numbers at kickoff — same externalised-config pattern as health scoring.
+        var dataQualityOptions = new DataQualityOptions();
+        configuration.GetSection(DataQualityOptions.SectionName).Bind(dataQualityOptions);
+        dataQualityOptions.Validate();
+        services.AddSingleton(dataQualityOptions);
 
         // Data Collector (#1) file parsing adapter (ClosedXML / OpenXml / System.Xml).
         services.AddScoped<IUploadParser, UploadParser>();

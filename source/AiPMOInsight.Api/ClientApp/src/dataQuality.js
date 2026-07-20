@@ -9,6 +9,8 @@ export const EMPTY_DQ = {
   items: [],
   totalItems: 0,
   perProject: [],
+  duplicates: [],
+  completeness: [],
 };
 
 // Total mapping of a data-quality-summary response body to a safe view model: missing/partial fields
@@ -22,5 +24,7 @@ export function dqView(body) {
     items: body.items ?? [],
     totalItems: body.totalItems ?? 0,
     perProject: body.perProject ?? [],
+    duplicates: body.duplicates ?? [],
+    completeness: body.completeness ?? [],
   };
 }

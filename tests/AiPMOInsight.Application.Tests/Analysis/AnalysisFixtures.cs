@@ -42,7 +42,8 @@ internal static class AnalysisFixtures
         IReadOnlyList<MinuteEntryRecord>? minutes = null,
         IReadOnlyList<RaidItemRecord>? raidItems = null,
         IReadOnlyList<DecisionRecord>? decisions = null,
-        IReadOnlyList<ScopeChangeRecord>? scopeChanges = null) => new()
+        IReadOnlyList<ScopeChangeRecord>? scopeChanges = null,
+        IReadOnlyList<TimeEntryRecord>? timeEntries = null) => new()
     {
         Projects = projects ?? [],
         Milestones = milestones ?? [],
@@ -52,5 +53,6 @@ internal static class AnalysisFixtures
         RaidItems = raidItems ?? [],
         Decisions = decisions ?? [],
         ScopeChanges = scopeChanges ?? [],
+        TimeEntries = timeEntries ?? [],
     };
 }
