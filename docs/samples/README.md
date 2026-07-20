@@ -105,19 +105,19 @@ the `projectKey` parsed from the file. Upload `orbit-sample.xlsx` for a full run
 
 ```bash
 # 1. log in (dev admin is seeded) — saves auth cookies
-curl -c cookies.txt -X POST "http://localhost:5080/api/auth/login" \
+curl -c cookies.txt -X POST "http://localhost:5081/api/auth/login" \
   -H "Content-Type: application/json" \
   -d '{"email":"admin@localhost","password":"Admin123!$"}'
 
 # 2. upload the consolidated workbook -> returns { uploadId, fileName }
-curl -b cookies.txt -X POST "http://localhost:5080/api/ingest/upload" \
+curl -b cookies.txt -X POST "http://localhost:5081/api/ingest/upload" \
   -F "file=@docs/samples/orbit-sample.xlsx"
 
 # 3. analyze the stored upload -> runs the pipeline, emits cited findings per project
-curl -b cookies.txt -X POST "http://localhost:5080/api/analyze/<uploadId-from-step-2>"
+curl -b cookies.txt -X POST "http://localhost:5081/api/analyze/<uploadId-from-step-2>"
 
 # 4. read a project's findings (project keys come from the file: ORB-1001 .. ORB-1006)
-curl -b cookies.txt "http://localhost:5080/api/projects/ORB-1002"
+curl -b cookies.txt "http://localhost:5081/api/projects/ORB-1002"
 ```
 
 > On Windows PowerShell, `curl` is an alias for `Invoke-WebRequest`. Either call `curl.exe`

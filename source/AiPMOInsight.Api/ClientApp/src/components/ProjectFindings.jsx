@@ -32,6 +32,7 @@ export function ProjectFindings() {
   const [view, setView] = useState(EMPTY_VIEW);
   const [health, setHealth] = useState(EMPTY_HEALTH);
   const [progress, setProgress] = useState(null);
+  const [projectKeys, setProjectKeys] = useState([]);
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(false);
 
@@ -85,6 +86,21 @@ export function ProjectFindings() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // Populate the switcher dropdown from every project on record. Best-effort: on failure the select
+  // falls back to just the current key so the page still works.
+  useEffect(() => {
+    let live = true;
+    (async () => {
+      try {
+        const res = await authFetch('/api/projects');
+        if (!res.ok) return;
+        const keys = await res.json();
+        if (live && Array.isArray(keys)) setProjectKeys(keys);
+      } catch { /* leave the dropdown to fall back to the current key */ }
+    })();
+    return () => { live = false; };
+  }, []);
+
   const hasAnything =
     view.findings.length + view.narrative.length + view.challenge.length + view.review.length > 0;
 
@@ -108,13 +124,19 @@ export function ProjectFindings() {
         </div>
 
         <form className="l2-switcher" onSubmit={e => { e.preventDefault(); loadFindings(projectKey); }} role="group">
-          <input
-            type="text"
+          <select
             value={projectKey}
-            placeholder="Project key"
             aria-label="Switch project"
             onChange={e => setProjectKey(e.target.value)}
-          />
+            disabled={projectKeys.length === 0}
+          >
+            {/* If the fetched list doesn't include the current key (e.g. it arrived via ?key= for a
+                project not yet analyzed), keep it visible so the label matches the header. */}
+            {!projectKeys.includes(projectKey) && projectKey && (
+              <option value={projectKey}>{projectKey}</option>
+            )}
+            {projectKeys.map(k => <option key={k} value={k}>{k}</option>)}
+          </select>
           <button type="submit">Switch project</button>
         </form>
       </div>

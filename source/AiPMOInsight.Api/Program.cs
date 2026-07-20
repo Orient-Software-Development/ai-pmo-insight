@@ -199,6 +199,7 @@ app.MapAuthEndpoints();
 app.MapProfileEndpoints();
 app.MapIngestEndpoints();
 app.MapFindingsEndpoints();
+app.MapProjectKeysEndpoints();
 app.MapUploadHistoryEndpoints();
 app.MapHealthScoringEndpoints();
 app.MapExecutivePortfolioEndpoints();
