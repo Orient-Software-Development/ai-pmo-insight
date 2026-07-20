@@ -89,11 +89,9 @@ export function Login() {
                 onChange={e => setPassword(e.target.value)}
                 required
               />
-              {mode === 'register' && (
-                <div className="field-hint">
-                  At least 8 characters · upper + lower + digit + symbol (ASP.NET Identity default).
-                </div>
-              )}
+              <div className="field-hint" aria-hidden={mode !== 'register'}>
+                At least 8 characters · upper + lower + digit + symbol (ASP.NET Identity default).
+              </div>
             </label>
 
             {error && (

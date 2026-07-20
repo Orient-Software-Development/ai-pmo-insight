@@ -56,7 +56,7 @@ Vite serves the SPA and proxies API calls to the backend, so the browser sees a 
 dotnet dev-certs https --trust
 ```
 
-**Terminal 1 — backend** (https://localhost:7443, http://localhost:5080):
+**Terminal 1 — backend** (https://localhost:7443, http://localhost:5081):
 ```bash
 dotnet run --project source/AiPMOInsight.Api --launch-profile https
 ```
@@ -160,19 +160,19 @@ JWT access (15 min) and refresh (7-day) tokens, both transported as `httpOnly`, 
 [`docs/authentication.md`](docs/authentication.md) for the full design.
 
 ```bash
-curl -X POST "http://localhost:5080/api/auth/register" -H "Content-Type: application/json" \
+curl -X POST "http://localhost:5081/api/auth/register" -H "Content-Type: application/json" \
   -d '{"email":"me@x.com","password":"Passw0rd!$"}'
 
-curl -c cookies.txt -X POST "http://localhost:5080/api/auth/login" -H "Content-Type: application/json" \
+curl -c cookies.txt -X POST "http://localhost:5081/api/auth/login" -H "Content-Type: application/json" \
   -d '{"email":"me@x.com","password":"Passw0rd!$"}'
 
 # Upload a fixture and run the full pipeline over it
-curl -b cookies.txt -F "file=@docs/samples/timeline.xlsx" http://localhost:5080/api/ingest/upload
-curl -b cookies.txt -X POST http://localhost:5080/api/analyze/<uploadId>
-curl -b cookies.txt http://localhost:5080/api/projects/<projectKey>
+curl -b cookies.txt -F "file=@docs/samples/timeline.xlsx" http://localhost:5081/api/ingest/upload
+curl -b cookies.txt -X POST http://localhost:5081/api/analyze/<uploadId>
+curl -b cookies.txt http://localhost:5081/api/projects/<projectKey>
 
-curl -b cookies.txt http://localhost:5080/api/profile/me       # current user + roles
-curl -b cookies.txt -c cookies.txt -X POST "http://localhost:5080/api/auth/refresh"
+curl -b cookies.txt http://localhost:5081/api/profile/me       # current user + roles
+curl -b cookies.txt -c cookies.txt -X POST "http://localhost:5081/api/auth/refresh"
 ```
 
 ## Observability
