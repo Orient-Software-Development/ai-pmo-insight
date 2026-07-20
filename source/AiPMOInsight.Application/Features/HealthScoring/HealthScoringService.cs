@@ -60,7 +60,7 @@ public sealed class HealthScoringService(HealthScoringOptions options)
             .GroupBy(f => f.Area!.Value)
             .Select(g =>
             {
-                var worst = g.Min(f => f.Severity!.Value);
+                var worst = g.Max(f => f.Severity!.Value);
                 var weight = options.WeightFor(g.Key);
                 var areaScore = options.ScoreFor(worst);
                 return (Area: g.Key, Severity: worst, Weight: weight, AreaScore: areaScore);
@@ -71,7 +71,7 @@ public sealed class HealthScoringService(HealthScoringOptions options)
         var totalWeight = areas.Sum(a => a.Weight);
         var rawScore = totalWeight == 0
             ? 0d
-            : areas.Sum(a => (double)a.AreaScore * a.Weight) / totalWeight;
+            : areas.Sum(a => (double)a.AreaScore * a.Weight);
 
         var contributions = areas
             .Select(a => new AreaContribution(
