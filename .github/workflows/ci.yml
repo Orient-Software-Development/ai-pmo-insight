@@ -1,0 +1,31 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up .NET SDK (pinned via global.json)
+        uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: global.json
+
+      - name: Restore
+        run: dotnet restore
+
+      - name: Build
+        run: dotnet build -c Release --no-restore
+
+      # Full suite includes the Layer-1 OpenAPI drift test (OpenApiDriftTest), which fails if
+      # /openapi/v1.json has drifted from the committed openapi.json baseline. To accept a
+      # deliberate API change, regenerate the baseline locally with:
+      #   UPDATE_OPENAPI_BASELINE=1 dotnet test --filter FullyQualifiedName~OpenApiDriftTest
+      # and commit the diff in the same PR.
+      - name: Test
+        run: dotnet test -c Release --no-build --verbosity normal
