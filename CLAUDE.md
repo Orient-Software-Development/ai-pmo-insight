@@ -1,15 +1,11 @@
 # CLAUDE.md
 
-Guidance for Claude Code working in this repo. Reorganised into 6 sections following
-"living-spec" practice, with the shipped-features log moved out to [SHIPPED.md](SHIPPED.md)
-to keep this file lean. Read a specific SHIPPED.md block when the task touches that surface
-(auth, health scoring, dashboards, etc.); otherwise it is not needed every session.
+Guidance for Claude Code in this repo. Six sections adapted from "living-spec" practice.
+Shipped-features log lives in [SHIPPED.md](SHIPPED.md) — load a specific block on demand.
 
-Anti-patterns explicitly avoided here (see [SHIPPED.md](SHIPPED.md) `spec-drift-sensor` blocks
-for context): (a) no `file:line` refs — symbols only, so refactors don't rot the doc;
-(b) no "Implementation Status" section — git branches, PRs and the issue tracker are the
-authoritative state; (c) automation rules (auto-accept, deny) live in `.claude/settings.json`,
-not in prose here.
+**Deliberate omissions** (per prior review, guideline recommendations we do NOT follow):
+symbols not `file:line` (refactor-resistant); no "Implementation Status" section (git / PRs /
+issue tracker are the state); automation rules in `.claude/settings.json`, not prose here.
 
 ---
 
@@ -195,95 +191,82 @@ placeholder status. Don't restate what the code already says.
 
 ## 5. Boundaries (semantic rules only)
 
-Automation rules (auto-accept commands, deny lists) live in `.claude/settings.json`. This section
-is what the agent must NOT do based on domain knowledge that isn't obvious from the code.
+Automation rules (auto-accept, deny) live in `.claude/settings.json`; this section is what the
+agent must not do based on domain knowledge not obvious from the code.
 
-**Never:**
-- Commit `Jwt__SigningKey`, `Llm__*__ApiKey`, or `AppDb__ConnectionString` values (env / user-
-  secrets only). The dev value in `appsettings.json` is intentional and non-production.
-- Introduce per-user data scoping without an explicit spec change — the model is
-  **shared workspace, any authenticated caller sees everything**. Adding a `Where(x => x.UserId
-  == currentUser)` is a design-changing decision, not a cleanup.
-- Treat `HealthScoring`, `DataQuality`, or "POC" thresholds as client-agreed — they are PRD
-  placeholders. Preserve the `IsPlaceholder` / startup-warning wiring.
-- Fabricate UI data for signals the backend doesn't yet emit. Render a dashed "not yet captured
-  — follow-on" placeholder instead.
-- Run migrations on startup in Production (`DbInitializer.MigrateAndSeedAsync` is guarded
-  `IsDevelopment()`; production applies migrations as a deliberate deploy step).
-- Return auth tokens in a response body — access + refresh both travel only as `httpOnly`
-  cookies.
-- Bypass the drift sensor by editing the test or the baseline manually — regenerate with
-  `UPDATE_OPENAPI_BASELINE=1 dotnet test --filter "…OpenApiDriftTest"` and review the diff.
+**Always (Auto-accept):**
+- New slice + endpoint + integration test following section 4's pattern.
+- New `HealthArea` finding kind that stays out of the score (mirror the `Scope` precedent).
+- Reformatting, dead-code removal, tests around existing behavior.
 
-**Ask first:**
-- Repo-wide refactors touching more than one slice (mediator shape, DI wiring, endpoint
-  conventions).
-- Schema migrations (destructive columns, rename cascades, index changes on hot tables).
-- Anything that would require regenerating the drift baseline as a side effect of an unrelated
-  change.
-- Adding a new LLM provider adapter or changing provider-selection semantics.
-- Changing OpenSpec proposals under `openspec/` — those are review-gated design docs.
+**Ask first (Default):**
+- Repo-wide refactors touching more than one slice (mediator shape, DI wiring, conventions).
+- Schema migrations (destructive columns, renames, indexes on hot tables).
+- Any change that would regenerate the drift baseline as a side effect.
+- New LLM provider adapter or provider-selection semantic change.
+- Changes to OpenSpec proposals under `openspec/` — review-gated design docs.
 
-**Safe / auto:**
-- Adding a new slice + endpoint + integration test following the pattern in section 4.
-- Adding a new `HealthArea` finding kind that stays out of the score (mirror the `Scope`
-  precedent).
-- Reformatting, dead-code removal, adding tests around existing behavior.
+**Never (Blocked):**
+- Commit `Jwt__SigningKey`, `Llm__*__ApiKey`, `AppDb__ConnectionString` values (env / user-
+  secrets only; the `appsettings.json` dev value is intentional and non-production).
+- Introduce per-user data scoping — model is **shared workspace, all authenticated callers see
+  everything**. `Where(x => x.UserId == currentUser)` is a spec change, not a cleanup.
+- Treat any `HealthScoring` / `DataQuality` / "POC" threshold as client-agreed — they are PRD
+  placeholders; preserve `IsPlaceholder` + startup-warning wiring.
+- Fabricate UI data for signals the backend doesn't emit — render a dashed "not yet captured"
+  placeholder instead.
+- Run migrations on startup in Production (`DbInitializer.MigrateAndSeedAsync` is
+  `IsDevelopment()`-guarded; Prod applies as a deploy step).
+- Return auth tokens in a response body — both cookies only, `httpOnly` + `SameSite=Strict`.
+- Bypass the drift sensor by editing the test or baseline by hand — regenerate via the
+  `UPDATE_OPENAPI_BASELINE=1` command in section 2 and review the diff.
 
 ---
 
 ## 6. Decision log
 
-Load-bearing choices future agents keep re-litigating. Recorded once; contradict only with
-explicit user consent.
+Load-bearing choices — recorded once; contradict only with explicit user consent. Dates are
+approximate (month or phase) where the exact commit is older than the current git-log window.
 
-**JWT in httpOnly cookies, not Authorization header.** Security: XSS-safe. Both tokens
-`SameSite=Strict` (no separate CSRF token needed). Refresh token has a **fixed 7-day TTL, not
-sliding on rotation** — an inactive session must eventually die even if used moments before
-expiry.
+**[pre-2026-07] JWT in httpOnly cookies, not Authorization header.** XSS-safe; both tokens
+`SameSite=Strict` (no separate CSRF token). Refresh token has a **fixed 7-day TTL, not sliding
+on rotation** — an inactive session must eventually die.
 
-**No per-user scoping on findings / uploads / projects.** Shared workspace by product decision;
-any authenticated caller sees everything. If a per-user story appears, it's a new spec, not a
-security fix.
+**[pre-2026-07] Shared workspace, no per-user scoping.** Any authenticated caller sees every
+finding / upload / project. Per-user scoping is a new spec, not a cleanup.
 
-**No first-class `Project` entity.** Project keys are opaque strings discovered from
-`IFindingRepository.DistinctProjectKeysAsync` (`SELECT DISTINCT project_key`). Preserved because
-projects have no lifecycle of their own — they exist only as far as findings reference them.
+**[pre-2026-07] Provider (Anthropic / OpenAI / fake) selectable per-agent via config alone.**
+`RoutingLlmClient` + `ILlmClientFactory` — no agent/prompt/orchestrator code change to swap.
 
-**Scoring is a re-runnable query, not a pipeline step.** `HealthScoringService` is pure and runs
-on demand — no persisted score column, no re-analysis needed to see the current bucket. Enables
-config changes to take effect without re-running paid LLM analysis.
+**[pre-2026-07] Migrations run in Dev auto, in Prod deliberately.**
+`DbInitializer.MigrateAndSeedAsync` is `IsDevelopment()`-guarded; Prod applies as a deploy step.
+Never change without a rollback plan.
 
-**All health-scoring / DQ numbers ship as EXAMPLE placeholders.** The startup warning is the
-guardrail. No score, threshold, or override in production config is client-agreed until PMO
-kickoff replaces the block.
+**[pre-2026-07] Integration tests use EF in-memory, not mocked repositories.** `TestWebAppFactory`
+swaps in the in-memory provider; endpoint tests exercise real repository code paths. Mocks
+belong in handler unit tests, not endpoint tests.
 
-**Provider (Anthropic / OpenAI / fake) selectable per-agent via config alone.** Adapter code and
-per-agent registration go through `RoutingLlmClient` + `ILlmClientFactory`. No agent, prompt, or
-orchestrator code changes to swap providers.
+**[pre-2026-07] TDD for OpenSpec-tracked changes.** Red-green-refactor; suite green before
+checking off a task.
 
-**Response types declared on every endpoint via `.Produces<T>()`.** Otherwise minimal-API
-handlers return opaque `IResult`, the OpenAPI doc omits response schemas, and the Layer-1 drift
-sensor can't detect field-level drift. Non-negotiable — an endpoint without `.Produces<T>()` is
-an incomplete endpoint.
+**[2026-07 Phase 4] Scoring is a re-runnable query, not a pipeline step.** `HealthScoringService`
+is pure and runs on demand — no persisted score column. Config changes take effect without
+re-running paid LLM analysis.
 
-**Layer-2 runtime contract test is GET-only.** POST endpoints require valid request bodies per
-schema, which would duplicate the hand-written `AuthEndpointsTests` / `*EndpointsTests`. Revisit
-only if a POST-side runtime bug slips through.
+**[2026-07 Phase 4] All health-scoring / DQ numbers ship as EXAMPLE placeholders.** Startup
+warning is the guardrail. No score / threshold / override is client-agreed until PMO kickoff.
 
-**Layer-3 (LLM semantic drift over CLAUDE.md invariants) is deliberately unbuilt.** Non-
-deterministic, high cost per PR, no established best practice. Layers 1+2 must prove insufficient
-in practice first.
+**[2026-07 Phase 5] No first-class `Project` entity.** Keys are opaque strings from
+`IFindingRepository.DistinctProjectKeysAsync`. Projects have no lifecycle of their own.
 
-**Migrations run in Dev auto, in Prod deliberately.** `DbInitializer.MigrateAndSeedAsync` is
-`IsDevelopment()`-guarded. Production runs `dotnet ef database update` as a deploy step. Never
-change this without an accompanying rollback plan.
+**[2026-07-21] Response types declared on every endpoint via `.Produces<T>()`.** Otherwise
+minimal-API handlers return opaque `IResult`, the OpenAPI doc omits response schemas, and the
+Layer-1 sensor misses field-level drift. Non-negotiable.
 
-**TDD for OpenSpec-tracked changes.** OpenSpec proposals under `openspec/` are implemented
-red-green-refactor; the suite must be green before checking off a task.
+**[2026-07-21] Layer-2 runtime contract test is GET-only.** POST bodies would duplicate the
+hand-written `AuthEndpointsTests` / `*EndpointsTests`. Revisit only if a POST-side runtime bug
+slips through.
 
-**Integration tests use EF in-memory, not mocked repositories.** `TestWebAppFactory` swaps the
-Npgsql `AppDbContext` for the EF in-memory provider; all finding/upload/health endpoint tests
-exercise real repository code paths against it. If you find yourself reaching for a mocked
-`IFindingRepository` in an integration test, use `TestWebAppFactory` instead — mocks belong in
-handler unit tests, not endpoint tests.
+**[2026-07-21] Layer-3 (LLM semantic drift over invariants) deliberately unbuilt.**
+Non-deterministic, high cost per PR, no established best practice. Layers 1+2 must prove
+insufficient first.
