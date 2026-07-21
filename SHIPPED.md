@@ -317,6 +317,18 @@ SHIPPED.md's Auth block") rather than every session.
 > `test -c Release`) runs the full suite on every PR + push-to-main; the drift test lives inside
 > `AiPMOInsight.Api.Tests` so it runs as part of that same job — no separate step.
 
+> **Spec-drift sensor (Layer 1.5 classification, `feat/spec-drift`):** advisory PR-only CI job
+> `openapi-classify` (`.github/workflows/ci.yml`) that installs
+> [oasdiff](https://github.com/oasdiff/oasdiff), extracts the base branch's `openapi.json` via
+> `git show origin/<base>:openapi.json`, and posts a **Breaking vs Additive** classification of
+> the diff to the PR's job summary. **Non-blocking on purpose** — Layer 1's strict "baseline
+> must be current" test in the `test` job remains the merge gate. Layer 1.5's role is to tell
+> the reviewer *what kind* of change landed (would a consumer have to update?), not to decide
+> the merge. Skipped gracefully on push-to-main (nothing to compare against) and on the very
+> first PR to introduce `openapi.json` (base branch has no baseline yet). Local equivalent is
+> `oasdiff breaking <base> openapi.json` — see [CLAUDE.md](CLAUDE.md) §2. Closes the Day-2
+> severity-classification gap flagged during the "living spec" review.
+
 > **Spec-drift sensor (Layer 2 runtime, `feat/spec-drift`):** the runtime companion to Layer 1 —
 > the xUnit test `OpenApiRuntimeContractTest`
 > (`tests/AiPMOInsight.Api.Tests/OpenApiRuntimeContractTest.cs`) reads the committed `openapi.json`

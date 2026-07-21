@@ -56,6 +56,12 @@ dotnet ef database update \
 # Commit the diff in the same PR as the code change.
 UPDATE_OPENAPI_BASELINE=1 dotnet test --filter "FullyQualifiedName~OpenApiDriftTest"
 
+# Classify openapi.json drift vs main: Breaking (consumer must update) vs Additive
+# (backwards-compatible). Mirrors the CI advisory step. Requires oasdiff installed locally.
+git show main:openapi.json > /tmp/base-openapi.json
+oasdiff breaking /tmp/base-openapi.json openapi.json     # empty = additive only
+oasdiff diff /tmp/base-openapi.json openapi.json --summary
+
 # Local Postgres for dev / running the API outside tests.
 docker-compose up -d postgres
 dotnet run --project source/AiPMOInsight.Api

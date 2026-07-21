@@ -49,3 +49,10 @@ slips through.
 **[2026-07-21] Layer-3 (LLM semantic drift over invariants) deliberately unbuilt.**
 Non-deterministic, high cost per PR, no established best practice. Layers 1+2 must prove
 insufficient first.
+
+**[2026-07-21] Drift classification (breaking vs additive) via `oasdiff` is advisory, not
+blocking.** Layer 1 remains the strict "baseline must be current" merge gate — any change to
+the shape requires a same-PR baseline update. The `openapi-classify` CI job runs on PRs only,
+posts to the job summary, and never fails the build. Its purpose is to tell the reviewer
+**what kind** of change landed (would a consumer need to update?), not to decide for them
+whether it's OK. Local equivalent command is in [CLAUDE.md](CLAUDE.md) §2.
