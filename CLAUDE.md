@@ -62,10 +62,18 @@ dotnet run --project source/AiPMOInsight.Api
 
 # React dev server (proxies to the API).
 cd source/AiPMOInsight.Api/ClientApp && npm install && npm run dev
+
+# Format the backend. Use --verify-no-changes as a non-destructive check (CI / pre-commit).
+dotnet format --verify-no-changes
+dotnet format
+
+# Frontend has no lint script yet (ClientApp/package.json defines only dev/build/preview/
+# generate-api). Adding ESLint + a `lint` script is a documented follow-on.
 ```
 
 **Config the agent must NOT commit values for** (env / user-secrets only): `Jwt__SigningKey`,
-`Llm__Default__ApiKey`, `Llm__Agents__<SkillName>__ApiKey`, `AppDb__ConnectionString`.
+`Llm__Default__ApiKey`, `Llm__Agents__<SkillName>__ApiKey`, `AppDb__ConnectionString`. Enforced
+as a hard **Never** in §5.
 
 ---
 
