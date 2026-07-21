@@ -20,7 +20,8 @@ public static class ProjectKeysEndpoints
         })
         .WithTags("Projects")
         .WithName("ListProjectKeys")
-        .RequireAuthorization();
+        .RequireAuthorization()
+        .Produces<IReadOnlyList<string>>(StatusCodes.Status200OK);
 
         return app;
     }

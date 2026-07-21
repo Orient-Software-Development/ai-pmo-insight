@@ -19,7 +19,8 @@ public static class DataQualityEndpoints
             Results.Ok(await sender.Send(new SummarizeDataQuality.Query(), ct)))
             .WithTags("DataQuality")
             .RequireAuthorization()
-            .WithName("GetDataQualitySummary");
+            .WithName("GetDataQualitySummary")
+            .Produces<SummarizeDataQuality.Result>(StatusCodes.Status200OK);
 
         return app;
     }

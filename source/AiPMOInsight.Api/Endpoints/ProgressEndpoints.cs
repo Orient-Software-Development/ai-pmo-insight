@@ -20,7 +20,9 @@ public static class ProgressEndpoints
             var result = await sender.Send(new SummarizeProgress.Query(projectKey), ct);
             return result is null ? Results.NotFound() : Results.Ok(result);
         })
-        .WithName("GetProjectProgress");
+        .WithName("GetProjectProgress")
+        .Produces<SummarizeProgress.Result>(StatusCodes.Status200OK)
+        .Produces(StatusCodes.Status404NotFound);
 
         return app;
     }

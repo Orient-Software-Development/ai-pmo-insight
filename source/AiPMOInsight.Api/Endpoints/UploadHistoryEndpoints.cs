@@ -20,7 +20,8 @@ public static class UploadHistoryEndpoints
             var result = await sender.Send(new GetUploads.Query(), ct);
             return Results.Ok(result);
         })
-        .WithName("ListUploads");
+        .WithName("ListUploads")
+        .Produces<IReadOnlyList<GetUploads.UploadListItem>>(StatusCodes.Status200OK);
 
         // An upload's latest analysis run, four sections. 404 when the upload id is unknown.
         group.MapGet("/{uploadId:guid}/findings", async (Guid uploadId, ISender sender, CancellationToken ct) =>
@@ -28,7 +29,9 @@ public static class UploadHistoryEndpoints
             var result = await sender.Send(new GetUploadFindings.Query(uploadId), ct);
             return result is null ? Results.NotFound() : Results.Ok(result);
         })
-        .WithName("GetUploadFindings");
+        .WithName("GetUploadFindings")
+        .Produces<GetUploadFindings.Result>(StatusCodes.Status200OK)
+        .Produces(StatusCodes.Status404NotFound);
 
         return app;
     }
