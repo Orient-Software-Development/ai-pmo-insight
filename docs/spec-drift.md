@@ -248,3 +248,88 @@ manual regen step becomes a common source of "forgot to regen" back-and-forth in
 React uses hand-written `fetch()` from 8 files. If adopted, spec changes would flow into
 generated TypeScript, giving compile-time errors when a client reference falls behind the
 API. Bigger scope than this sensor; a separate change.
+
+## 10. Branch protection setup (close the "decorative CI" gap)
+
+### Problem
+
+CI running is not the same as CI being enforced. Without branch protection, a red status
+check displays a red X on the PR — but the **Merge** button stays enabled and anyone with
+merge permission can click through. Every layer in this doc becomes theatre without step 10.
+
+### Decision
+
+Configure branch protection on `main` in GitHub repo settings to require the CI jobs as
+status checks. Cannot be committed as code — it lives in
+`https://github.com/<org>/<repo>/settings/branches`.
+
+### One-time setup
+
+1. GitHub repo → **Settings → Branches → Branch protection rules → Add rule** (or **Add
+   ruleset** if you're on the newer Rulesets UI — same idea).
+2. **Branch name pattern:** `main`.
+3. Enable:
+   - **Require a pull request before merging** — no direct pushes to `main`.
+     - Suggested: **Require approvals** ≥ 1.
+     - Optional: **Dismiss stale approvals when new commits are pushed** — re-review after any change.
+   - **Require status checks to pass before merging**.
+     - Enable **Require branches to be up to date before merging** so the checks reflect the
+       post-merge state, not stale results from before the base moved.
+     - In the "Search for status checks" box, add both jobs from
+       [.github/workflows/ci.yml](../.github/workflows/ci.yml):
+       - `test` — full xUnit suite; includes Layer 1 (`OpenApiDriftTest`) and Layer 2
+         (`OpenApiRuntimeContractTest`).
+       - `openapi-classify` — Layer 1.5 breaking-vs-additive classification.
+     - **Gotcha:** GitHub only surfaces check names in the picker *after* the check has run
+       at least once. If the picker is empty, open a throw-away PR first so GitHub sees the
+       names, then come back and add them.
+   - **Do not allow bypassing the above settings** — or, at minimum, enable **Include
+     administrators** so admin accounts can't click-through.
+4. Save.
+
+### Verify it works
+
+Open a test PR that changes an endpoint response shape but deliberately does NOT regenerate
+`openapi.json`. Expected:
+
+- The `test` job fails (Layer 1 detects drift).
+- The **Merge** button is disabled with "Required status checks must pass before merging".
+
+If Merge is still enabled, one of the required checks isn't wired — re-open branch
+protection and confirm both names appear in the list.
+
+### Consequences
+
+- ✅ No PR can merge with a failing Layer 1 (baseline drift) or Layer 2 (runtime contract)
+  test.
+- ✅ No PR can be direct-pushed to bypass review.
+- ✅ The `openapi-classify` job always completes before merge, so the reviewer always sees
+  the breaking-vs-additive verdict in the PR summary.
+- ⚠️ Config lives in GitHub UI, not in the repo. Document any changes in this section so
+  history is preserved somewhere reviewable.
+
+### Pro-tip: `paths-ignore` + aggregator gate (only needed if you add `paths-ignore` later)
+
+The current CI workflow does not use `paths-ignore`, so this pattern is not yet needed. Read
+this only if you plan to skip CI on docs-only PRs.
+
+If you add `paths-ignore: ['**.md', 'docs/**']` to skip CI on docs-only PRs, GitHub will
+report the required check as *skipped*, not *passed*. Branch protection treats *skipped* as
+"not yet run" and blocks the merge forever. Fix with an aggregator job that always runs and
+succeeds when the real jobs either passed or were legitimately skipped:
+
+```yaml
+gate:
+  needs: [test, openapi-classify]
+  if: always()
+  runs-on: ubuntu-latest
+  steps:
+    - run: |
+        if [[ "${{ needs.test.result }}" == "failure" \
+           || "${{ needs.openapi-classify.result }}" == "failure" ]]; then
+          exit 1
+        fi
+```
+
+Then in branch protection, mark **only `gate`** as required — not `test` or
+`openapi-classify` directly.
