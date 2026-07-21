@@ -1,11 +1,11 @@
 # CLAUDE.md
 
-Guidance for Claude Code in this repo. Six sections adapted from "living-spec" practice.
-Shipped-features log lives in [SHIPPED.md](SHIPPED.md) — load a specific block on demand.
+Guidance for Claude Code in this repo. Seven sections adapted from "living-spec" practice.
+Two sibling files loaded on demand: [SHIPPED.md](SHIPPED.md) (historical feature log) and
+[CLAUDE-decisions.md](CLAUDE-decisions.md) (dated architectural decisions).
 
-**Deliberate omissions** (per prior review, guideline recommendations we do NOT follow):
-symbols not `file:line` (refactor-resistant); no "Implementation Status" section (git / PRs /
-issue tracker are the state); automation rules in `.claude/settings.json`, not prose here.
+**Deliberate omissions** (guideline recommendations we do NOT follow): symbols not `file:line`
+(refactor-resistant); automation rules live in `.claude/settings.json`, not prose here.
 
 ---
 
@@ -223,50 +223,23 @@ agent must not do based on domain knowledge not obvious from the code.
 
 ---
 
-## 6. Decision log
+## 6. Implementation status
 
-Load-bearing choices — recorded once; contradict only with explicit user consent. Dates are
-approximate (month or phase) where the exact commit is older than the current git-log window.
+Not a working status board — git / PRs / issue tracker are authoritative for day-to-day state.
+This section is a one-glance current-phase summary so a cold-start agent knows the shape of the
+world. See [SHIPPED.md](SHIPPED.md) for the per-feature log.
 
-**[pre-2026-07] JWT in httpOnly cookies, not Authorization header.** XSS-safe; both tokens
-`SameSite=Strict` (no separate CSRF token). Refresh token has a **fixed 7-day TTL, not sliding
-on rotation** — an inactive session must eventually die.
+- **Phases shipped:** 4 (RAG health scoring, 2026-07-15) → 5 (three-level dashboards L1/L2/L3 +
+  auth UI + history rich detail, 2026-07-15 → 2026-07-20; L2 and L3 follow-on registers both
+  closed).
+- **Most recent branch:** `feat/spec-drift` — spec-drift sensor Layers 1+2 shipped 2026-07-21.
+- **No active phase.** Next work is user-driven.
+- **Blocked:** none.
 
-**[pre-2026-07] Shared workspace, no per-user scoping.** Any authenticated caller sees every
-finding / upload / project. Per-user scoping is a new spec, not a cleanup.
+---
 
-**[pre-2026-07] Provider (Anthropic / OpenAI / fake) selectable per-agent via config alone.**
-`RoutingLlmClient` + `ILlmClientFactory` — no agent/prompt/orchestrator code change to swap.
+## 7. Decision log
 
-**[pre-2026-07] Migrations run in Dev auto, in Prod deliberately.**
-`DbInitializer.MigrateAndSeedAsync` is `IsDevelopment()`-guarded; Prod applies as a deploy step.
-Never change without a rollback plan.
-
-**[pre-2026-07] Integration tests use EF in-memory, not mocked repositories.** `TestWebAppFactory`
-swaps in the in-memory provider; endpoint tests exercise real repository code paths. Mocks
-belong in handler unit tests, not endpoint tests.
-
-**[pre-2026-07] TDD for OpenSpec-tracked changes.** Red-green-refactor; suite green before
-checking off a task.
-
-**[2026-07 Phase 4] Scoring is a re-runnable query, not a pipeline step.** `HealthScoringService`
-is pure and runs on demand — no persisted score column. Config changes take effect without
-re-running paid LLM analysis.
-
-**[2026-07 Phase 4] All health-scoring / DQ numbers ship as EXAMPLE placeholders.** Startup
-warning is the guardrail. No score / threshold / override is client-agreed until PMO kickoff.
-
-**[2026-07 Phase 5] No first-class `Project` entity.** Keys are opaque strings from
-`IFindingRepository.DistinctProjectKeysAsync`. Projects have no lifecycle of their own.
-
-**[2026-07-21] Response types declared on every endpoint via `.Produces<T>()`.** Otherwise
-minimal-API handlers return opaque `IResult`, the OpenAPI doc omits response schemas, and the
-Layer-1 sensor misses field-level drift. Non-negotiable.
-
-**[2026-07-21] Layer-2 runtime contract test is GET-only.** POST bodies would duplicate the
-hand-written `AuthEndpointsTests` / `*EndpointsTests`. Revisit only if a POST-side runtime bug
-slips through.
-
-**[2026-07-21] Layer-3 (LLM semantic drift over invariants) deliberately unbuilt.**
-Non-deterministic, high cost per PR, no established best practice. Layers 1+2 must prove
-insufficient first.
+Twelve dated architectural decisions moved out to [CLAUDE-decisions.md](CLAUDE-decisions.md) —
+load on demand when a change might contradict a past decision. Each entry has a date/phase tag
+and the rationale.
