@@ -660,9 +660,6 @@
           "customerExposure": {
             "$ref": "#/components/schemas/IReadOnlyList\u00601"
           },
-          "decisionBacklog": {
-            "$ref": "#/components/schemas/Int32"
-          },
           "financialExposure": {
             "$ref": "#/components/schemas/ScorePortfolioFinancialExposureView"
           },
@@ -693,7 +690,6 @@
           "averageConfidence",
           "intervention",
           "financialExposure",
-          "decisionBacklog",
           "keyPersons",
           "customerExposure",
           "recommendedActions"

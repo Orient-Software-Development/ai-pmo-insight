@@ -98,7 +98,8 @@ public class ScorePortfolioTests
 
         var result = await Run(seed);
 
-        result.DecisionBacklog.Should().Be(2);
+        // DEMO: removed for the spec-drift breaking-change demonstration (Scenario B).
+        // result.DecisionBacklog.Should().Be(2);
     }
 
     [Fact]
@@ -142,7 +143,8 @@ public class ScorePortfolioTests
         var result = await Run([]);
 
         result.FinancialExposure.Amount.Should().Be(0m);
-        result.DecisionBacklog.Should().Be(0);
+        // DEMO: removed for the spec-drift breaking-change demonstration (Scenario B).
+        // result.DecisionBacklog.Should().Be(0);
         result.KeyPersons.Should().BeEmpty();
         result.CustomerExposure.Should().BeEmpty();
         result.RecommendedActions.Should().BeEmpty();
