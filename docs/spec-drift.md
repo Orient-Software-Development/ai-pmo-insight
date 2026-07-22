@@ -174,12 +174,13 @@ Revisit only if a POST-side runtime bug slips through in practice.
 - ⚠️ GET-only coverage. POST/PUT/DELETE runtime contracts rely on hand-written integration
   tests.
 
-## 6. Layer 3 — Why not built
+## 6. Layer 3 — Why not built (with one on-demand exception)
 
-Layer 3 would use an LLM to check semantic intent — for example, reading a PR diff and
-[CLAUDE.md](../CLAUDE.md), then flagging "this change violates the shared-workspace invariant".
+Layer 3 would use an LLM to check semantic intent on every PR — for example, reading a diff
+and [CLAUDE.md](../CLAUDE.md), then flagging "this change violates the shared-workspace
+invariant".
 
-Not built because:
+**Not built as an automatic CI gate**, because:
 
 1. **Non-deterministic.** Two runs on the same PR can produce different verdicts. Advisory
    only.
@@ -187,8 +188,27 @@ Not built because:
 3. **No established best practice.** Semantic-drift LLM checks are a frontier; no reference
    pattern to copy.
 
-Deliberately deferred until Layers 1 + 1.5 + 2 prove insufficient in practice. If Layer 1
-starts letting through changes that break invariants documented only in prose, revisit.
+Deliberately deferred until Layers 1 + 1.5 + 2 prove insufficient in practice.
+
+### On-demand exception: `/check-doc-drift` slash command
+
+The one place Layer 3 does exist here is as a **manually-invoked** slash command
+(`.claude/commands/check-doc-drift.md`) for prose docs the sensor stack cannot cover
+(`docs/authentication.md`, `docs/analysis-pipeline.md`, `openspec/specs/*/spec.md`, etc.).
+
+- Usage: `/check-doc-drift authentication`
+- Reads the doc + the code files it describes (mapping in the command file)
+- Reports MAJOR / MODERATE / MINOR drift with quoted claims + code file:line references
+- **Advisory only** — no CI wiring, no merge gate
+- Cost: ~$0.05-0.20 per check
+- Human decides whether to update doc, update code, or accept divergence
+- To make a finding binding, encode the invariant as a test (see §5 pattern —
+  `SharedWorkspaceInvariantTests`, `AuthTokenExposureInvariantTests`)
+
+If this pattern proves useful in practice, a natural evolution would be to trigger it
+automatically on PRs that touch specific paths (e.g. any PR modifying
+`source/AiPMOInsight.Api/Security/*` runs `/check-doc-drift authentication` as a job comment).
+Not built yet — waiting for the on-demand version to demonstrate value first.
 
 ## 7. Developer workflow — worked example
 
