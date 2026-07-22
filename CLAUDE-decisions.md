@@ -56,6 +56,17 @@ auth code or the doc itself. Only `docs/authentication.md` is on CI — highest 
 stay on-demand until the pattern proves value for them. Requires the `ANTHROPIC_API_KEY`
 repo secret; the CI job skips cleanly if the secret is unset.
 
+**[2026-07-22] Layer-3 CI automation expanded from one doc to three.** Added
+`doc-drift-analysis-pipeline` and `doc-drift-dashboard-output-formats` alongside the
+existing `doc-drift-authentication` job, same pattern (path-filtered, advisory, skips
+cleanly without the secret). Rationale for these two specifically: `analysis-pipeline.md`
+had already drifted twice from real code changes (stale cost/routing config, an
+already-shipped feature documented as "not yet implemented") when checked manually via
+`/check-doc-drift`; `dashboard-output-formats.md` traces every number a stakeholder sees on
+the dashboards, so a silent drift there is a "the tool told the client a wrong number" risk.
+`database.md` and `auth-gap.md` stay on-demand only — no evidence yet that they drift often
+enough to justify a standing CI cost.
+
 **[2026-07-21] Drift classification (breaking vs additive) via `oasdiff` is advisory, not
 blocking.** Layer 1 remains the strict "baseline must be current" merge gate — any change to
 the shape requires a same-PR baseline update. The `openapi-classify` CI job runs on PRs only,

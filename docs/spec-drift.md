@@ -202,42 +202,51 @@ Any prose doc — including ones not covered by the CI job below — can be chec
 - Reports MAJOR / MODERATE / MINOR drift with quoted claims + code `file:line` references
 - Human decides whether to update doc, update code, or accept divergence
 
-### Automated: `doc-drift-authentication` CI job
+### Automated: three CI jobs, one per doc
 
-For [`docs/authentication.md`](authentication.md) specifically — the most security-sensitive
-doc, and the one most likely to silently drift from the code — the check runs automatically
-on every PR that touches auth-related paths:
+Three docs now have a CI-automated check, each gated on its own path filter so it only runs
+when the doc or the code it describes actually changed in the PR:
 
-- **Job:** `doc-drift-authentication` in [`.github/workflows/ci.yml`](../.github/workflows/ci.yml)
-- **Trigger:** PR only, gated by an explicit git-diff check for changes under
-  `source/AiPMOInsight.Api/Security/`, `source/AiPMOInsight.Infrastructure/Security/`,
-  `AuthEndpoints.cs`, `Program.cs`, or `docs/authentication.md`. No relevant change → job
-  short-circuits without any API call.
-- **Model:** `claude-opus-4-8`
-- **Output:** posted to the PR's job summary in the same format as the local slash command
-- **Blocking:** **no** — advisory only, same tier as Layer 1.5 oasdiff classification
+| Job | Doc | Trigger paths (git-diff filter) |
+|---|---|---|
+| `doc-drift-authentication` | [`authentication.md`](authentication.md) | `source/AiPMOInsight.Api/Security/`, `source/AiPMOInsight.Infrastructure/Security/`, `AuthEndpoints.cs`, `Program.cs`, or the doc itself |
+| `doc-drift-analysis-pipeline` | [`analysis-pipeline.md`](analysis-pipeline.md) | `source/AiPMOInsight.Application/Features/Analysis/` (all files, discovered dynamically — a new agent file doesn't need a workflow edit) or the doc itself |
+| `doc-drift-dashboard-output-formats` | [`dashboard-output-formats.md`](dashboard-output-formats.md) | `source/AiPMOInsight.Application/Features/{ExecutivePortfolio,HealthScoring,DataQuality,Findings,Progress}/`, five hand-picked dashboard-serving files under `source/AiPMOInsight.Api/Endpoints/` (not the whole folder — Auth/Profile/Ingest/UploadHistory/ProjectKeys endpoints aren't dashboard panels), or the doc itself |
 
-**Setup required (one-time):** the job needs an `ANTHROPIC_API_KEY` repo secret. Add it in
+Common shape for all three, in [`.github/workflows/ci.yml`](../.github/workflows/ci.yml):
+
+- **Trigger:** PR only. No relevant change → job short-circuits without any API call.
+- **Model:** `$DOC_DRIFT_MODEL` (currently `claude-sonnet-5`, set once at the top of the
+  workflow file — change there, not per-job).
+- **Output:** posted to the PR's job summary in the same format as the local slash command.
+- **Blocking:** **no** — advisory only, same tier as Layer 1.5 oasdiff classification.
+
+**Setup required (one-time):** the jobs need an `ANTHROPIC_API_KEY` repo secret. Add it in
 GitHub → Settings → Secrets and variables → Actions → New repository secret. If the secret
-is unset the job posts a "skipped" summary and exits cleanly — the check is opt-in per-repo,
-not a hard dependency of the CI pipeline.
+is unset each job posts its own "skipped" summary and exits cleanly — the check is opt-in
+per-repo, not a hard dependency of the CI pipeline. One secret covers all three jobs.
 
 **Fork PRs:** GitHub does not expose secrets to workflows triggered from forks. Fork PRs
 will always see the "skipped" summary. Not a concern for this repo today (single-team, no
 external contributors), but worth noting if that changes.
 
-### Why only one doc has the automated version
+### Why these three docs (and not the rest)
 
-Cost per PR is small (~$0.10-0.20), but multiplied across many docs it accumulates. The
-cost/benefit is strongest for docs where:
+Cost per PR is small (~$0.10-0.20 per job), but multiplied across many docs it accumulates,
+and each added job is another thing that can flake or need upkeep. The cost/benefit is
+strongest for docs where:
 
-- The claims are security-critical (silent drift = vulnerability)
+- The claims are load-bearing (security-critical, or the numbers/thresholds a stakeholder
+  dashboard reads directly)
 - The code changes independently of the doc (drift is likely, not theoretical)
-- Human review is fallible (dense, long-standing doc that reviewers skim)
+- Human review is fallible (dense doc that reviewers skim, or a large surface with many
+  small per-agent claims)
 
-`docs/authentication.md` scores highest on all three. Other docs (`analysis-pipeline`,
-`database`, `dashboard-output-formats`) can be checked with the slash command on demand;
-adding them to CI is one row per doc in the workflow if the pattern proves valuable.
+`authentication.md` (security), `analysis-pipeline.md` (the 11-agent orchestration + LLM
+cost/routing story), and `dashboard-output-formats.md` (every number a stakeholder sees,
+traced to its formula) score highest. `database.md` and `auth-gap.md` can still be checked
+with the slash command on demand; promoting either to CI is one more job block in the
+workflow if the pattern proves valuable there too.
 
 ## 7. Developer workflow — worked example
 
@@ -276,6 +285,9 @@ Grep for names.
 | Schema-name transformer | `source/AiPMOInsight.Api/Program.cs` → `AddOpenApi(options => ...)` |
 | Endpoints requiring `.Produces<T>()` | `source/AiPMOInsight.Api/Endpoints/*.cs` |
 | Integration test host | `tests/AiPMOInsight.Api.Tests/TestWebAppFactory.cs` |
+| Layer 3 on-demand command | `.claude/commands/check-doc-drift.md` |
+| Layer 3 CI jobs | `.github/workflows/ci.yml` → `doc-drift-authentication`, `doc-drift-analysis-pipeline`, `doc-drift-dashboard-output-formats` |
+| Layer 3 model config | `.github/workflows/ci.yml` → `env.DOC_DRIFT_MODEL` |
 
 ## 9. Alternatives considered
 
