@@ -174,41 +174,70 @@ Revisit only if a POST-side runtime bug slips through in practice.
 - ⚠️ GET-only coverage. POST/PUT/DELETE runtime contracts rely on hand-written integration
   tests.
 
-## 6. Layer 3 — Why not built (with one on-demand exception)
+## 6. Layer 3 — Semantic drift, partial coverage
 
-Layer 3 would use an LLM to check semantic intent on every PR — for example, reading a diff
-and [CLAUDE.md](../CLAUDE.md), then flagging "this change violates the shared-workspace
-invariant".
+Layer 3 uses an LLM to check that prose docs still match the code they describe — semantic
+intent, not structural shape. Two forms exist here today: a manually-invoked slash command
+for any doc, and one automated CI job for the single doc most worth catching drift on
+(auth).
 
-**Not built as an automatic CI gate**, because:
+**Kept advisory, not blocking**, because Layer 3 is inherently:
 
-1. **Non-deterministic.** Two runs on the same PR can produce different verdicts. Advisory
-   only.
-2. **Cost.** Every PR consumes tokens against an LLM API.
-3. **No established best practice.** Semantic-drift LLM checks are a frontier; no reference
-   pattern to copy.
+1. **Non-deterministic.** Two runs on the same input can produce different findings.
+2. **Cost.** Every invocation consumes API tokens (~$0.10-0.20 with `claude-opus-4-8`).
+3. **No established best practice.** Prompt drift, false positives, and quality tuning are
+   still frontier problems.
 
-Deliberately deferred until Layers 1 + 1.5 + 2 prove insufficient in practice.
+None of these are blockers for advisory use; all three would be blockers for gating merges.
+So Layer 3 outputs findings to review, never a fail.
 
-### On-demand exception: `/check-doc-drift` slash command
+### On-demand: `/check-doc-drift` slash command
 
-The one place Layer 3 does exist here is as a **manually-invoked** slash command
-(`.claude/commands/check-doc-drift.md`) for prose docs the sensor stack cannot cover
-(`docs/authentication.md`, `docs/analysis-pipeline.md`, `openspec/specs/*/spec.md`, etc.).
+Any prose doc — including ones not covered by the CI job below — can be checked manually:
 
-- Usage: `/check-doc-drift authentication`
+- Command: `.claude/commands/check-doc-drift.md`
+- Usage: `/check-doc-drift authentication` (or `analysis-pipeline`, `database`, or any doc
+  path)
 - Reads the doc + the code files it describes (mapping in the command file)
-- Reports MAJOR / MODERATE / MINOR drift with quoted claims + code file:line references
-- **Advisory only** — no CI wiring, no merge gate
-- Cost: ~$0.05-0.20 per check
+- Reports MAJOR / MODERATE / MINOR drift with quoted claims + code `file:line` references
 - Human decides whether to update doc, update code, or accept divergence
-- To make a finding binding, encode the invariant as a test (see §5 pattern —
-  `SharedWorkspaceInvariantTests`, `AuthTokenExposureInvariantTests`)
 
-If this pattern proves useful in practice, a natural evolution would be to trigger it
-automatically on PRs that touch specific paths (e.g. any PR modifying
-`source/AiPMOInsight.Api/Security/*` runs `/check-doc-drift authentication` as a job comment).
-Not built yet — waiting for the on-demand version to demonstrate value first.
+### Automated: `doc-drift-authentication` CI job
+
+For [`docs/authentication.md`](authentication.md) specifically — the most security-sensitive
+doc, and the one most likely to silently drift from the code — the check runs automatically
+on every PR that touches auth-related paths:
+
+- **Job:** `doc-drift-authentication` in [`.github/workflows/ci.yml`](../.github/workflows/ci.yml)
+- **Trigger:** PR only, gated by an explicit git-diff check for changes under
+  `source/AiPMOInsight.Api/Security/`, `source/AiPMOInsight.Infrastructure/Security/`,
+  `AuthEndpoints.cs`, `Program.cs`, or `docs/authentication.md`. No relevant change → job
+  short-circuits without any API call.
+- **Model:** `claude-opus-4-8`
+- **Output:** posted to the PR's job summary in the same format as the local slash command
+- **Blocking:** **no** — advisory only, same tier as Layer 1.5 oasdiff classification
+
+**Setup required (one-time):** the job needs an `ANTHROPIC_API_KEY` repo secret. Add it in
+GitHub → Settings → Secrets and variables → Actions → New repository secret. If the secret
+is unset the job posts a "skipped" summary and exits cleanly — the check is opt-in per-repo,
+not a hard dependency of the CI pipeline.
+
+**Fork PRs:** GitHub does not expose secrets to workflows triggered from forks. Fork PRs
+will always see the "skipped" summary. Not a concern for this repo today (single-team, no
+external contributors), but worth noting if that changes.
+
+### Why only one doc has the automated version
+
+Cost per PR is small (~$0.10-0.20), but multiplied across many docs it accumulates. The
+cost/benefit is strongest for docs where:
+
+- The claims are security-critical (silent drift = vulnerability)
+- The code changes independently of the doc (drift is likely, not theoretical)
+- Human review is fallible (dense, long-standing doc that reviewers skim)
+
+`docs/authentication.md` scores highest on all three. Other docs (`analysis-pipeline`,
+`database`, `dashboard-output-formats`) can be checked with the slash command on demand;
+adding them to CI is one row per doc in the workflow if the pattern proves valuable.
 
 ## 7. Developer workflow — worked example
 

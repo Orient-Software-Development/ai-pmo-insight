@@ -46,9 +46,15 @@ Layer-1 sensor misses field-level drift. Non-negotiable.
 hand-written `AuthEndpointsTests` / `*EndpointsTests`. Revisit only if a POST-side runtime bug
 slips through.
 
-**[2026-07-21] Layer-3 (LLM semantic drift over invariants) deliberately unbuilt.**
-Non-deterministic, high cost per PR, no established best practice. Layers 1+2 must prove
-insufficient first.
+**[2026-07-21] Layer-3 (LLM semantic drift) — advisory only, one CI-automated doc.**
+Non-deterministic, ~$0.10-0.20 per invocation, no established best practice — reasons to
+keep it out of blocking gates, not reasons to skip it entirely. Two forms exist:
+(a) `/check-doc-drift` slash command for any prose doc, run on demand; (b) automated CI job
+`doc-drift-authentication` in `.github/workflows/ci.yml`, gated on PRs that actually touch
+auth code or the doc itself. Only `docs/authentication.md` is on CI — highest cost/benefit
+(security-critical, code changes independently of the doc, reviewers skim it). Other docs
+stay on-demand until the pattern proves value for them. Requires the `ANTHROPIC_API_KEY`
+repo secret; the CI job skips cleanly if the secret is unset.
 
 **[2026-07-21] Drift classification (breaking vs additive) via `oasdiff` is advisory, not
 blocking.** Layer 1 remains the strict "baseline must be current" merge gate — any change to
