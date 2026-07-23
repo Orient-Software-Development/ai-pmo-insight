@@ -18,9 +18,6 @@ public interface IRefreshTokenService
     /// </summary>
     Task<RefreshRotation?> RotateAsync(string rawToken, CancellationToken ct = default);
 
-    /// <summary>Revokes a refresh token (logout). No-op if unknown or already revoked.</summary>
-    Task RevokeAsync(string rawToken, CancellationToken ct = default);
-
     /// <summary>Revokes every active refresh token for a user (logout via the access cookie).</summary>
     Task RevokeAllAsync(string userId, CancellationToken ct = default);
 }
@@ -101,17 +98,6 @@ internal sealed class RefreshTokenService(AppDbContext db, IOptions<JwtOptions> 
         }
 
         return new RefreshRotation(existing.UserId, new RefreshTokenResult(raw, replacement.ExpiresAt));
-    }
-
-    public async Task RevokeAsync(string rawToken, CancellationToken ct = default)
-    {
-        var hash = Hash(rawToken);
-        var existing = await db.RefreshTokens.SingleOrDefaultAsync(t => t.TokenHash == hash && t.RevokedAt == null, ct);
-        if (existing is not null)
-        {
-            existing.RevokedAt = clock.GetUtcNow();
-            await db.SaveChangesAsync(ct);
-        }
     }
 
     public Task RevokeAllAsync(string userId, CancellationToken ct = default) =>
