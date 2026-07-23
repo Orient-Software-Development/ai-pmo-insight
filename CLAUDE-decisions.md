@@ -67,6 +67,18 @@ the dashboards, so a silent drift there is a "the tool told the client a wrong n
 `database.md` and `auth-gap.md` stay on-demand only — no evidence yet that they drift often
 enough to justify a standing CI cost.
 
+**[2026-07-23] `CLAUDE.md` added as a fourth Layer-3 CI job — stays advisory, not blocking.**
+`doc-drift-claude-md` added on user request, same non-blocking pattern as the other three.
+Explicitly considered and rejected: making any of the four jobs blocking (would require
+parsing a structured verdict instead of free-text and `exit 1` on drift — reintroduces the
+exact non-determinism/false-positive risk the 2026-07-21 decision chose advisory to avoid) and
+a deterministic "PR touched the code but not the doc" presence gate (no LLM, no flakiness, but
+only proves the doc was touched, not that it's correct — considered lower value than the
+LLM check's actual content comparison, so not built either). Revisit if advisory-only proves
+insufficient in practice. Code sent to the model is a hand-picked ~41-file set matching
+CLAUDE.md §3's control points, not the whole `source/` tree — CLAUDE.md's scope is close to
+the entire solution, so a naive wildcard would blow up prompt cost for no real gain.
+
 **[2026-07-21] Drift classification (breaking vs additive) via `oasdiff` is advisory, not
 blocking.** Layer 1 remains the strict "baseline must be current" merge gate — any change to
 the shape requires a same-PR baseline update. The `openapi-classify` CI job runs on PRs only,
