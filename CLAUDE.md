@@ -97,7 +97,7 @@ The mediator (`AiPMOInsight.Application/Messaging`) dispatches `ISender.Send(new
 through a `LoggingBehavior` pipeline.
 
 **Domain ports** live in `AiPMOInsight.Application/Abstractions/*.cs`: `ICurrentUser`,
-`IUploadRepository`, `IFindingRepository`, `ILlmClient`. Implementations are in
+`IUploadRepository`, `IUploadParser`, `IFindingRepository`, `ILlmClient`. Implementations are in
 `AiPMOInsight.Infrastructure` and `AiPMOInsight.Api/Security`.
 
 **Endpoints** are Minimal-API extension methods in `AiPMOInsight.Api/Endpoints/*.cs`
@@ -109,8 +109,9 @@ generator emits a response schema — the Layer-1 drift sensor depends on this. 
 `OpenApiDriftTest` and `OpenApiRuntimeContractTest` (both in `AiPMOInsight.Api.Tests`).
 
 **Security.** `AuthCookies` centralises cookie flags (httpOnly, SameSite=Strict, per-path scoping);
-`TokenService` signs HS256 JWTs; `RefreshTokenService` issues/rotates/revokes with a 7-day fixed
-TTL (see decision log). `Program.cs` `JwtBearerEvents.OnMessageReceived` pulls the access token
+`TokenService` signs HS256 JWTs; `RefreshTokenService` issues/rotates/revokes with a configurable,
+default-7-day fixed (non-sliding — rotation inherits the original expiry) TTL (see decision log).
+`Program.cs` `JwtBearerEvents.OnMessageReceived` pulls the access token
 out of the cookie — the Authorization header is never used by the browser client.
 
 **Persistence.** `AppDbContext` (`AiPMOInsight.Infrastructure/Persistence`) is
