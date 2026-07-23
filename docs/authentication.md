@@ -154,8 +154,8 @@ Issue two tokens on login with asymmetric lifetimes:
 
 | Token | Lifetime | Transport | Scope |
 |---|---|---|---|
-| **Access Token** | 15 minutes | `httpOnly` cookie | `Path=/` |
-| **Refresh Token** | 7 days (fixed) | `httpOnly` cookie | `Path=/api/auth/refresh` |
+| **Access Token** | 15 minutes (default, configurable via `Jwt:AccessTokenMinutes`) | `httpOnly` cookie | `Path=/` |
+| **Refresh Token** | 7 days (default, configurable via `Jwt:RefreshTokenDays`; fixed at issuance — not reset on rotation) | `httpOnly` cookie | `Path=/api/auth/refresh` |
 
 **Refresh Token expiration model — Sliding vs Fixed:**
 
@@ -268,21 +268,34 @@ Refresh flow:
        → issue new cookies
 ```
 
-**Refresh race condition:** Browsers can issue concurrent requests. If two tabs both trigger a refresh simultaneously using the same token, one will succeed and the other will appear as a reuse (the token was already rotated). Mitigate with a per-user refresh mutex or a short-lived idempotency window:
+**Refresh race condition:** Browsers can issue concurrent requests. If two tabs both trigger a
+refresh simultaneously using the same (still-active) token, the actual mitigation is **database-level
+optimistic concurrency**, not a time-based grace window or mutex — `RefreshTokenService.RotateAsync`
+catches `DbUpdateConcurrencyException` on the losing write and treats it as a benign concurrent
+refresh (returns `null`, no revocation):
 
 ```
-Tab A: refresh() ──→ succeeds, old token revoked
-Tab B: refresh() ──→ same token → revokedAt IS NOT NULL → looks like reuse → 401
-                                                                  ↑
-                                          Mitigate: short grace window (~5s) before treating as attack
+Tab A: refresh() ──→ reads token (active), revokes it, inserts replacement, SaveChanges succeeds
+Tab B: refresh() ──→ reads the SAME row concurrently, also tries to revoke + insert
+                       → SaveChanges detects the row changed since Tab B's read
+                       → DbUpdateConcurrencyException caught → return null (benign, no revocation)
 ```
+
+⚠️ **What this does *not* cover:** if Tab B's request arrives *after* Tab A's rotation has already
+committed — a delayed retry, a stale cached cookie, or an actual replayed stolen token — Tab B reads
+the row as already `revokedAt IS NOT NULL` and is treated as **reuse**: the whole token family is
+revoked, same as genuine theft. There is no grace window distinguishing "briefly delayed legitimate
+client" from "attacker replaying a stolen token" in that case — it's an accepted trade-off, since
+nothing in the request itself can tell the two apart.
 
 ### Consequences
 
 ✅ Stolen Refresh Token becomes invalid after the next legitimate refresh cycle.  
 ✅ Reuse detection catches token replay attacks and forces re-authentication.  
 ✅ DB breach does not expose usable tokens.  
-⚠️ Race condition on concurrent refreshes — mitigate with mutex or grace window.
+✅ Truly simultaneous refreshes are handled via DB-level optimistic concurrency, not a mutex or timer.  
+⚠️ A refresh that arrives *after* the token was already rotated is always treated as reuse — no
+grace period, even for a merely-delayed legitimate client.
 
 ---
 
@@ -302,6 +315,12 @@ GET /api/profile/me
 
 ## 8. Database Schema
 
+> **Conceptual sketch — superseded.** The two tables immediately below (`User Table`, `Refresh
+> Token Table`) are the original design sketch, written before ASP.NET Core Identity was adopted
+> for user storage. Some fields here (`jti`, `ip`, `userAgent` on the refresh token) were never
+> carried into the actual implementation. The **Implementation note** further down is the
+> authoritative schema — read that if you need the exact column list.
+
 ### User Table
 
 | Field | Type | Notes |
@@ -316,11 +335,11 @@ GET /api/profile/me
 |---|---|---|
 | `tokenHash` | VARCHAR | SHA-256 of raw token — indexed |
 | `userId` | UUID | FK → User |
-| `jti` | UUID | Unique token ID — prevents double-use |
+| `jti` | UUID | **Not implemented** — original design idea for double-use prevention; the actual schema uses `tokenHash` lookup + `revokedAt` state instead (see Implementation Note) |
 | `expiresAt` | TIMESTAMP | 7 days from original login — fixed, not reset on rotation |
 | `revokedAt` | TIMESTAMP | NULL = active; non-NULL = revoked |
-| `ip` | VARCHAR | Issuing client IP — anomaly detection |
-| `userAgent` | VARCHAR | Device fingerprint — anomaly detection |
+| `ip` | VARCHAR | **Not implemented** — original anomaly-detection idea; `RefreshTokenService` does not currently capture or store this |
+| `userAgent` | VARCHAR | **Not implemented** — same as `ip` above |
 
 **Design note:** Rows are never hard-deleted on rotation — `revokedAt` is set. This preserves the audit trail and enables reuse detection.
 
@@ -418,7 +437,7 @@ Server:
   2. Verify password hash (PBKDF2 via `UserManager.CheckPasswordAsync`)
   3. Generate accessToken (JWT, 15min, signed with SECRET_KEY)
   4. Generate refreshToken (cryptographically secure random bytes)
-  5. INSERT refresh_tokens (hash(refreshToken), userId, jti, expiresAt, ip, userAgent)
+  5. INSERT refresh_tokens (hash(refreshToken), userId, expiresAt)
 
 Response:
   Set-Cookie: access_token=<jwt>; HttpOnly; Secure; SameSite=Strict; Path=/
