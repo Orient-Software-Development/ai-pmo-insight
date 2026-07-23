@@ -93,6 +93,19 @@ explicitly requested rather than a silent background check). Comment body is pas
 an env var, never spliced directly into a `run:` script via `${{ }}` — required to avoid a
 GitHub Actions script-injection vector on untrusted comment text.
 
+**[2026-07-23] Added `workflow_dispatch` as a second manual trigger alongside the PR comment,
+plus `issues: write` permission.** User wanted the workflow selectable from the Actions tab's
+"Run workflow" button, not only via PR comment. Added typed inputs (`pr_number`, `doc` as a
+fixed dropdown so it can't be invalid) — no extra permission gate needed on this path since
+GitHub already requires write access to see/trigger `workflow_dispatch`. While wiring this up,
+caught that `pull-requests: write` alone isn't enough for the reaction + reply-comment calls
+(both hit the `issues/comments/...` API surface under the hood, since a PR conversation
+comment is an issue comment) — added `issues: write` too, otherwise those steps 403 even
+though the doc-drift jobs themselves would still run. Also: because neither `issue_comment`
+nor `workflow_dispatch` carries a PR ref, GitHub always reads this workflow file from the
+**default branch**, never a PR branch — a PR that adds/edits this file must be merged to
+`main` before either trigger works, including for PRs opened after the merge.
+
 **[2026-07-21] Drift classification (breaking vs additive) via `oasdiff` is advisory, not
 blocking.** Layer 1 remains the strict "baseline must be current" merge gate — any change to
 the shape requires a same-PR baseline update. The `openapi-classify` CI job runs on PRs only,

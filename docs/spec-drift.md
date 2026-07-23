@@ -33,10 +33,42 @@ others don't.
 Layer 1 (blocking)    static shape:      committed openapi.json  vs  live /openapi/v1.json
 Layer 1.5 (advisory)  drift severity:    base branch's baseline  vs  PR's baseline (breaking vs additive)
 Layer 2 (blocking)    runtime contract:  actual API responses    vs  declared schemas
-Layer 3               semantic intent    NOT BUILT — see §7
+Layer 3 (advisory)    semantic intent:   prose docs              vs  the code they describe (LLM) — see §6
 ```
 
 ## 3. Layer 1 — Baseline drift detection
+
+### Where the live `/openapi/v1.json` comes from
+
+`/openapi/v1.json` is **not a file in the repo** — it is an HTTP endpoint the app generates at
+runtime. Two lines in `Program.cs` produce it:
+
+- `builder.Services.AddOpenApi(...)` (`Program.cs:153`) turns on `Microsoft.AspNetCore.OpenApi`.
+  It scans every mapped endpoint and its `.Produces<T>()` metadata and builds an OpenAPI
+  document **in memory** from that code.
+- `app.MapOpenApi()` (`Program.cs:199`) exposes that document at the route `/openapi/v1.json`.
+  Each request re-serializes the in-memory document to JSON. `v1` is the default document name;
+  rename the document and the path changes with it.
+
+So there are **two** OpenAPI documents, and Layer 1 exists to compare them:
+
+| | What it is | When it changes |
+|---|---|---|
+| **live** — `/openapi/v1.json` | generated from the *current* code, freshly, on every request | instantly — the moment you change an endpoint or a DTO, with no manual step |
+| **baseline** — `openapi.json` (repo root) | a committed snapshot of the live doc | only when a human runs `UPDATE_OPENAPI_BASELINE=1 …` and commits the result |
+
+`OpenApiDriftTest` boots the app in-memory (via `TestWebAppFactory`), GETs the **live** document,
+and structurally diffs it against the committed **baseline**. Drift = the two disagree. To see the
+live document by hand: `dotnet run --project source/AiPMOInsight.Api`, then open
+`http://localhost:<port>/openapi/v1.json`.
+
+One detail worth knowing when you explain this to someone: the `AddOpenApi` block also overrides
+`CreateSchemaReferenceId` (`Program.cs:155-161`). Many slices expose a record literally named
+`Result` (`ScoreProject.Result`, `ScorePortfolio.Result`, …); with the default naming they would
+all collide on `Result` under `components.schemas`. The override qualifies nested types with their
+declaring type — `ScoreProjectResult`, `ScorePortfolioResult`, … — so schema names stay unique and
+stable. If that naming rule ever changes, every schema name in `openapi.json` changes with it and
+Layer 1 will (correctly) flag mass drift.
 
 ### Problem
 
@@ -178,13 +210,15 @@ Revisit only if a POST-side runtime bug slips through in practice.
 
 Layer 3 uses an LLM to check that prose docs still match the code they describe — semantic
 intent, not structural shape. Two forms exist here today: a manually-invoked slash command
-for any doc, and one automated CI job for the single doc most worth catching drift on
-(auth).
+for any doc (run locally), and a CI-automated check for four high-value docs that runs
+**on demand** when someone comments `/check-doc-drift` on a PR (see below).
 
 **Kept advisory, not blocking**, because Layer 3 is inherently:
 
 1. **Non-deterministic.** Two runs on the same input can produce different findings.
-2. **Cost.** Every invocation consumes API tokens (~$0.10-0.20 with `claude-opus-4-8`).
+2. **Cost.** Every invocation consumes API tokens (~$0.10-0.20; the CI jobs use
+   `claude-sonnet-5` via `DOC_DRIFT_MODEL`, the local slash command uses whatever model the
+   Claude Code session runs).
 3. **No established best practice.** Prompt drift, false positives, and quality tuning are
    still frontier problems.
 
@@ -205,16 +239,25 @@ Any prose doc — including ones not covered by the CI job below — can be chec
 ### CI-automated, on-demand: four docs, triggered by a PR comment
 
 Four docs have a CI-automated check, but — unlike a typical CI job — it does **not** run on
-every push. It runs only when someone comments on the PR asking for it, in
+every push. It runs only when someone explicitly asks for it, two ways, both wired in
 [`.github/workflows/doc-drift-on-demand.yml`](../.github/workflows/doc-drift-on-demand.yml):
 
 ```
-Comment on a PR:  /check-doc-drift                          → checks all four docs
-                  /check-doc-drift authentication            → just that one
-                  /check-doc-drift claude                    → CLAUDE.md
-                  /check-doc-drift analysis-pipeline
-                  /check-doc-drift dashboard-output-formats
+Comment on a PR:      /check-doc-drift                          → checks all four docs
+                      /check-doc-drift authentication            → just that one
+                      /check-doc-drift claude                    → CLAUDE.md
+                      /check-doc-drift analysis-pipeline
+                      /check-doc-drift dashboard-output-formats
+
+Actions tab:          "Doc Drift (on-demand)" → Run workflow →
+                      pick a PR number + a doc from the dropdown (defaults to "all")
 ```
+
+The two triggers share the same `dispatch` job and the same four `doc-drift-*` jobs — only
+how `dispatch` learns *which* PR and *which* doc differs (parsed from the comment text on one
+path, read directly from typed `workflow_dispatch` inputs on the other). The Actions-tab path
+needs write access to the repo to even see the "Run workflow" button (GitHub enforces that
+itself), so it skips the `author_association` check the comment path needs.
 
 | Job | Doc | Code sent to the model |
 |---|---|---|
@@ -233,20 +276,30 @@ subsequent push to that PR — a 5-commit PR touching all four docs' code areas 
 the cost proportional to how many times a human actually asks, not how many times they push.
 
 **How it works** (`dispatch` job in the workflow):
-1. Someone comments `/check-doc-drift [doc]` on an open PR.
-2. Gated on: the comment is on a PR (not a plain issue), the commenter's
+1. Someone comments `/check-doc-drift [doc]` on an open PR, **or** triggers `workflow_dispatch`
+   from the Actions tab with a PR number + doc chosen from a dropdown.
+2. Comment path gated on: the comment is on a PR (not a plain issue), the commenter's
    `author_association` is `OWNER`/`MEMBER`/`COLLABORATOR` (blocks a random commenter from
-   burning API budget), and the comment starts with `/check-doc-drift`.
-3. `dispatch` parses the argument, resolves the PR's head ref via `gh pr view`, reacts 👀 on
-   the comment to confirm it was seen, and (if the argument didn't match a known doc) replies
-   with a usage message instead of running anything.
+   burning API budget), and the comment starts with `/check-doc-drift`. `workflow_dispatch`
+   path needs no extra gate — GitHub already requires write access to trigger it.
+3. `dispatch` resolves the doc + PR number (from whichever trigger fired), resolves the PR's
+   head ref via `gh pr view`, and — comment path only — reacts 👀 on the comment to confirm it
+   was seen, replying with a usage message instead of running anything if the argument didn't
+   match a known doc (not applicable to `workflow_dispatch`, whose doc input is a fixed
+   dropdown so it can't be invalid).
 4. Each `doc-drift-*` job runs only if `dispatch` resolved to `all` or that job's specific
-   doc name, checks out the **PR's head ref** (not the default branch — `issue_comment`
-   doesn't carry a ref the way `pull_request` does), and runs the same prompt-assembly +
-   Anthropic API call as before.
+   doc name, checks out the **PR's head ref** (not the default branch — neither trigger
+   carries a ref the way `pull_request` does), and runs the same prompt-assembly + Anthropic
+   API call as before.
 5. Result is posted **both** to the run's job summary and as a **reply comment directly on
    the PR** — more visible than a job summary link for something a human explicitly asked
    for.
+
+**Important:** because `issue_comment` and `workflow_dispatch` aren't tied to a PR ref the way
+`pull_request` is, GitHub always reads this workflow's *definition* from the **default branch**
+(`main`), never from a PR branch. A PR that only adds or edits this file has no effect on
+itself — the change has to be merged to `main` before either trigger works, including on PRs
+opened afterward.
 
 **SECURITY note baked into the workflow:** the comment body (`github.event.comment.body`) is
 untrusted, attacker-controllable text. It's passed through an environment variable
