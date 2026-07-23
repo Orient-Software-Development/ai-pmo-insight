@@ -103,10 +103,12 @@ through a `LoggingBehavior` pipeline.
 **Endpoints** are Minimal-API extension methods in `AiPMOInsight.Api/Endpoints/*.cs`
 (`AuthEndpoints`, `ProfileEndpoints`, `FindingsEndpoints`, `IngestEndpoints`,
 `UploadHistoryEndpoints`, `HealthScoringEndpoints`, `ExecutivePortfolioEndpoints`,
-`DataQualityEndpoints`, `ProgressEndpoints`, `ProjectKeysEndpoints`). Every endpoint must
-declare `.Produces<T>(200)` (+ `.Produces(404)` on the nullable → 404 patterns) so the OpenAPI
-generator emits a response schema — the Layer-1 drift sensor depends on this. See
-`OpenApiDriftTest` and `OpenApiRuntimeContractTest` (both in `AiPMOInsight.Api.Tests`).
+`DataQualityEndpoints`, `ProgressEndpoints`, `ProjectKeysEndpoints`). Every endpoint that returns
+a typed body must declare `.Produces<T>(200)` (+ `.Produces(404)` on the nullable → 404 patterns)
+so the OpenAPI generator emits a response schema — the Layer-1 drift sensor depends on this. See
+`OpenApiDriftTest` and `OpenApiRuntimeContractTest` (both in `AiPMOInsight.Api.Tests`). Exempt:
+`AuthEndpoints` — every route returns a bare `Results.Ok()` / `Results.Problem(...)` with no typed
+response body, so there's no schema for `.Produces<T>` to describe.
 
 **Security.** `AuthCookies` centralises cookie flags (httpOnly, SameSite=Strict, per-path scoping);
 `TokenService` signs HS256 JWTs; `RefreshTokenService` issues/rotates/revokes with a configurable,
