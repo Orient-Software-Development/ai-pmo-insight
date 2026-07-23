@@ -381,7 +381,7 @@ on the normalized column), so casing never splits or duplicates an account.
 | `created_at` | TIMESTAMPTZ | Issued-at |
 | `expires_at` | TIMESTAMPTZ | Fixed 7-day TTL from original login — inherited on rotation, not reset |
 | `revoked_at` | TIMESTAMPTZ | NULL = active; set on rotation, logout, or reuse-detection revocation |
-| `replaced_by_token_hash` | TEXT | Hash of the successor token — rotation chain / reuse detection |
+| `replaced_by_token_hash` | TEXT | Hash of the successor token — audit/traceability only. **Not read by reuse detection**: `RotateAsync` triggers purely on `revokedAt IS NOT NULL`/expiry, it never chain-walks this column |
 
 > **`SecurityStamp`.** Identity maintains this per-user stamp; bumping it is the cookie-based way to
 > invalidate every session ("log out everywhere"). This template is **stateless JWT** — access tokens

@@ -17,7 +17,7 @@ suggestion) but run in the same parallel stage as #3–#6.
 | 1 | Data Collector | deterministic | Upload bytes | Parsed `CollectedData` |
 | 2 | Data Quality | deterministic | One project slice | Quality signal + findings |
 | 3 | Status | deterministic | Slice + quality | Findings |
-| 4 | Risk & Issue | **LLM** | Slice + quality | Findings |
+| 4 | Risk & Issue | **hybrid** | Slice + quality | Findings |
 | 5 | Financial | deterministic | Slice + quality | Findings |
 | 6 | Resource | deterministic | Slice + quality | Findings |
 | — | Decision *(new)* | deterministic | Slice + quality | Findings |
