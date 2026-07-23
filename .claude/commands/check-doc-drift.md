@@ -11,8 +11,8 @@ only), so this command uses your own reading to catch semantic drift between the
 implementation.
 
 **Input:** the short doc name, e.g. `/check-doc-drift authentication`. Resolves to
-`docs/authentication.md`. If the exact path was passed (e.g. `docs/authentication.md`), use it
-as-is.
+`docs/authentication.md`. If the exact path was passed (e.g. `docs/authentication.md`, or
+`CLAUDE.md` for the repo-root guidance file — not under `docs/`), use it as-is.
 
 ## Doc → code mapping
 
