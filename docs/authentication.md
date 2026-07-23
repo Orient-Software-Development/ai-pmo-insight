@@ -154,8 +154,8 @@ Issue two tokens on login with asymmetric lifetimes:
 
 | Token | Lifetime | Transport | Scope |
 |---|---|---|---|
-| **Access Token** | 15 minutes | `httpOnly` cookie | `Path=/` |
-| **Refresh Token** | 7 days (fixed) | `httpOnly` cookie | `Path=/api/auth/refresh` |
+| **Access Token** | 15 minutes (default, configurable via `Jwt:AccessTokenMinutes`) | `httpOnly` cookie | `Path=/` |
+| **Refresh Token** | 7 days (default, configurable via `Jwt:RefreshTokenDays`; fixed at issuance — not reset on rotation) | `httpOnly` cookie | `Path=/api/auth/refresh` |
 
 **Refresh Token expiration model — Sliding vs Fixed:**
 

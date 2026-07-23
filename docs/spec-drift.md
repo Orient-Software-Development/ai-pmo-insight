@@ -216,9 +216,12 @@ for any doc (run locally), and a CI-automated check for four high-value docs tha
 **Kept advisory, not blocking**, because Layer 3 is inherently:
 
 1. **Non-deterministic.** Two runs on the same input can produce different findings.
-2. **Cost.** Every invocation consumes API tokens (~$0.10-0.20; the CI jobs use
-   `claude-sonnet-5` via `DOC_DRIFT_MODEL`, the local slash command uses whatever model the
-   Claude Code session runs).
+2. **Cost.** Every invocation consumes API tokens (~$0.10-0.20; the CI jobs default to
+   `claude-sonnet-5` via `DOC_DRIFT_MODEL`, overridable per-run on the Actions-tab path — see
+   below; the local slash command uses whatever model the Claude Code session runs).
+   `claude-sonnet-5` is the deliberate default floor: `claude-haiku-4-5` was observed producing
+   a false-positive MAJOR security finding (claiming JWT issuer/audience validation wasn't
+   enforced when `Program.cs` clearly enforces it) that two independent sonnet-5 runs did not.
 3. **No established best practice.** Prompt drift, false positives, and quality tuning are
    still frontier problems.
 
@@ -251,6 +254,7 @@ Comment on a PR:      /check-doc-drift                          → checks all f
 
 Actions tab:          "Doc Drift (on-demand)" → Run workflow →
                       pick a PR number + a doc from the dropdown (defaults to "all")
+                      + optionally a model (defaults to claude-sonnet-5)
 ```
 
 The two triggers share the same `dispatch` job and the same four `doc-drift-*` jobs — only
@@ -277,13 +281,15 @@ the cost proportional to how many times a human actually asks, not how many time
 
 **How it works** (`dispatch` job in the workflow):
 1. Someone comments `/check-doc-drift [doc]` on an open PR, **or** triggers `workflow_dispatch`
-   from the Actions tab with a PR number + doc chosen from a dropdown.
+   from the Actions tab with a PR number + doc chosen from a dropdown (plus an optional model
+   dropdown — comment triggers have no per-invocation model choice and always use the default).
 2. Comment path gated on: the comment is on a PR (not a plain issue), the commenter's
    `author_association` is `OWNER`/`MEMBER`/`COLLABORATOR` (blocks a random commenter from
    burning API budget), and the comment starts with `/check-doc-drift`. `workflow_dispatch`
    path needs no extra gate — GitHub already requires write access to trigger it.
-3. `dispatch` resolves the doc + PR number (from whichever trigger fired), resolves the PR's
-   head ref via `gh pr view`, and — comment path only — reacts 👀 on the comment to confirm it
+3. `dispatch` resolves the doc + PR number + model (from whichever trigger fired — the model is
+   the `workflow_dispatch` input if set, otherwise the `DOC_DRIFT_MODEL` default), resolves the
+   PR's head ref via `gh pr view`, and — comment path only — reacts 👀 on the comment to confirm it
    was seen, replying with a usage message instead of running anything if the argument didn't
    match a known doc (not applicable to `workflow_dispatch`, whose doc input is a fixed
    dropdown so it can't be invalid).
@@ -388,7 +394,7 @@ Grep for names.
 | Integration test host | `tests/AiPMOInsight.Api.Tests/TestWebAppFactory.cs` |
 | Layer 3 local command | `.claude/commands/check-doc-drift.md` |
 | Layer 3 CI-automated, comment-triggered | `.github/workflows/doc-drift-on-demand.yml` → `dispatch`, `doc-drift-authentication`, `doc-drift-claude-md`, `doc-drift-analysis-pipeline`, `doc-drift-dashboard-output-formats` |
-| Layer 3 model config | `.github/workflows/doc-drift-on-demand.yml` → `env.DOC_DRIFT_MODEL` |
+| Layer 3 model config | `.github/workflows/doc-drift-on-demand.yml` → `env.DOC_DRIFT_MODEL` (default) + `workflow_dispatch` `model` input (per-run override) |
 
 ## 9. Alternatives considered
 
