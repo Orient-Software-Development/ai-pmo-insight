@@ -14,14 +14,15 @@ public static class ProfileEndpoints
         var group = app.MapGroup("/api/profile").WithTags("Profile");
 
         // Current caller's name + roles, read from the validated JWT principal.
-        group.MapGet("/me", (ClaimsPrincipal user) => Results.Ok(new
-        {
-            userName = user.Identity?.Name ?? user.FindFirstValue(ClaimTypes.Email),
-            roles = user.FindAll(ClaimTypes.Role).Select(c => c.Value).ToArray(),
-        }))
+        group.MapGet("/me", (ClaimsPrincipal user) => Results.Ok(new MeResponse(
+            user.Identity?.Name ?? user.FindFirstValue(ClaimTypes.Email),
+            user.FindAll(ClaimTypes.Role).Select(c => c.Value).ToArray())))
         .WithName("Me")
-        .RequireAuthorization();
+        .RequireAuthorization()
+        .Produces<MeResponse>(StatusCodes.Status200OK);
 
         return app;
     }
+
+    public sealed record MeResponse(string? UserName, string[] Roles);
 }

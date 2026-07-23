@@ -18,7 +18,9 @@ public static class FindingsEndpoints
             var result = await sender.Send(new AnalyzeUpload.Command(uploadId), ct);
             return result is null ? Results.NotFound() : Results.Ok(result);
         })
-        .WithName("AnalyzeUpload");
+        .WithName("AnalyzeUpload")
+        .Produces<AnalyzeUpload.Result>(StatusCodes.Status200OK)
+        .Produces(StatusCodes.Status404NotFound);
 
         var projects = app.MapGroup("/api/projects").WithTags("Projects").RequireAuthorization();
 
@@ -27,7 +29,8 @@ public static class FindingsEndpoints
             var result = await sender.Send(new GetProjectFindings.Query(projectKey), ct);
             return Results.Ok(result);
         })
-        .WithName("GetProjectFindings");
+        .WithName("GetProjectFindings")
+        .Produces<GetProjectFindings.Result>(StatusCodes.Status200OK);
 
         return app;
     }

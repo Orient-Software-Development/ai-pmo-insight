@@ -18,7 +18,8 @@ public static class ExecutivePortfolioEndpoints
             Results.Ok(await sender.Send(new ScorePortfolio.Query(), ct)))
             .WithTags("ExecutivePortfolio")
             .RequireAuthorization()
-            .WithName("GetExecutivePortfolio");
+            .WithName("GetExecutivePortfolio")
+            .Produces<ScorePortfolio.Result>(StatusCodes.Status200OK);
 
         return app;
     }

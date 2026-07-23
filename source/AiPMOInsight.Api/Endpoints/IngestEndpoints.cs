@@ -29,7 +29,9 @@ public static class IngestEndpoints
         .WithName("UploadFixture")
         // Minimal-API form binding otherwise requires an antiforgery token; this API has no
         // antiforgery middleware and auth is cookie/JWT, so disable the requirement explicitly.
-        .DisableAntiforgery();
+        .DisableAntiforgery()
+        .Produces<UploadFixture.Result>(StatusCodes.Status201Created)
+        .Produces(StatusCodes.Status400BadRequest);
 
         return app;
     }

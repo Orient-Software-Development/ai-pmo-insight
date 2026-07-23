@@ -10,6 +10,8 @@ Describe how the system **is**. Long-lived, edited in place as the system change
 - [authentication.md](authentication.md) — JWT-cookie auth design
 - [database.md](database.md) — schema, EF migrations, persistence
 - [auth-gap.md](auth-gap.md) — auth implementation vs. `authentication.md` spec
+- [spec-drift.md](spec-drift.md) — 3-layer OpenAPI drift sensor: baseline test, oasdiff
+  classification, runtime contract validation
 - [kickoff-questions.md](kickoff-questions.md) — POC → production: what's left for the client to
   provide/decide, and what's still open engineering
 

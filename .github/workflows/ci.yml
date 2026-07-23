@@ -1,0 +1,80 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Set up .NET SDK (pinned via global.json)
+        uses: actions/setup-dotnet@v6
+        with:
+          global-json-file: global.json
+
+      - name: Restore
+        run: dotnet restore
+
+      - name: Build
+        run: dotnet build -c Release --no-restore
+
+      # Full suite includes the Layer-1 OpenAPI drift test (OpenApiDriftTest), which fails if
+      # /openapi/v1.json has drifted from the committed openapi.json baseline. To accept a
+      # deliberate API change, regenerate the baseline locally with:
+      #   UPDATE_OPENAPI_BASELINE=1 dotnet test --filter FullyQualifiedName~OpenApiDriftTest
+      # and commit the diff in the same PR.
+      - name: Test
+        run: dotnet test -c Release --no-build --verbosity normal
+
+  # Layer 1.5 — Advisory classification. Layer 1 fails on ANY openapi.json drift; this job
+  # classifies the drift into Breaking (a consumer would have to update) vs Additive
+  # (backwards-compatible) and posts the result to the PR's job summary. Non-blocking on
+  # purpose — the strict "baseline must be current" gate is Layer 1 in the `test` job above.
+  # PRs only: nothing to compare against on a push to main.
+  openapi-classify:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - name: Extract baseline openapi.json from base branch
+        id: baseline
+        run: |
+          if git show "origin/${{ github.base_ref }}:openapi.json" > /tmp/base-openapi.json 2>/dev/null; then
+            echo "has_baseline=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "No openapi.json on base branch — skipping (first PR to add the sensor?)."
+            echo "has_baseline=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Install oasdiff
+        if: steps.baseline.outputs.has_baseline == 'true'
+        run: curl -fsSL https://raw.githubusercontent.com/oasdiff/oasdiff/main/install.sh | sh
+
+      - name: Classify diff (advisory)
+        if: steps.baseline.outputs.has_baseline == 'true'
+        run: |
+          {
+            echo "## OpenAPI change classification"
+            echo ""
+            echo "Advisory only — the blocking \"baseline must be current\" gate is Layer 1 in the"
+            echo "\`test\` job. This step tells reviewers **what kind** of change landed."
+            echo ""
+            echo "### Breaking changes"
+            echo ""
+            echo '```'
+            oasdiff breaking /tmp/base-openapi.json openapi.json 2>&1 || true
+            echo '```'
+            echo ""
+            echo "### Full change summary"
+            echo ""
+            echo '```'
+            oasdiff diff /tmp/base-openapi.json openapi.json --summary 2>&1 || true
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"

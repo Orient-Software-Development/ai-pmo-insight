@@ -1,0 +1,1566 @@
+{
+  "components": {
+    "schemas": {
+      "AnalyzeUploadCitationView": {
+        "properties": {
+          "locator": {
+            "$ref": "#/components/schemas/String"
+          },
+          "structuredExcerpt": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/String"
+              }
+            ]
+          },
+          "textSnippet": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/String"
+              }
+            ]
+          },
+          "uploadId": {
+            "$ref": "#/components/schemas/Guid"
+          }
+        },
+        "required": [
+          "uploadId",
+          "locator",
+          "structuredExcerpt",
+          "textSnippet"
+        ],
+        "type": "object"
+      },
+      "AnalyzeUploadFindingView": {
+        "properties": {
+          "citation": {
+            "$ref": "#/components/schemas/AnalyzeUploadCitationView"
+          },
+          "confidence": {
+            "$ref": "#/components/schemas/String"
+          },
+          "createdAt": {
+            "$ref": "#/components/schemas/DateTimeOffset"
+          },
+          "id": {
+            "$ref": "#/components/schemas/Guid"
+          },
+          "kind": {
+            "$ref": "#/components/schemas/String"
+          },
+          "producingAgent": {
+            "$ref": "#/components/schemas/String"
+          },
+          "projectKey": {
+            "$ref": "#/components/schemas/String"
+          },
+          "promptVersion": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/String"
+              }
+            ]
+          },
+          "summary": {
+            "$ref": "#/components/schemas/String"
+          }
+        },
+        "required": [
+          "id",
+          "projectKey",
+          "summary",
+          "kind",
+          "confidence",
+          "producingAgent",
+          "promptVersion",
+          "citation",
+          "createdAt"
+        ],
+        "type": "object"
+      },
+      "AnalyzeUploadResult": {
+        "properties": {
+          "findings": {
+            "$ref": "#/components/schemas/IReadOnlyList\u00601"
+          },
+          "runId": {
+            "$ref": "#/components/schemas/Guid"
+          }
+        },
+        "required": [
+          "runId",
+          "findings"
+        ],
+        "type": "object"
+      },
+      "AuthEndpointsChangePasswordRequest": {
+        "properties": {
+          "currentPassword": {
+            "$ref": "#/components/schemas/String"
+          },
+          "newPassword": {
+            "$ref": "#/components/schemas/String"
+          }
+        },
+        "required": [
+          "currentPassword",
+          "newPassword"
+        ],
+        "type": "object"
+      },
+      "AuthEndpointsLoginRequest": {
+        "properties": {
+          "email": {
+            "$ref": "#/components/schemas/String"
+          },
+          "password": {
+            "$ref": "#/components/schemas/String"
+          }
+        },
+        "required": [
+          "email",
+          "password"
+        ],
+        "type": "object"
+      },
+      "AuthEndpointsRegisterRequest": {
+        "properties": {
+          "email": {
+            "$ref": "#/components/schemas/String"
+          },
+          "password": {
+            "$ref": "#/components/schemas/String"
+          }
+        },
+        "required": [
+          "email",
+          "password"
+        ],
+        "type": "object"
+      },
+      "Boolean": {
+        "type": "boolean"
+      },
+      "DateTimeOffset": {
+        "format": "date-time",
+        "type": "string"
+      },
+      "Decimal": {
+        "format": "double",
+        "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d\u002B)?$",
+        "type": [
+          "number",
+          "string"
+        ]
+      },
+      "Double": {
+        "format": "double",
+        "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d\u002B)?(?:[eE][\u002B-]?\\d\u002B)?$",
+        "type": [
+          "number",
+          "string"
+        ]
+      },
+      "GetProjectFindingsCitationView": {
+        "properties": {
+          "locator": {
+            "$ref": "#/components/schemas/String"
+          },
+          "structuredExcerpt": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/String"
+              }
+            ]
+          },
+          "textSnippet": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/String"
+              }
+            ]
+          },
+          "uploadId": {
+            "$ref": "#/components/schemas/Guid"
+          }
+        },
+        "required": [
+          "uploadId",
+          "locator",
+          "structuredExcerpt",
+          "textSnippet"
+        ],
+        "type": "object"
+      },
+      "GetProjectFindingsFindingView": {
+        "properties": {
+          "area": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/String"
+              }
+            ]
+          },
+          "citation": {
+            "$ref": "#/components/schemas/GetProjectFindingsCitationView"
+          },
+          "confidence": {
+            "$ref": "#/components/schemas/String"
+          },
+          "createdAt": {
+            "$ref": "#/components/schemas/DateTimeOffset"
+          },
+          "id": {
+            "$ref": "#/components/schemas/Guid"
+          },
+          "kind": {
+            "$ref": "#/components/schemas/String"
+          },
+          "metricDetail": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/IReadOnlyDictionary\u00602"
+              }
+            ]
+          },
+          "metricUnit": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/String"
+              }
+            ]
+          },
+          "metricValue": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/Nullable\u00601"
+              }
+            ]
+          },
+          "producingAgent": {
+            "$ref": "#/components/schemas/String"
+          },
+          "projectKey": {
+            "$ref": "#/components/schemas/String"
+          },
+          "promptVersion": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/String"
+              }
+            ]
+          },
+          "runId": {
+            "$ref": "#/components/schemas/Guid"
+          },
+          "severity": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/String"
+              }
+            ]
+          },
+          "summary": {
+            "$ref": "#/components/schemas/String"
+          }
+        },
+        "required": [
+          "id",
+          "projectKey",
+          "summary",
+          "kind",
+          "confidence",
+          "producingAgent",
+          "promptVersion",
+          "runId",
+          "citation",
+          "createdAt",
+          "area",
+          "severity",
+          "metricValue",
+          "metricUnit",
+          "metricDetail"
+        ],
+        "type": "object"
+      },
+      "GetProjectFindingsResult": {
+        "properties": {
+          "challenge": {
+            "$ref": "#/components/schemas/IReadOnlyList\u00601"
+          },
+          "findings": {
+            "$ref": "#/components/schemas/IReadOnlyList\u00601"
+          },
+          "narrative": {
+            "$ref": "#/components/schemas/IReadOnlyList\u00601"
+          },
+          "projectKey": {
+            "$ref": "#/components/schemas/String"
+          },
+          "review": {
+            "$ref": "#/components/schemas/IReadOnlyList\u00601"
+          }
+        },
+        "required": [
+          "projectKey",
+          "findings",
+          "narrative",
+          "challenge",
+          "review"
+        ],
+        "type": "object"
+      },
+      "GetUploadFindingsCitationView": {
+        "properties": {
+          "locator": {
+            "$ref": "#/components/schemas/String"
+          },
+          "structuredExcerpt": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/String"
+              }
+            ]
+          },
+          "textSnippet": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/String"
+              }
+            ]
+          },
+          "uploadId": {
+            "$ref": "#/components/schemas/Guid"
+          }
+        },
+        "required": [
+          "uploadId",
+          "locator",
+          "structuredExcerpt",
+          "textSnippet"
+        ],
+        "type": "object"
+      },
+      "GetUploadFindingsFindingView": {
+        "properties": {
+          "citation": {
+            "$ref": "#/components/schemas/GetUploadFindingsCitationView"
+          },
+          "confidence": {
+            "$ref": "#/components/schemas/String"
+          },
+          "createdAt": {
+            "$ref": "#/components/schemas/DateTimeOffset"
+          },
+          "id": {
+            "$ref": "#/components/schemas/Guid"
+          },
+          "kind": {
+            "$ref": "#/components/schemas/String"
+          },
+          "producingAgent": {
+            "$ref": "#/components/schemas/String"
+          },
+          "projectKey": {
+            "$ref": "#/components/schemas/String"
+          },
+          "promptVersion": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/String"
+              }
+            ]
+          },
+          "runId": {
+            "$ref": "#/components/schemas/Guid"
+          },
+          "summary": {
+            "$ref": "#/components/schemas/String"
+          }
+        },
+        "required": [
+          "id",
+          "projectKey",
+          "summary",
+          "kind",
+          "confidence",
+          "producingAgent",
+          "promptVersion",
+          "runId",
+          "citation",
+          "createdAt"
+        ],
+        "type": "object"
+      },
+      "GetUploadFindingsResult": {
+        "properties": {
+          "challenge": {
+            "$ref": "#/components/schemas/IReadOnlyList\u00601"
+          },
+          "findings": {
+            "$ref": "#/components/schemas/IReadOnlyList\u00601"
+          },
+          "narrative": {
+            "$ref": "#/components/schemas/IReadOnlyList\u00601"
+          },
+          "review": {
+            "$ref": "#/components/schemas/IReadOnlyList\u00601"
+          },
+          "uploadId": {
+            "$ref": "#/components/schemas/Guid"
+          }
+        },
+        "required": [
+          "uploadId",
+          "findings",
+          "narrative",
+          "challenge",
+          "review"
+        ],
+        "type": "object"
+      },
+      "GetUploadsUploadListItem": {
+        "properties": {
+          "fileName": {
+            "$ref": "#/components/schemas/String"
+          },
+          "id": {
+            "$ref": "#/components/schemas/Guid"
+          },
+          "uploadedAt": {
+            "$ref": "#/components/schemas/DateTimeOffset"
+          }
+        },
+        "required": [
+          "id",
+          "fileName",
+          "uploadedAt"
+        ],
+        "type": "object"
+      },
+      "Guid": {
+        "format": "uuid",
+        "type": "string"
+      },
+      "IFormFile": {
+        "format": "binary",
+        "type": "string"
+      },
+      "IReadOnlyDictionary\u00602": {
+        "additionalProperties": {
+          "$ref": "#/components/schemas/String"
+        },
+        "type": "object"
+      },
+      "IReadOnlyList\u00601": {
+        "items": {
+          "$ref": "#/components/schemas/SummarizeProgressChangeView"
+        },
+        "type": "array"
+      },
+      "Int32": {
+        "format": "int32",
+        "pattern": "^-?(?:0|[1-9]\\d*)$",
+        "type": [
+          "integer",
+          "string"
+        ]
+      },
+      "Nullable\u00601": {
+        "format": "double",
+        "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d\u002B)?(?:[eE][\u002B-]?\\d\u002B)?$",
+        "type": [
+          "number",
+          "string"
+        ]
+      },
+      "ProfileEndpointsMeResponse": {
+        "properties": {
+          "roles": {
+            "$ref": "#/components/schemas/String[]"
+          },
+          "userName": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/String"
+              }
+            ]
+          }
+        },
+        "required": [
+          "userName",
+          "roles"
+        ],
+        "type": "object"
+      },
+      "ScorePortfolioCustomerExposureView": {
+        "properties": {
+          "atRiskCount": {
+            "$ref": "#/components/schemas/Int32"
+          },
+          "customer": {
+            "$ref": "#/components/schemas/String"
+          }
+        },
+        "required": [
+          "customer",
+          "atRiskCount"
+        ],
+        "type": "object"
+      },
+      "ScorePortfolioFinancialExposureView": {
+        "properties": {
+          "amount": {
+            "$ref": "#/components/schemas/Decimal"
+          },
+          "currency": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/String"
+              }
+            ]
+          }
+        },
+        "required": [
+          "amount",
+          "currency"
+        ],
+        "type": "object"
+      },
+      "ScorePortfolioInterventionView": {
+        "properties": {
+          "citationLocator": {
+            "$ref": "#/components/schemas/String"
+          },
+          "confidence": {
+            "$ref": "#/components/schemas/Double"
+          },
+          "projectKey": {
+            "$ref": "#/components/schemas/String"
+          },
+          "reason": {
+            "$ref": "#/components/schemas/String"
+          },
+          "status": {
+            "$ref": "#/components/schemas/String"
+          }
+        },
+        "required": [
+          "projectKey",
+          "status",
+          "confidence",
+          "reason",
+          "citationLocator"
+        ],
+        "type": "object"
+      },
+      "ScorePortfolioKeyPersonView": {
+        "properties": {
+          "person": {
+            "$ref": "#/components/schemas/String"
+          },
+          "projectCount": {
+            "$ref": "#/components/schemas/Int32"
+          },
+          "status": {
+            "$ref": "#/components/schemas/String"
+          }
+        },
+        "required": [
+          "person",
+          "projectCount",
+          "status"
+        ],
+        "type": "object"
+      },
+      "ScorePortfolioRecommendedActionView": {
+        "properties": {
+          "action": {
+            "$ref": "#/components/schemas/String"
+          },
+          "deadline": {
+            "$ref": "#/components/schemas/String"
+          },
+          "owner": {
+            "$ref": "#/components/schemas/String"
+          },
+          "projectKey": {
+            "$ref": "#/components/schemas/String"
+          },
+          "status": {
+            "$ref": "#/components/schemas/String"
+          }
+        },
+        "required": [
+          "projectKey",
+          "status",
+          "action",
+          "owner",
+          "deadline"
+        ],
+        "type": "object"
+      },
+      "ScorePortfolioResult": {
+        "properties": {
+          "amber": {
+            "$ref": "#/components/schemas/Int32"
+          },
+          "averageConfidence": {
+            "$ref": "#/components/schemas/Double"
+          },
+          "customerExposure": {
+            "$ref": "#/components/schemas/IReadOnlyList\u00601"
+          },
+          "decisionBacklog": {
+            "$ref": "#/components/schemas/Int32"
+          },
+          "financialExposure": {
+            "$ref": "#/components/schemas/ScorePortfolioFinancialExposureView"
+          },
+          "green": {
+            "$ref": "#/components/schemas/Int32"
+          },
+          "intervention": {
+            "$ref": "#/components/schemas/IReadOnlyList\u00601"
+          },
+          "keyPersons": {
+            "$ref": "#/components/schemas/IReadOnlyList\u00601"
+          },
+          "needsPmReview": {
+            "$ref": "#/components/schemas/Int32"
+          },
+          "recommendedActions": {
+            "$ref": "#/components/schemas/IReadOnlyList\u00601"
+          },
+          "red": {
+            "$ref": "#/components/schemas/Int32"
+          }
+        },
+        "required": [
+          "red",
+          "amber",
+          "green",
+          "needsPmReview",
+          "averageConfidence",
+          "intervention",
+          "financialExposure",
+          "decisionBacklog",
+          "keyPersons",
+          "customerExposure",
+          "recommendedActions"
+        ],
+        "type": "object"
+      },
+      "ScoreProjectAreaView": {
+        "properties": {
+          "area": {
+            "$ref": "#/components/schemas/String"
+          },
+          "contribution": {
+            "$ref": "#/components/schemas/Double"
+          },
+          "severity": {
+            "$ref": "#/components/schemas/String"
+          },
+          "weight": {
+            "$ref": "#/components/schemas/Int32"
+          }
+        },
+        "required": [
+          "area",
+          "severity",
+          "weight",
+          "contribution"
+        ],
+        "type": "object"
+      },
+      "ScoreProjectOverrideView": {
+        "properties": {
+          "citationLocator": {
+            "$ref": "#/components/schemas/String"
+          },
+          "findingId": {
+            "$ref": "#/components/schemas/Guid"
+          },
+          "floor": {
+            "$ref": "#/components/schemas/String"
+          },
+          "reason": {
+            "$ref": "#/components/schemas/String"
+          },
+          "ruleId": {
+            "$ref": "#/components/schemas/String"
+          }
+        },
+        "required": [
+          "ruleId",
+          "floor",
+          "reason",
+          "findingId",
+          "citationLocator"
+        ],
+        "type": "object"
+      },
+      "ScoreProjectResult": {
+        "properties": {
+          "projectKey": {
+            "$ref": "#/components/schemas/String"
+          },
+          "score": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/ScoreProjectScoreView"
+              }
+            ]
+          }
+        },
+        "required": [
+          "projectKey",
+          "score"
+        ],
+        "type": "object"
+      },
+      "ScoreProjectScoreView": {
+        "properties": {
+          "appliedOverrides": {
+            "$ref": "#/components/schemas/IReadOnlyList\u00601"
+          },
+          "areas": {
+            "$ref": "#/components/schemas/IReadOnlyList\u00601"
+          },
+          "confidence": {
+            "$ref": "#/components/schemas/Double"
+          },
+          "finalBucket": {
+            "$ref": "#/components/schemas/String"
+          },
+          "needsPmReview": {
+            "$ref": "#/components/schemas/Boolean"
+          },
+          "rawBucket": {
+            "$ref": "#/components/schemas/String"
+          },
+          "rawScore": {
+            "$ref": "#/components/schemas/Double"
+          },
+          "runId": {
+            "$ref": "#/components/schemas/Guid"
+          }
+        },
+        "required": [
+          "runId",
+          "rawScore",
+          "rawBucket",
+          "finalBucket",
+          "needsPmReview",
+          "confidence",
+          "areas",
+          "appliedOverrides"
+        ],
+        "type": "object"
+      },
+      "String": {
+        "type": "string"
+      },
+      "String[]": {
+        "items": {
+          "$ref": "#/components/schemas/String"
+        },
+        "type": "array"
+      },
+      "SummarizeDataQualityCompletenessView": {
+        "properties": {
+          "categories": {
+            "$ref": "#/components/schemas/IReadOnlyDictionary\u00602"
+          },
+          "projectKey": {
+            "$ref": "#/components/schemas/String"
+          }
+        },
+        "required": [
+          "projectKey",
+          "categories"
+        ],
+        "type": "object"
+      },
+      "SummarizeDataQualityConfidenceView": {
+        "properties": {
+          "belowTarget": {
+            "$ref": "#/components/schemas/Boolean"
+          },
+          "mean": {
+            "$ref": "#/components/schemas/Double"
+          },
+          "threshold": {
+            "$ref": "#/components/schemas/Int32"
+          }
+        },
+        "required": [
+          "mean",
+          "threshold",
+          "belowTarget"
+        ],
+        "type": "object"
+      },
+      "SummarizeDataQualityDuplicateView": {
+        "properties": {
+          "candidate": {
+            "$ref": "#/components/schemas/String"
+          },
+          "candidateName": {
+            "$ref": "#/components/schemas/String"
+          },
+          "citationLocator": {
+            "$ref": "#/components/schemas/String"
+          },
+          "projectKey": {
+            "$ref": "#/components/schemas/String"
+          },
+          "score": {
+            "$ref": "#/components/schemas/Int32"
+          }
+        },
+        "required": [
+          "projectKey",
+          "candidate",
+          "candidateName",
+          "score",
+          "citationLocator"
+        ],
+        "type": "object"
+      },
+      "SummarizeDataQualityItemView": {
+        "properties": {
+          "ageDays": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/Nullable\u00601"
+              }
+            ]
+          },
+          "citationLocator": {
+            "$ref": "#/components/schemas/String"
+          },
+          "issue": {
+            "$ref": "#/components/schemas/String"
+          },
+          "lift": {
+            "$ref": "#/components/schemas/Int32"
+          },
+          "projectKey": {
+            "$ref": "#/components/schemas/String"
+          },
+          "remediation": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/String"
+              }
+            ]
+          },
+          "severity": {
+            "$ref": "#/components/schemas/String"
+          }
+        },
+        "required": [
+          "projectKey",
+          "issue",
+          "severity",
+          "citationLocator",
+          "ageDays",
+          "remediation",
+          "lift"
+        ],
+        "type": "object"
+      },
+      "SummarizeDataQualityProjectCountView": {
+        "properties": {
+          "count": {
+            "$ref": "#/components/schemas/Int32"
+          },
+          "projectKey": {
+            "$ref": "#/components/schemas/String"
+          }
+        },
+        "required": [
+          "projectKey",
+          "count"
+        ],
+        "type": "object"
+      },
+      "SummarizeDataQualityResult": {
+        "properties": {
+          "completeness": {
+            "$ref": "#/components/schemas/IReadOnlyList\u00601"
+          },
+          "confidence": {
+            "$ref": "#/components/schemas/SummarizeDataQualityConfidenceView"
+          },
+          "duplicates": {
+            "$ref": "#/components/schemas/IReadOnlyList\u00601"
+          },
+          "items": {
+            "$ref": "#/components/schemas/IReadOnlyList\u00601"
+          },
+          "perProject": {
+            "$ref": "#/components/schemas/IReadOnlyList\u00601"
+          },
+          "totalItems": {
+            "$ref": "#/components/schemas/Int32"
+          }
+        },
+        "required": [
+          "confidence",
+          "items",
+          "totalItems",
+          "perProject",
+          "duplicates",
+          "completeness"
+        ],
+        "type": "object"
+      },
+      "SummarizeProgressChangeView": {
+        "properties": {
+          "area": {
+            "$ref": "#/components/schemas/String"
+          },
+          "change": {
+            "$ref": "#/components/schemas/String"
+          },
+          "citationLocator": {
+            "$ref": "#/components/schemas/String"
+          },
+          "fromSeverity": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/String"
+              }
+            ]
+          },
+          "summary": {
+            "$ref": "#/components/schemas/String"
+          },
+          "toSeverity": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/String"
+              }
+            ]
+          }
+        },
+        "required": [
+          "area",
+          "change",
+          "fromSeverity",
+          "toSeverity",
+          "summary",
+          "citationLocator"
+        ],
+        "type": "object"
+      },
+      "SummarizeProgressResult": {
+        "properties": {
+          "hasPrevious": {
+            "$ref": "#/components/schemas/Boolean"
+          },
+          "latestRunAt": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/Nullable\u00601"
+              }
+            ]
+          },
+          "movedBackward": {
+            "$ref": "#/components/schemas/IReadOnlyList\u00601"
+          },
+          "movedForward": {
+            "$ref": "#/components/schemas/IReadOnlyList\u00601"
+          },
+          "pace": {
+            "$ref": "#/components/schemas/String"
+          },
+          "paceIsPlaceholder": {
+            "$ref": "#/components/schemas/Boolean"
+          },
+          "previousRunAt": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/Nullable\u00601"
+              }
+            ]
+          },
+          "projectKey": {
+            "$ref": "#/components/schemas/String"
+          },
+          "scoreAfter": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/Nullable\u00601"
+              }
+            ]
+          },
+          "scoreBefore": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/Nullable\u00601"
+              }
+            ]
+          },
+          "scoreDelta": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/Nullable\u00601"
+              }
+            ]
+          }
+        },
+        "required": [
+          "projectKey",
+          "hasPrevious",
+          "previousRunAt",
+          "latestRunAt",
+          "scoreBefore",
+          "scoreAfter",
+          "scoreDelta",
+          "pace",
+          "paceIsPlaceholder",
+          "movedForward",
+          "movedBackward"
+        ],
+        "type": "object"
+      },
+      "UploadFixtureResult": {
+        "properties": {
+          "fileName": {
+            "$ref": "#/components/schemas/String"
+          },
+          "uploadId": {
+            "$ref": "#/components/schemas/Guid"
+          }
+        },
+        "required": [
+          "uploadId",
+          "fileName"
+        ],
+        "type": "object"
+      }
+    }
+  },
+  "info": {
+    "title": "AiPMOInsight.Api | v1",
+    "version": "1.0.0"
+  },
+  "openapi": "3.1.1",
+  "paths": {
+    "/api/analyze/{uploadId}": {
+      "post": {
+        "operationId": "AnalyzeUpload",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "uploadId",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/Guid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AnalyzeUploadResult"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        },
+        "tags": [
+          "Analysis"
+        ]
+      }
+    },
+    "/api/auth/change-password": {
+      "post": {
+        "operationId": "ChangePassword",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AuthEndpointsChangePasswordRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "Auth"
+        ]
+      }
+    },
+    "/api/auth/login": {
+      "post": {
+        "operationId": "Login",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AuthEndpointsLoginRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "Auth"
+        ]
+      }
+    },
+    "/api/auth/logout": {
+      "post": {
+        "operationId": "Logout",
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "Auth"
+        ]
+      }
+    },
+    "/api/auth/refresh": {
+      "post": {
+        "operationId": "Refresh",
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "Auth"
+        ]
+      }
+    },
+    "/api/auth/register": {
+      "post": {
+        "operationId": "Register",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AuthEndpointsRegisterRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "Auth"
+        ]
+      }
+    },
+    "/api/data-quality/summary": {
+      "get": {
+        "operationId": "GetDataQualitySummary",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SummarizeDataQualityResult"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "DataQuality"
+        ]
+      }
+    },
+    "/api/ingest/upload": {
+      "post": {
+        "operationId": "UploadFixture",
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "properties": {
+                  "file": {
+                    "$ref": "#/components/schemas/IFormFile"
+                  }
+                },
+                "type": "object"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UploadFixtureResult"
+                }
+              }
+            },
+            "description": "Created"
+          },
+          "400": {
+            "description": "Bad Request"
+          }
+        },
+        "tags": [
+          "Ingest"
+        ]
+      }
+    },
+    "/api/portfolio": {
+      "get": {
+        "operationId": "GetExecutivePortfolio",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ScorePortfolioResult"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "ExecutivePortfolio"
+        ]
+      }
+    },
+    "/api/profile/me": {
+      "get": {
+        "operationId": "Me",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProfileEndpointsMeResponse"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "Profile"
+        ]
+      }
+    },
+    "/api/projects": {
+      "get": {
+        "operationId": "ListProjectKeys",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IReadOnlyList\u00601"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "Projects"
+        ]
+      }
+    },
+    "/api/projects/{projectKey}": {
+      "get": {
+        "operationId": "GetProjectFindings",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "projectKey",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/String"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GetProjectFindingsResult"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "Projects"
+        ]
+      }
+    },
+    "/api/projects/{projectKey}/health": {
+      "get": {
+        "operationId": "GetProjectHealthScore",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "projectKey",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/String"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ScoreProjectResult"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        },
+        "tags": [
+          "HealthScoring"
+        ]
+      }
+    },
+    "/api/projects/{projectKey}/progress": {
+      "get": {
+        "operationId": "GetProjectProgress",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "projectKey",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/String"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SummarizeProgressResult"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        },
+        "tags": [
+          "Progress"
+        ]
+      }
+    },
+    "/api/uploads": {
+      "get": {
+        "operationId": "ListUploads",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IReadOnlyList\u00601"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "History"
+        ]
+      }
+    },
+    "/api/uploads/{uploadId}/findings": {
+      "get": {
+        "operationId": "GetUploadFindings",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "uploadId",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/Guid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GetUploadFindingsResult"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        },
+        "tags": [
+          "History"
+        ]
+      }
+    }
+  },
+  "servers": [
+    {
+      "url": "http://localhost/"
+    }
+  ],
+  "tags": [
+    {
+      "name": "Projects"
+    },
+    {
+      "name": "ExecutivePortfolio"
+    },
+    {
+      "name": "DataQuality"
+    },
+    {
+      "name": "Auth"
+    },
+    {
+      "name": "Profile"
+    },
+    {
+      "name": "Ingest"
+    },
+    {
+      "name": "Analysis"
+    },
+    {
+      "name": "History"
+    },
+    {
+      "name": "HealthScoring"
+    },
+    {
+      "name": "Progress"
+    }
+  ]
+}

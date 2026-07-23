@@ -146,7 +146,20 @@ builder.Services
         options.IncludeScopes = true;
     });
 
-builder.Services.AddOpenApi();
+// Schema reference id: disambiguate the many nested `Result` records (ScorePortfolio.Result,
+// ScoreProject.Result, …) by qualifying with their declaring type — otherwise they all collide on
+// the name "Result" in components.schemas. Same rule for other collided nested names (FindingView,
+// CitationView, …). Non-nested types keep their bare name.
+builder.Services.AddOpenApi(options =>
+{
+    options.CreateSchemaReferenceId = jsonTypeInfo =>
+    {
+        var type = jsonTypeInfo.Type;
+        return type is { IsNested: true, DeclaringType: not null }
+            ? $"{type.DeclaringType.Name}{type.Name}"
+            : type.Name;
+    };
+});
 
 var app = builder.Build();
 

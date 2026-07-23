@@ -23,7 +23,9 @@ public static class HealthScoringEndpoints
             var result = await sender.Send(new ScoreProject.Query(projectKey), ct);
             return result is null ? Results.NotFound() : Results.Ok(result);
         })
-        .WithName("GetProjectHealthScore");
+        .WithName("GetProjectHealthScore")
+        .Produces<ScoreProject.Result>(StatusCodes.Status200OK)
+        .Produces(StatusCodes.Status404NotFound);
 
         return app;
     }
