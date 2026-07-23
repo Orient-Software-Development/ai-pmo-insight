@@ -71,12 +71,11 @@ Standard three-part structure: `Header.Payload.Signature`, all Base64URL-encoded
   "iat": 153449083,
   "exp": 153452683,
   "jti": "a1b2c3d4-...",
-  "role": "teacher",
-  "tenantId": "org-xyz"
+  "role": "user"
 }
 ```
 
-> Use `sub` as the primary user identifier — avoid duplicating it with a custom `userId` claim. `iat` (issued at) records when the token was created — useful for audit trails and anomaly detection. Add custom claims (e.g. `role`, `tenantId`) only when they are needed for request-level authorization and are not expected to change frequently.
+> Use `sub` as the primary user identifier — avoid duplicating it with a custom `userId` claim. `iat` (issued at) records when the token was created — useful for audit trails and anomaly detection. `role` is the one custom claim actually issued today (`TokenService.CreateToken`, one per assigned role). A claim like `tenantId` is a **hypothetical example only** — there is no tenant/organization concept anywhere in this codebase (the app is a single shared workspace, see `CLAUDE.md`); do not add such a claim without a backing data model and an explicit scope decision.
 
 **Signature:**
 ```
@@ -252,7 +251,10 @@ A long-lived Refresh Token that is never invalidated is equivalent to a permanen
 
 **Rotation:** Every use of a Refresh Token issues a new Refresh Token and immediately revokes the old one. The old token's `revokedAt` is set; a new row is inserted.
 
-**Reuse detection:** If a token arrives with `revokedAt IS NOT NULL`, the entire token family is revoked. This signals that a previously-rotated token was replayed — indicative of theft.
+**Reuse detection:** If a token arrives with `revokedAt IS NOT NULL`, **every active refresh token
+for that user is revoked — all devices, not just the rotation chain the reused token came from**
+(`RefreshTokenService.RevokeAllActiveAsync` revokes by `userId`, with no notion of a narrower
+"family"). This signals that a previously-rotated token was replayed — indicative of theft.
 
 ```
 Refresh flow:
@@ -260,7 +262,7 @@ Refresh flow:
   2. Server: hash(token) → lookup tokenHash in DB
   3. Check: expiresAt > NOW AND revokedAt IS NULL
   4. If reused token detected (revokedAt IS NOT NULL):
-       → revoke entire token family
+       → revoke every active refresh token for this user (all devices)
        → return 401, force re-login
   5. If valid:
        → SET revokedAt = NOW on old row
@@ -283,10 +285,10 @@ Tab B: refresh() ──→ reads the SAME row concurrently, also tries to revoke
 
 ⚠️ **What this does *not* cover:** if Tab B's request arrives *after* Tab A's rotation has already
 committed — a delayed retry, a stale cached cookie, or an actual replayed stolen token — Tab B reads
-the row as already `revokedAt IS NOT NULL` and is treated as **reuse**: the whole token family is
-revoked, same as genuine theft. There is no grace window distinguishing "briefly delayed legitimate
-client" from "attacker replaying a stolen token" in that case — it's an accepted trade-off, since
-nothing in the request itself can tell the two apart.
+the row as already `revokedAt IS NOT NULL` and is treated as **reuse**: every active refresh token
+for the user is revoked (all devices), same as genuine theft. There is no grace window
+distinguishing "briefly delayed legitimate client" from "attacker replaying a stolen token" in that
+case — it's an accepted trade-off, since nothing in the request itself can tell the two apart.
 
 ### Consequences
 
@@ -385,7 +387,7 @@ on the normalized column), so casing never splits or duplicates an account.
 > invalidate every session ("log out everywhere"). This template is **stateless JWT** — access tokens
 > are validated by signature + `exp` with no per-request DB read — so session invalidation is enforced
 > by **revoking refresh tokens** (`RefreshTokenService.RevokeAllAsync`), called on **logout**, on
-> **reuse-detection** family revocation, and on **password change** (`POST /api/auth/change-password`,
+> **reuse-detection** revocation (all devices), and on **password change** (`POST /api/auth/change-password`,
 > §9). Other devices can no longer rotate; their access tokens age out within the 15-minute TTL.
 > `ConcurrencyStamp` is unrelated — it is EF Core optimistic-concurrency metadata, not a security
 > control.
@@ -468,7 +470,7 @@ POST /api/auth/refresh
 Server:
   1. Read cookie → hash → lookup tokenHash in DB
   2. Assert: expiresAt > NOW
-  3. Assert: revokedAt IS NULL  ← if not, revoke family, return 401
+  3. Assert: revokedAt IS NULL  ← if not, revoke every active token for this user (all devices), return 401
   4. SET revokedAt = NOW on old row
   5. INSERT new row with same expiresAt as old row  ← fixed TTL, not reset
   6. Generate new accessToken (signed with SECRET_KEY)
@@ -603,15 +605,15 @@ CLIENT (Browser)                                            SERVER (ASP.NET API)
 | XSS stealing tokens | `httpOnly` cookies — JavaScript cannot read them |
 | CSRF on API requests | `SameSite=Strict` — cookie not sent on cross-site requests |
 | Stolen Access Token | 15-min TTL limits blast radius; valid until expiry even after logout |
-| Stolen Refresh Token | Rotation invalidates after next use; reuse detection triggers family revocation |
+| Stolen Refresh Token | Rotation invalidates after next use; reuse detection revokes every active token for the user (all devices) |
 | DB breach exposing tokens | Only SHA-256 hashes stored — raw tokens never persisted |
 | Algorithm confusion attack | Server enforces signing algorithm — never trusts `alg` claim from token |
 | Replay attacks | `exp` claim's short TTL limits the window; no `jti` blacklist — access tokens aren't individually revocable (see §1) |
-| Subdomain cookie injection | Use `__Host-` cookie prefix to scope cookies strictly to the origin |
+| Subdomain cookie injection | **Not yet applied** — `AuthCookies` uses plain `access_token`/`refresh_token` names, no `__Host-` prefix. Deferred hardening item if subdomains come into scope (see §4) |
 | Signing key compromise | Rotate SECRET_KEY in Secrets Manager; redeploy to pick up new value |
 | Clock skew across instances | Allow ±2 min tolerance on `exp` validation |
 | Refresh endpoint abuse | Rate limiting per IP and per user |
-| Brute-force login | Rate limiting + account lockout / exponential backoff |
+| Brute-force login | Account lockout — implemented via ASP.NET Identity's `AccessFailedAsync`/`IsLockedOutAsync` (`AuthEndpoints.cs` login handler); rate limiting is aspirational, not yet implemented |
 | Password database breach | PBKDF2 hashing (ASP.NET Identity) — raw passwords never stored |
 | TLS downgrade | `Secure` cookie flag + HSTS enforced at infrastructure level |
 
