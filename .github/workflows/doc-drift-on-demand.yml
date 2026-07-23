@@ -40,7 +40,7 @@ permissions:
   issues: write
 
 env:
-  DOC_DRIFT_MODEL: claude-sonnet-5
+  DOC_DRIFT_MODEL: claude-haiku-4-5-20251001
 
 jobs:
   # Parses the triggering comment and resolves which doc(s) to check. Every downstream job
