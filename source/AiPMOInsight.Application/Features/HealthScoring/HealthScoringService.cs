@@ -60,10 +60,10 @@ public sealed class HealthScoringService(HealthScoringOptions options)
             .GroupBy(f => f.Area!.Value)
             .Select(g =>
             {
-                var worst = g.Max(f => f.Severity!.Value);
+                var worstSeverity = g.Max(f => f.Severity!.Value);
                 var weight = options.WeightFor(g.Key);
-                var areaScore = options.ScoreFor(worst);
-                return (Area: g.Key, Severity: worst, Weight: weight, AreaScore: areaScore);
+                var areaScore = options.ScoreFor(worstSeverity);
+                return (Area: g.Key, Severity: worstSeverity, Weight: weight, AreaScore: areaScore);
             })
             .OrderBy(a => a.Area)
             .ToList();
