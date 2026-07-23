@@ -79,6 +79,20 @@ insufficient in practice. Code sent to the model is a hand-picked ~41-file set m
 CLAUDE.md §3's control points, not the whole `source/` tree — CLAUDE.md's scope is close to
 the entire solution, so a naive wildcard would blow up prompt cost for no real gain.
 
+**[2026-07-23] All four Layer-3 CI jobs moved from automatic push-trigger to a PR-comment
+chatops trigger (`/check-doc-drift [doc]`).** Moved out of `ci.yml` into its own
+`doc-drift-on-demand.yml`, triggered by `issue_comment` instead of `pull_request`. Reason:
+the push-triggered version's path filter diffed `origin/<base>...HEAD` (cumulative since
+branch point), not the incremental push — so once a PR touched a mapped path, every
+subsequent push re-ran the LLM call again with no caching, and a multi-commit PR touching
+several docs' code areas could rack up many redundant calls. On-demand ties cost to how many
+times a human actually asks. Gated on `author_association` (OWNER/MEMBER/COLLABORATOR) to
+stop a random commenter from spending API budget. Result posts as both a job summary and a
+direct PR reply comment (more visible than before, since this is now something a human
+explicitly requested rather than a silent background check). Comment body is passed through
+an env var, never spliced directly into a `run:` script via `${{ }}` — required to avoid a
+GitHub Actions script-injection vector on untrusted comment text.
+
 **[2026-07-21] Drift classification (breaking vs additive) via `oasdiff` is advisory, not
 blocking.** Layer 1 remains the strict "baseline must be current" merge gate — any change to
 the shape requires a same-PR baseline update. The `openapi-classify` CI job runs on PRs only,
