@@ -25,7 +25,6 @@ public static class ScorePortfolio
         double AverageConfidence,
         IReadOnlyList<InterventionView> Intervention,
         FinancialExposureView FinancialExposure,
-        int DecisionBacklog,
         IReadOnlyList<KeyPersonView> KeyPersons,
         IReadOnlyList<CustomerExposureView> CustomerExposure,
         IReadOnlyList<RecommendedActionView> RecommendedActions);
@@ -101,9 +100,6 @@ public static class ScorePortfolio
                 exposureFindings.Sum(f => f.MetricValue!.Value),
                 exposureFindings.Select(f => f.MetricUnit).FirstOrDefault(u => u is not null));
 
-            // Decision backlog: count of Decision-area findings (overdue / due-soon) across latest runs.
-            var decisionBacklog = latestFindings.Count(f => f.Area == HealthArea.Decision);
-
             // Key-person concentration: distinct people from the Resource agent's concentration findings
             // (person on MetricDetail, project count on MetricValue), worst band per person.
             var keyPersons = latestFindings
@@ -155,7 +151,7 @@ public static class ScorePortfolio
                 .ToList();
 
             return new Result(red, amber, green, needsReview, avgConfidence, intervention,
-                exposure, decisionBacklog, keyPersons, customerExposure, recommendedActions);
+                exposure, keyPersons, customerExposure, recommendedActions);
         }
 
         /// <summary>
