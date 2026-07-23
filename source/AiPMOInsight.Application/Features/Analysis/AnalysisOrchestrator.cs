@@ -57,7 +57,7 @@ public sealed class AnalysisOrchestrator(
         // doesn't scale linearly with project count. The cap keeps burst pressure off vendor rate
         // limits; ordering of the returned list is preserved because Task.WhenAll returns results
         // in the same order as its inputs.
-        const int maxProjectConcurrency = 2;
+        const int maxProjectConcurrency = 5;
         using var throttle = new SemaphoreSlim(maxProjectConcurrency, maxProjectConcurrency);
         var perProject = await Task.WhenAll(projectKeys.Select(async projectKey =>
         {
