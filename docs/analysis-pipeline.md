@@ -81,7 +81,7 @@ once per upload, before the fan-out, and its output is sliced per project.
 | Agent | LLM call happens when… | LLM call is skipped when… |
 |---|---|---|
 | #4 Risk & Issue | Project has meeting minutes (extract from unstructured text) | Project has no minutes — RAID rows go through the deterministic path only |
-| #7 Narrative | 3+ analysis findings **or** any finding produced by minute extraction | Fewer than 3 non-minute findings — a template path handles routine GREEN, "needs review", and 1–2-signal RED |
+| #7 Narrative | 3+ analysis findings **or** any finding produced by minute extraction | Fewer than 3 analysis findings **and** none minute-extracted — a template path handles routine GREEN, "needs review", and 1–2-signal RED |
 | #8 Challenge | Any analysis finding exists | Zero analysis findings — a placeholder line replaces the critique |
 | #9 Review | Any analysis finding exists | Zero analysis findings — a placeholder line replaces the questions |
 
@@ -96,7 +96,7 @@ References:
 | Projects | Project shape | LLM calls |
 |---|---|---|
 | 1 | clean project (no findings, no minutes) | 0 |
-| 1 | 1 RAID row, no minutes | 0 (Narrative uses template; Challenge/Review skip) |
+| 1 | 1 RAID row, no minutes | 2 (Narrative uses template — 1 finding, not minute-extracted; Challenge + Review both fire — their skip rule is "zero analysis findings," and 1 is non-zero) |
 | 1 | 3 findings + minutes | 4 (all four LLM agents fire) |
 | 6 | worst case — every project has minutes and 3+ findings | 24 |
 | 6 | typical — mix of clean, small-signal, and complex projects | ~6–12 |
