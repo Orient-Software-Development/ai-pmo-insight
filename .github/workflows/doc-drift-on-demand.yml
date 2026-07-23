@@ -211,9 +211,15 @@ jobs:
 
           # Build the request body via jq's --rawfile — safe against every quote/escape in the
           # prompt without shell-level string manipulation.
+          # thinking: disabled — this call just needs a rubric comparison written out, not
+          # extended reasoning. Without this, claude-sonnet-5 defaults to adaptive thinking
+          # when `thinking` is omitted (a behavior change from Sonnet 4.6) and can burn the
+          # entire max_tokens budget on thinking with nothing left for the answer, ending in
+          # `stop_reason: "max_tokens"` and empty content.
           jq -n --rawfile prompt /tmp/prompt.txt --arg model "$DOC_DRIFT_MODEL" '{
             model: $model,
             max_tokens: 4096,
+            thinking: {type: "disabled"},
             messages: [{role: "user", content: $prompt}]
           }' > /tmp/request.json
 
@@ -378,9 +384,15 @@ jobs:
 
           # Build the request body via jq's --rawfile — safe against every quote/escape in the
           # prompt without shell-level string manipulation.
+          # thinking: disabled — this call just needs a rubric comparison written out, not
+          # extended reasoning. Without this, claude-sonnet-5 defaults to adaptive thinking
+          # when `thinking` is omitted (a behavior change from Sonnet 4.6) and can burn the
+          # entire max_tokens budget on thinking with nothing left for the answer, ending in
+          # `stop_reason: "max_tokens"` and empty content.
           jq -n --rawfile prompt /tmp/prompt.txt --arg model "$DOC_DRIFT_MODEL" '{
             model: $model,
             max_tokens: 4096,
+            thinking: {type: "disabled"},
             messages: [{role: "user", content: $prompt}]
           }' > /tmp/request.json
 
@@ -520,9 +532,15 @@ jobs:
 
           # Build the request body via jq's --rawfile — safe against every quote/escape in the
           # prompt without shell-level string manipulation.
+          # thinking: disabled — this call just needs a rubric comparison written out, not
+          # extended reasoning. Without this, claude-sonnet-5 defaults to adaptive thinking
+          # when `thinking` is omitted (a behavior change from Sonnet 4.6) and can burn the
+          # entire max_tokens budget on thinking with nothing left for the answer, ending in
+          # `stop_reason: "max_tokens"` and empty content.
           jq -n --rawfile prompt /tmp/prompt.txt --arg model "$DOC_DRIFT_MODEL" '{
             model: $model,
             max_tokens: 4096,
+            thinking: {type: "disabled"},
             messages: [{role: "user", content: $prompt}]
           }' > /tmp/request.json
 
@@ -678,9 +696,15 @@ jobs:
 
           # Build the request body via jq's --rawfile — safe against every quote/escape in the
           # prompt without shell-level string manipulation.
+          # thinking: disabled — this call just needs a rubric comparison written out, not
+          # extended reasoning. Without this, claude-sonnet-5 defaults to adaptive thinking
+          # when `thinking` is omitted (a behavior change from Sonnet 4.6) and can burn the
+          # entire max_tokens budget on thinking with nothing left for the answer, ending in
+          # `stop_reason: "max_tokens"` and empty content.
           jq -n --rawfile prompt /tmp/prompt.txt --arg model "$DOC_DRIFT_MODEL" '{
             model: $model,
             max_tokens: 4096,
+            thinking: {type: "disabled"},
             messages: [{role: "user", content: $prompt}]
           }' > /tmp/request.json
 
