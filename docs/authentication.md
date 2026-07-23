@@ -24,7 +24,7 @@ Issue a **JWT (JSON Web Token)** upon successful login. The server embeds trust 
 
 ```
 POST /api/auth/login
-  → bcrypt.compare(submittedPassword, storedHash)
+  → verify password hash (PBKDF2 via ASP.NET Identity's `UserManager.CheckPasswordAsync` — see §8)
   → if match: sign JWT with SECRET_KEY
   → return JWT via httpOnly cookie
 ```
@@ -290,12 +290,12 @@ Tab B: refresh() ──→ same token → revokedAt IS NOT NULL → looks like r
 
 The Access Token cookie is sent automatically by the browser on every request to `Path=/`, granting access to protected API endpoints.
 
-Identity information is intentionally separated from the Access Token — this keeps tokens small and avoids serving stale profile data if the user updates their name or avatar between token issuances. After login, the client fetches user info via a dedicated endpoint:
+Identity information is intentionally separated from the Access Token — this keeps tokens small and avoids serving stale profile data between token issuances. After login, the client fetches the current caller's name and roles via a dedicated endpoint:
 
 ```
 GET /api/profile/me
 (browser auto-attaches access_token cookie)
-→ 200 { userId, name, email, avatar, ... }
+→ 200 { userName, roles: [...] }
 ```
 
 ---
@@ -308,7 +308,7 @@ GET /api/profile/me
 |---|---|---|
 | `id` | UUID | Primary key |
 | `email` | VARCHAR | Unique, indexed |
-| `password` | VARCHAR | bcrypt/Argon2 hash — raw password never stored |
+| `password` | VARCHAR | PBKDF2 hash (ASP.NET Identity) — raw password never stored; see the Implementation Note below for the actual `AspNetUsers`-backed schema |
 
 ### Refresh Token Table
 
@@ -415,7 +415,7 @@ POST /api/auth/login  { email, password }
 
 Server:
   1. SELECT user WHERE email = ?
-  2. bcrypt.compare(password, user.passwordHash)
+  2. Verify password hash (PBKDF2 via `UserManager.CheckPasswordAsync`)
   3. Generate accessToken (JWT, 15min, signed with SECRET_KEY)
   4. Generate refreshToken (cryptographically secure random bytes)
   5. INSERT refresh_tokens (hash(refreshToken), userId, jti, expiresAt, ip, userAgent)
@@ -469,12 +469,17 @@ Client:
 POST /api/auth/logout
 
 Server:
-  1. SET revokedAt = NOW on active refresh token row
+  1. SET revokedAt = NOW on every active refresh token row for this user (all devices — "log
+     out everywhere"; see §8 Implementation Note, RefreshTokenService.RevokeAllAsync)
   2. Set-Cookie: access_token=;  Max-Age=0  ← clears cookie
      Set-Cookie: refresh_token=; Max-Age=0  ← clears cookie
 ```
 
-> **Note:** Logout revokes the active Refresh Token immediately and clears both cookies. Any previously issued Access Token remains technically valid until its 15-minute expiry. This is an accepted trade-off of stateless Access Tokens — the short TTL bounds the risk window.
+> **Note:** Logout revokes **every active Refresh Token for this user, on every device** — not
+> just the one that called `/logout` — and clears both cookies on this device. Any previously
+> issued Access Token, on this or any other device, remains technically valid until its own
+> 15-minute expiry. This is an accepted trade-off of stateless Access Tokens — the short TTL
+> bounds the risk window.
 
 ### Change Password
 
@@ -562,7 +567,8 @@ CLIENT (Browser)                                            SERVER (ASP.NET API)
       |                                                              |
       | 18. POST /api/auth/logout                                    |
       | -----------------------------------------------------------> |
-      |                                                              | 19. SET revokedAt on refresh token
+      |                                                              | 19. SET revokedAt on ALL active
+      |                                                              |     refresh tokens (all devices)
       |                                                              |     Clear both cookies (Max-Age=0)
       | 20. Returns 200 OK                                           |
       | <----------------------------------------------------------- |
@@ -587,7 +593,7 @@ CLIENT (Browser)                                            SERVER (ASP.NET API)
 | Clock skew across instances | Allow ±2 min tolerance on `exp` validation |
 | Refresh endpoint abuse | Rate limiting per IP and per user |
 | Brute-force login | Rate limiting + account lockout / exponential backoff |
-| Password database breach | bcrypt/Argon2 hashing — raw passwords never stored |
+| Password database breach | PBKDF2 hashing (ASP.NET Identity) — raw passwords never stored |
 | TLS downgrade | `Secure` cookie flag + HSTS enforced at infrastructure level |
 
 ---
