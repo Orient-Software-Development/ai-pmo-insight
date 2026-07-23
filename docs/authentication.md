@@ -94,7 +94,7 @@ HMACSHA256(
 | `exp` | Must be in the future (allow ±2 min clock skew) | `401` |
 | `iss` | Must match known issuer | `401` |
 | `aud` | Must match this service's identifier | `401` |
-| `jti` | Unique token ID — optional blacklist check on logout | `401` |
+| `jti` | Present in the payload for traceability; **not checked or blacklisted** — access tokens aren't individually revocable (see §1), so `jti` uniqueness is not enforced | n/a |
 
 > **Clock skew:** In distributed systems, server clocks may differ slightly. Allow a small tolerance (1–2 minutes) when validating `exp` to prevent spurious authentication failures across instances.
 
@@ -606,7 +606,7 @@ CLIENT (Browser)                                            SERVER (ASP.NET API)
 | Stolen Refresh Token | Rotation invalidates after next use; reuse detection triggers family revocation |
 | DB breach exposing tokens | Only SHA-256 hashes stored — raw tokens never persisted |
 | Algorithm confusion attack | Server enforces signing algorithm — never trusts `alg` claim from token |
-| Replay attacks | `exp` claim + `jti` uniqueness check |
+| Replay attacks | `exp` claim's short TTL limits the window; no `jti` blacklist — access tokens aren't individually revocable (see §1) |
 | Subdomain cookie injection | Use `__Host-` cookie prefix to scope cookies strictly to the origin |
 | Signing key compromise | Rotate SECRET_KEY in Secrets Manager; redeploy to pick up new value |
 | Clock skew across instances | Allow ±2 min tolerance on `exp` validation |
