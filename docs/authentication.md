@@ -24,7 +24,7 @@ Issue a **JWT (JSON Web Token)** upon successful login. The server embeds trust 
 
 ```
 POST /api/auth/login
-  → bcrypt.compare(submittedPassword, storedHash)
+  → verify password hash (PBKDF2 via ASP.NET Identity's `UserManager.CheckPasswordAsync` — see §8)
   → if match: sign JWT with SECRET_KEY
   → return JWT via httpOnly cookie
 ```
@@ -154,8 +154,8 @@ Issue two tokens on login with asymmetric lifetimes:
 
 | Token | Lifetime | Transport | Scope |
 |---|---|---|---|
-| **Access Token** | 15 minutes | `httpOnly` cookie | `Path=/` |
-| **Refresh Token** | 7 days (fixed) | `httpOnly` cookie | `Path=/api/auth/refresh` |
+| **Access Token** | 15 minutes (default, configurable via `Jwt:AccessTokenMinutes`) | `httpOnly` cookie | `Path=/` |
+| **Refresh Token** | 7 days (default, configurable via `Jwt:RefreshTokenDays`; fixed at issuance — not reset on rotation) | `httpOnly` cookie | `Path=/api/auth/refresh` |
 
 **Refresh Token expiration model — Sliding vs Fixed:**
 
@@ -268,21 +268,34 @@ Refresh flow:
        → issue new cookies
 ```
 
-**Refresh race condition:** Browsers can issue concurrent requests. If two tabs both trigger a refresh simultaneously using the same token, one will succeed and the other will appear as a reuse (the token was already rotated). Mitigate with a per-user refresh mutex or a short-lived idempotency window:
+**Refresh race condition:** Browsers can issue concurrent requests. If two tabs both trigger a
+refresh simultaneously using the same (still-active) token, the actual mitigation is **database-level
+optimistic concurrency**, not a time-based grace window or mutex — `RefreshTokenService.RotateAsync`
+catches `DbUpdateConcurrencyException` on the losing write and treats it as a benign concurrent
+refresh (returns `null`, no revocation):
 
 ```
-Tab A: refresh() ──→ succeeds, old token revoked
-Tab B: refresh() ──→ same token → revokedAt IS NOT NULL → looks like reuse → 401
-                                                                  ↑
-                                          Mitigate: short grace window (~5s) before treating as attack
+Tab A: refresh() ──→ reads token (active), revokes it, inserts replacement, SaveChanges succeeds
+Tab B: refresh() ──→ reads the SAME row concurrently, also tries to revoke + insert
+                       → SaveChanges detects the row changed since Tab B's read
+                       → DbUpdateConcurrencyException caught → return null (benign, no revocation)
 ```
+
+⚠️ **What this does *not* cover:** if Tab B's request arrives *after* Tab A's rotation has already
+committed — a delayed retry, a stale cached cookie, or an actual replayed stolen token — Tab B reads
+the row as already `revokedAt IS NOT NULL` and is treated as **reuse**: the whole token family is
+revoked, same as genuine theft. There is no grace window distinguishing "briefly delayed legitimate
+client" from "attacker replaying a stolen token" in that case — it's an accepted trade-off, since
+nothing in the request itself can tell the two apart.
 
 ### Consequences
 
 ✅ Stolen Refresh Token becomes invalid after the next legitimate refresh cycle.  
 ✅ Reuse detection catches token replay attacks and forces re-authentication.  
 ✅ DB breach does not expose usable tokens.  
-⚠️ Race condition on concurrent refreshes — mitigate with mutex or grace window.
+✅ Truly simultaneous refreshes are handled via DB-level optimistic concurrency, not a mutex or timer.  
+⚠️ A refresh that arrives *after* the token was already rotated is always treated as reuse — no
+grace period, even for a merely-delayed legitimate client.
 
 ---
 
@@ -290,17 +303,23 @@ Tab B: refresh() ──→ same token → revokedAt IS NOT NULL → looks like r
 
 The Access Token cookie is sent automatically by the browser on every request to `Path=/`, granting access to protected API endpoints.
 
-Identity information is intentionally separated from the Access Token — this keeps tokens small and avoids serving stale profile data if the user updates their name or avatar between token issuances. After login, the client fetches user info via a dedicated endpoint:
+Identity information is intentionally separated from the Access Token — this keeps tokens small and avoids serving stale profile data between token issuances. After login, the client fetches the current caller's name and roles via a dedicated endpoint:
 
 ```
 GET /api/profile/me
 (browser auto-attaches access_token cookie)
-→ 200 { userId, name, email, avatar, ... }
+→ 200 { userName, roles: [...] }
 ```
 
 ---
 
 ## 8. Database Schema
+
+> **Conceptual sketch — superseded.** The two tables immediately below (`User Table`, `Refresh
+> Token Table`) are the original design sketch, written before ASP.NET Core Identity was adopted
+> for user storage. Some fields here (`jti`, `ip`, `userAgent` on the refresh token) were never
+> carried into the actual implementation. The **Implementation note** further down is the
+> authoritative schema — read that if you need the exact column list.
 
 ### User Table
 
@@ -308,7 +327,7 @@ GET /api/profile/me
 |---|---|---|
 | `id` | UUID | Primary key |
 | `email` | VARCHAR | Unique, indexed |
-| `password` | VARCHAR | bcrypt/Argon2 hash — raw password never stored |
+| `password` | VARCHAR | PBKDF2 hash (ASP.NET Identity) — raw password never stored; see the Implementation Note below for the actual `AspNetUsers`-backed schema |
 
 ### Refresh Token Table
 
@@ -316,11 +335,11 @@ GET /api/profile/me
 |---|---|---|
 | `tokenHash` | VARCHAR | SHA-256 of raw token — indexed |
 | `userId` | UUID | FK → User |
-| `jti` | UUID | Unique token ID — prevents double-use |
+| `jti` | UUID | **Not implemented** — original design idea for double-use prevention; the actual schema uses `tokenHash` lookup + `revokedAt` state instead (see Implementation Note) |
 | `expiresAt` | TIMESTAMP | 7 days from original login — fixed, not reset on rotation |
 | `revokedAt` | TIMESTAMP | NULL = active; non-NULL = revoked |
-| `ip` | VARCHAR | Issuing client IP — anomaly detection |
-| `userAgent` | VARCHAR | Device fingerprint — anomaly detection |
+| `ip` | VARCHAR | **Not implemented** — original anomaly-detection idea; `RefreshTokenService` does not currently capture or store this |
+| `userAgent` | VARCHAR | **Not implemented** — same as `ip` above |
 
 **Design note:** Rows are never hard-deleted on rotation — `revokedAt` is set. This preserves the audit trail and enables reuse detection.
 
@@ -415,10 +434,10 @@ POST /api/auth/login  { email, password }
 
 Server:
   1. SELECT user WHERE email = ?
-  2. bcrypt.compare(password, user.passwordHash)
+  2. Verify password hash (PBKDF2 via `UserManager.CheckPasswordAsync`)
   3. Generate accessToken (JWT, 15min, signed with SECRET_KEY)
   4. Generate refreshToken (cryptographically secure random bytes)
-  5. INSERT refresh_tokens (hash(refreshToken), userId, jti, expiresAt, ip, userAgent)
+  5. INSERT refresh_tokens (hash(refreshToken), userId, expiresAt)
 
 Response:
   Set-Cookie: access_token=<jwt>; HttpOnly; Secure; SameSite=Strict; Path=/
@@ -469,12 +488,17 @@ Client:
 POST /api/auth/logout
 
 Server:
-  1. SET revokedAt = NOW on active refresh token row
+  1. SET revokedAt = NOW on every active refresh token row for this user (all devices — "log
+     out everywhere"; see §8 Implementation Note, RefreshTokenService.RevokeAllAsync)
   2. Set-Cookie: access_token=;  Max-Age=0  ← clears cookie
      Set-Cookie: refresh_token=; Max-Age=0  ← clears cookie
 ```
 
-> **Note:** Logout revokes the active Refresh Token immediately and clears both cookies. Any previously issued Access Token remains technically valid until its 15-minute expiry. This is an accepted trade-off of stateless Access Tokens — the short TTL bounds the risk window.
+> **Note:** Logout revokes **every active Refresh Token for this user, on every device** — not
+> just the one that called `/logout` — and clears both cookies on this device. Any previously
+> issued Access Token, on this or any other device, remains technically valid until its own
+> 15-minute expiry. This is an accepted trade-off of stateless Access Tokens — the short TTL
+> bounds the risk window.
 
 ### Change Password
 
@@ -562,7 +586,8 @@ CLIENT (Browser)                                            SERVER (ASP.NET API)
       |                                                              |
       | 18. POST /api/auth/logout                                    |
       | -----------------------------------------------------------> |
-      |                                                              | 19. SET revokedAt on refresh token
+      |                                                              | 19. SET revokedAt on ALL active
+      |                                                              |     refresh tokens (all devices)
       |                                                              |     Clear both cookies (Max-Age=0)
       | 20. Returns 200 OK                                           |
       | <----------------------------------------------------------- |
@@ -587,7 +612,7 @@ CLIENT (Browser)                                            SERVER (ASP.NET API)
 | Clock skew across instances | Allow ±2 min tolerance on `exp` validation |
 | Refresh endpoint abuse | Rate limiting per IP and per user |
 | Brute-force login | Rate limiting + account lockout / exponential backoff |
-| Password database breach | bcrypt/Argon2 hashing — raw passwords never stored |
+| Password database breach | PBKDF2 hashing (ASP.NET Identity) — raw passwords never stored |
 | TLS downgrade | `Secure` cookie flag + HSTS enforced at infrastructure level |
 
 ---

